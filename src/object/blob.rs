@@ -1,2 +1,2 @@
 #[derive(Debug)]
-pub struct Blob {}
+pub struct Blob(Vec<u8>);

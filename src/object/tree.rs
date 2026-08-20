@@ -1,15 +1,12 @@
-use sha1::{
-    Digest, Sha1,
-    digest::{array::Array, consts::U20},
-};
+use sha1::{Digest, Sha1};
 
-use crate::hash::HashObject;
+use crate::hash::{HashObject, ObjectHash};
 
 #[derive(Debug)]
 pub struct Tree {}
 
 impl HashObject for Tree {
-    fn hash(&self) -> Array<u8, U20> {
+    fn hash(&self) -> ObjectHash {
         Sha1::digest([])
     }
 }

@@ -1,3 +1,5 @@
+use std::fmt::{Debug, Display};
+
 use sha1::digest::{array::Array, consts::U20};
 
 /// A hash that identifies an [`crate::object::Object`].
@@ -13,6 +15,12 @@ impl ObjectHash {
 impl From<Array<u8, U20>> for ObjectHash {
     fn from(value: Array<u8, U20>) -> Self {
         ObjectHash(value)
+    }
+}
+
+impl Display for ObjectHash {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
     }
 }
 

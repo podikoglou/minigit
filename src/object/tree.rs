@@ -7,6 +7,6 @@ pub struct Tree {}
 
 impl HashObject for Tree {
     fn hash(&self) -> ObjectHash {
-        Sha1::digest([])
+        Sha1::digest([]).into()
     }
 }

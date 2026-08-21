@@ -62,7 +62,7 @@ fn main() -> anyhow::Result<()> {
 
                     for object in objects {
                         match object {
-                            Ok(object) => println!("{}", object),
+                            Ok(object) => println!("{}", object.hash()),
                             Err(err) => println!("{}", err),
                         }
                     }

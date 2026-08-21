@@ -23,8 +23,3 @@ impl Display for ObjectHash {
         write!(f, "{}", hex::encode(self.0))
     }
 }
-
-pub trait HashObject {
-    /// Creates a SHA1 hash that identifies an [`crate::object::Object`].
-    fn hash(&self) -> ObjectHash;
-}

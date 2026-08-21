@@ -1,6 +1,8 @@
 pub mod blob;
 pub mod tree;
 
+use std::fmt::Display;
+
 use blob::Blob;
 use strum::{EnumDiscriminants, EnumString};
 use tree::Tree;
@@ -12,6 +14,15 @@ use tree::Tree;
 pub enum Object {
     Blob(Blob),
     Tree(Tree),
+}
+
+impl Display for Object {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Object::Blob(blob) => write!(f, "{}", blob),
+            Object::Tree(tree) => write!(f, "{}", tree),
+        }
+    }
 }
 
 impl Object {

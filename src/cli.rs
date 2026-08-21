@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use bpaf::Bpaf;
 
 use crate::object::ObjectType;
@@ -20,5 +22,8 @@ pub enum Options {
         /// Actually write the object into the object database.
         #[bpaf(short('w'))]
         write: bool,
+
+        #[bpaf(positional("file"))]
+        files: Vec<String>,
     },
 }

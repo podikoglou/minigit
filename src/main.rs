@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     cli::{Options, options},
-    object::ObjectType,
+    object::{Object, ObjectType, blob::Blob},
 };
 
 pub mod hash;
@@ -46,15 +46,25 @@ fn main() -> anyhow::Result<()> {
                         None
                     };
 
-                    let files = stdin_data
+                    let objects = stdin_data
                         .map(Ok)
                         .into_iter()
-                        .chain(files.into_iter().map(fs::read));
+                        .chain(files.into_iter().map(fs::read))
+                        .map(|contents| match contents {
+                            Ok(bytes) => {
+                                // create a Blob out of this
+                                let blob = Blob::new(bytes);
 
-                    for file in files {
-                        let file = file?;
+                                Ok(Object::blob(blob))
+                            }
+                            Err(err) => Err(err),
+                        });
 
-                        dbg!(file);
+                    for object in objects {
+                        match object {
+                            Ok(object) => println!("{}", object),
+                            Err(err) => println!("{}", err),
+                        }
                     }
                 }
                 ObjectType::Tree => {

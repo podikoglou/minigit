@@ -34,12 +34,7 @@ fn main() -> anyhow::Result<()> {
 
                         let mut lock = stdin.lock();
 
-                        loop {
-                            match lock.read(&mut buf) {
-                                Ok(v) if v != 0 => continue,
-                                _ => break,
-                            }
-                        }
+                        lock.read_to_end(&mut buf)?;
 
                         Some(buf)
                     } else {

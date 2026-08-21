@@ -20,7 +20,11 @@ impl From<Array<u8, U20>> for ObjectHash {
 
 impl Display for ObjectHash {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.0.fmt(f)
+        for byte in self.0 {
+            write!(f, "{:x}", byte)?;
+        }
+
+        Ok(())
     }
 }
 

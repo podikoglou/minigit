@@ -1,7 +1,7 @@
 pub mod blob;
 pub mod tree;
 
-use std::{fmt::Display, io::Write};
+use std::io::{self, Write};
 
 use blob::Blob;
 use sha1::{Digest, Sha1};
@@ -34,7 +34,7 @@ impl Object {
             Object::Blob(blob) => {
                 write!(writer, "blob {}\0", blob.0.len())
             }
-            Object::Tree(tree) => todo!(),
+            Object::Tree(_) => todo!(),
         }?;
 
         Ok(())
@@ -46,18 +46,18 @@ impl Object {
 
         match self {
             Object::Blob(blob) => writer.write(&blob.0)?,
-            Object::Tree(tree) => todo!(),
+            Object::Tree(_) => todo!(),
         };
 
         Ok(())
     }
 
     /// Creates a SHA1 hash of the object.
-    pub fn hash(&self) -> ObjectHash {
+    pub fn hash(&self) -> Result<ObjectHash, io::Error> {
         let mut buf = Vec::new();
-        self.write(&mut buf);
+        self.write(&mut buf)?;
 
-        Sha1::digest(buf).into()
+        Ok(Sha1::digest(buf).into())
     }
 }
 

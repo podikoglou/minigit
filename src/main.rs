@@ -1,5 +1,5 @@
 use std::{
-    fs::{self, File},
+    fs::{self},
     io::{self, Read},
 };
 
@@ -20,7 +20,7 @@ fn main() -> anyhow::Result<()> {
         Options::HashObjectCommand {
             r#type,
             stdin,
-            write,
+            write: _write,
             files,
         } => {
             let ty = r#type.unwrap_or(ObjectType::Blob);
@@ -57,7 +57,7 @@ fn main() -> anyhow::Result<()> {
 
                     for object in objects {
                         match object {
-                            Ok(object) => println!("{}", object.hash()),
+                            Ok(object) => println!("{}", object.hash()?),
                             Err(err) => println!("{}", err),
                         }
                     }

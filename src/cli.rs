@@ -12,5 +12,13 @@ pub enum Options {
         /// Possible values are blob, tree.
         #[bpaf(long("type"), short('t'))]
         r#type: Option<ObjectType>,
+
+        /// Read the object from the standard input instead of from a file.
+        #[bpaf(flag(true, false))]
+        stdin: bool,
+
+        /// Actually write the object into the object database.
+        #[bpaf(short('w'))]
+        write: bool,
     },
 }

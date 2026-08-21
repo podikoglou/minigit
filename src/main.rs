@@ -12,7 +12,11 @@ fn main() {
     let opts = options().run();
 
     match opts {
-        Options::HashObjectCommand { r#type } => {
+        Options::HashObjectCommand {
+            r#type,
+            stdin,
+            write,
+        } => {
             let r#type = r#type.unwrap_or(ObjectType::Blob);
         }
     }

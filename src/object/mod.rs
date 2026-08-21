@@ -19,30 +19,30 @@ pub enum Object {
 impl Display for Object {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Object::Blob(blob) => write!(f, "{}", blob),
-            Object::Tree(tree) => write!(f, "{}", tree),
+            Self::Blob(blob) => write!(f, "{}", blob),
+            Self::Tree(tree) => write!(f, "{}", tree),
         }
     }
 }
 
 impl Object {
-    pub fn blob(blob: Blob) -> Object {
-        Object::Blob(blob)
+    pub fn blob(blob: Blob) -> Self {
+        Self::Blob(blob)
     }
 
-    pub fn tree(tree: Tree) -> Object {
-        Object::Tree(tree)
+    pub fn tree(tree: Tree) -> Self {
+        Self::Tree(tree)
     }
 }
 
 impl From<Blob> for Object {
     fn from(val: Blob) -> Self {
-        Object::blob(val)
+        Self::blob(val)
     }
 }
 
 impl From<Tree> for Object {
     fn from(val: Tree) -> Self {
-        Object::tree(val)
+        Self::tree(val)
     }
 }

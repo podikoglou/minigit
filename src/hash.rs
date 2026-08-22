@@ -1,14 +1,15 @@
 use std::fmt::Display;
 
+use anyhow::Context;
 use sha1::digest::{array::Array, consts::U20};
 
 /// A hash that identifies an [`crate::object::Object`].
 pub struct ObjectHash(Array<u8, U20>);
 
 impl ObjectHash {
-    /// Gets the prefix (first two bytes) of the hash.
-    pub fn prefix(&self) -> &[u8] {
-        &self.0[0..2]
+    /// Gets the prefix (first byte) of the hash.
+    pub fn prefix(&self) -> HashPrefix {
+        self.0[0].into()
     }
 }
 
@@ -21,5 +22,58 @@ impl From<Array<u8, U20>> for ObjectHash {
 impl Display for ObjectHash {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", hex::encode(self.0))
+    }
+}
+
+/// Prefix (first byte) of an [ObjectHash].
+pub struct HashPrefix(u8);
+
+impl Display for HashPrefix {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:2x}", self.0)
+    }
+}
+
+impl From<u8> for HashPrefix {
+    fn from(value: u8) -> Self {
+        HashPrefix(value)
+    }
+}
+
+impl TryFrom<&str> for HashPrefix {
+    type Error = anyhow::Error;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        let decoded = hex::decode(value)?;
+        let first_byte = *(decoded.first().context("couldn't get first decoded byte")?);
+
+        Ok(HashPrefix(first_byte))
+    }
+}
+
+impl<'a> TryFrom<std::borrow::Cow<'a, str>> for HashPrefix {
+    type Error = anyhow::Error;
+
+    fn try_from(value: std::borrow::Cow<'a, str>) -> Result<Self, Self::Error> {
+        Self::try_from(value.as_ref())
+    }
+}
+
+impl TryFrom<String> for HashPrefix {
+    type Error = anyhow::Error;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Self::try_from(value.as_str())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::hash::HashPrefix;
+
+    #[test]
+    fn test_hash_prefix_display() {
+        assert_eq!(format!("{}", HashPrefix(0x00)), "00".to_string());
+        assert_eq!(format!("{}", HashPrefix(0x2f)), "2f".to_string());
     }
 }

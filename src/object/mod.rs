@@ -8,7 +8,7 @@ use sha1::{Digest, Sha1};
 use strum::{EnumDiscriminants, EnumString};
 use tree::Tree;
 
-use crate::hash::ObjectHash;
+use crate::{hash::ObjectHash, storage::object::LazyObject};
 
 #[derive(Debug, EnumDiscriminants)]
 #[strum_discriminants(name(ObjectType))]
@@ -70,5 +70,13 @@ impl From<Blob> for Object {
 impl From<Tree> for Object {
     fn from(val: Tree) -> Self {
         Self::tree(val)
+    }
+}
+
+impl TryFrom<LazyObject> for Object {
+    type Error = io::Error;
+
+    fn try_from(value: LazyObject) -> Result<Self, io::Error> {
+        Ok(todo!())
     }
 }

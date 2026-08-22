@@ -7,7 +7,7 @@ pub struct ObjectHash(Array<u8, U20>);
 
 impl ObjectHash {
     /// Gets the prefix (first two bytes) of the hash.
-    pub fn get_prefix(&self) -> &[u8] {
+    pub fn prefix(&self) -> &[u8] {
         &self.0[0..2]
     }
 }

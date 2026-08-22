@@ -19,7 +19,16 @@ impl Store {
                 .into_iter()
                 .flatten()
                 .filter_map(Result::ok)
-                .map(move |file| (format!("{:?}{:?}", prefix, file.file_name()), file.path()))
+                .map(move |file| {
+                    (
+                        format!(
+                            "{}{}",
+                            prefix.to_string_lossy(),
+                            file.file_name().to_string_lossy()
+                        ),
+                        file.path(),
+                    )
+                })
         }))
     }
 }

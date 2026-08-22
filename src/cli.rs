@@ -24,4 +24,8 @@ pub enum Options {
         #[bpaf(positional("file"))]
         files: Vec<String>,
     },
+
+    /// List objects in the repository
+    #[bpaf(command("ls-objects"))]
+    LsObjectsCommand {},
 }

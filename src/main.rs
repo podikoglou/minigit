@@ -1,4 +1,5 @@
 use std::{
+    env,
     fs::{self},
     io::{self, Read},
 };
@@ -6,6 +7,7 @@ use std::{
 use crate::{
     cli::{Options, options},
     object::{Object, ObjectType, blob::Blob},
+    storage::Store,
 };
 
 pub mod hash;
@@ -16,6 +18,9 @@ mod cli;
 
 fn main() -> anyhow::Result<()> {
     let opts = options().run();
+
+    let git_dir = env::current_dir()?.join(".git");
+    let store = Store::new(git_dir);
 
     match opts {
         Options::HashObjectCommand {
@@ -66,6 +71,11 @@ fn main() -> anyhow::Result<()> {
                 ObjectType::Tree => {
                     todo!()
                 }
+            }
+        }
+        Options::LsObjectsCommand {} => {
+            for object in store.list_objects()? {
+                println!("{}", object.0);
             }
         }
     }

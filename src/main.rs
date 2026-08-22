@@ -10,6 +10,7 @@ use crate::{
 
 pub mod hash;
 pub mod object;
+pub mod storage;
 
 mod cli;
 

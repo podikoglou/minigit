@@ -1,4 +1,8 @@
-use std::{fs, io, path::PathBuf};
+use std::{
+    fs::{self, DirEntry},
+    io,
+    path::PathBuf,
+};
 
 pub struct Store(PathBuf);
 
@@ -11,12 +15,18 @@ impl Store {
         self.0.join("objects/")
     }
 
-    /// Returns an iterator over pairs of object hashes and their paths.
-    pub fn objects(&self) -> Result<impl Iterator<Item = (String, PathBuf)>, io::Error> {
+    /// Returns an iterator over the paths of the prefix directories.
+    pub fn prefix_dirs(&self) -> Result<impl Iterator<Item = DirEntry>, io::Error> {
         let entries = fs::read_dir(self.objects_path())?;
 
-        Ok(entries
-            .filter_map(Result::ok)
+        Ok(entries.filter_map(Result::ok))
+    }
+
+    /// Returns an iterator over pairs of object hashes and their paths.
+    pub fn objects(&self) -> Result<impl Iterator<Item = (String, PathBuf)>, io::Error> {
+        let prefix_dirs = self.prefix_dirs()?;
+
+        Ok(prefix_dirs
             .filter(|entry| entry.file_name().len() == 2)
             .flat_map(|prefix_dir| {
                 let prefix = prefix_dir.file_name();

@@ -12,23 +12,26 @@ impl Store {
         let objects_path = self.0.join("objects/");
         let entries = fs::read_dir(objects_path)?;
 
-        Ok(entries.filter_map(Result::ok).flat_map(|prefix_dir| {
-            let prefix = prefix_dir.file_name();
+        Ok(entries
+            .filter_map(Result::ok)
+            .filter(|entry| entry.file_name().len() == 2)
+            .flat_map(|prefix_dir| {
+                let prefix = prefix_dir.file_name();
 
-            fs::read_dir(prefix_dir.path())
-                .into_iter()
-                .flatten()
-                .filter_map(Result::ok)
-                .map(move |file| {
-                    (
-                        format!(
-                            "{}{}",
-                            prefix.to_string_lossy(),
-                            file.file_name().to_string_lossy()
-                        ),
-                        file.path(),
-                    )
-                })
-        }))
+                fs::read_dir(prefix_dir.path())
+                    .into_iter()
+                    .flatten()
+                    .filter_map(Result::ok)
+                    .map(move |file| {
+                        (
+                            format!(
+                                "{}{}",
+                                prefix.to_string_lossy(),
+                                file.file_name().to_string_lossy()
+                            ),
+                            file.path(),
+                        )
+                    })
+            }))
     }
 }

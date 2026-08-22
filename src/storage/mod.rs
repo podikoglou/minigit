@@ -4,11 +4,22 @@ use std::{
     path::PathBuf,
 };
 
-pub struct Store(PathBuf);
+use anyhow::bail;
+
+pub mod object;
+pub mod prefix;
+
+pub struct Store {
+    path: PathBuf,
+}
 
 impl Store {
-    pub fn new(path: PathBuf) -> Self {
-        Self(path)
+    pub fn try_new(path: PathBuf) -> Result<Self, anyhow::Error> {
+        match fs::exists(&path) {
+            Ok(true) => Ok(Self { path }),
+            Ok(false) => bail!("directory does not exist"),
+            Err(err) => bail!(err),
+        }
     }
 
     pub fn objects_path(&self) -> PathBuf {

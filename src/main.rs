@@ -74,7 +74,7 @@ fn main() -> anyhow::Result<()> {
             }
         }
         Options::LsObjectsCommand {} => {
-            for object in store.list_objects()? {
+            for object in store.objects()? {
                 println!("{}", object.0);
             }
         }

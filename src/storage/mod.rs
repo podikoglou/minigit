@@ -8,7 +8,7 @@ impl Store {
     }
 
     /// Returns an iterator over pairs of object hashes and their paths.
-    pub fn list_objects(&self) -> Result<impl Iterator<Item = (String, PathBuf)>, io::Error> {
+    pub fn objects(&self) -> Result<impl Iterator<Item = (String, PathBuf)>, io::Error> {
         let objects_path = self.0.join("objects/");
         let entries = fs::read_dir(objects_path)?;
 

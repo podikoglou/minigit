@@ -20,7 +20,7 @@ fn main() -> anyhow::Result<()> {
     let opts = options().run();
 
     let git_dir = env::current_dir()?.join(".git");
-    let store = Store::new(git_dir);
+    let store = Store::try_new(git_dir)?;
 
     match opts {
         Options::HashObjectCommand {
@@ -75,7 +75,7 @@ fn main() -> anyhow::Result<()> {
         }
         Options::LsObjectsCommand {} => {
             for object in store.objects()? {
-                println!("{}", object.0);
+                println!("{}", object);
             }
         }
     }

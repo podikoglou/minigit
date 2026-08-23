@@ -7,7 +7,7 @@ use std::{
 use crate::{
     cli::{Options, options},
     object::{Object, ObjectType, blob::Blob},
-    storage::{Store, object::LazyObject},
+    storage::{Store, object::LazyObject, prefix_dir::PrefixDir},
 };
 
 pub mod hash;
@@ -82,7 +82,7 @@ fn main() -> anyhow::Result<()> {
                     prefix_dirs
                         .into_iter()
                         .filter_map(|prefix| store.prefix_dir(prefix).ok())
-                        .map(|prefix_dir| prefix_dir.objects())
+                        .map(PrefixDir::objects)
                         .filter_map(Result::ok)
                         .flatten(),
                 )

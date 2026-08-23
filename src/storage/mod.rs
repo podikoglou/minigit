@@ -34,7 +34,6 @@ impl Store {
     /// Returns an iterator over the paths of the prefix directories.
     pub fn prefix_dirs(&self) -> Result<impl Iterator<Item = PrefixDir>, io::Error> {
         Ok(fs::read_dir(self.objects_path())?
-            .into_iter()
             .filter_map(Result::ok)
             .filter_map(|entry| PrefixDir::try_new(entry.path()).ok()))
     }

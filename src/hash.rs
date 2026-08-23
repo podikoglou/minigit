@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use anyhow::Context;
+use anyhow::{Context, anyhow, ensure};
 use sha1::digest::{array::Array, consts::U20};
 
 /// A hash that identifies an [`crate::object::Object`].
@@ -25,7 +25,37 @@ impl Display for ObjectHash {
     }
 }
 
+impl TryFrom<&str> for ObjectHash {
+    type Error = anyhow::Error;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        let decoded = hex::decode(value)?;
+        let bytes: [u8; 20] = decoded
+            .try_into()
+            .map_err(|_| anyhow!("couldn't turn hash into a 20-byte array"))?;
+
+        Ok(ObjectHash(bytes.into()))
+    }
+}
+
+impl<'a> TryFrom<std::borrow::Cow<'a, str>> for ObjectHash {
+    type Error = anyhow::Error;
+
+    fn try_from(value: std::borrow::Cow<'a, str>) -> Result<Self, Self::Error> {
+        Self::try_from(value.as_ref())
+    }
+}
+
+impl TryFrom<String> for ObjectHash {
+    type Error = anyhow::Error;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Self::try_from(value.as_str())
+    }
+}
+
 /// Prefix (first byte) of an [ObjectHash].
+#[derive(Debug, PartialEq, Eq)]
 pub struct HashPrefix(u8);
 
 impl Display for HashPrefix {

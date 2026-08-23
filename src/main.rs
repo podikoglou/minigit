@@ -95,7 +95,7 @@ fn main() -> anyhow::Result<()> {
         }
         Options::LsPrefixDirs {} => {
             for prefix_dir in store.prefix_dirs()? {
-                println!("{}", prefix_dir?.prefix);
+                println!("{}", prefix_dir.prefix);
             }
         }
     }

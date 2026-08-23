@@ -1,6 +1,5 @@
 use std::{
     fs::{self},
-    io,
     path::PathBuf,
 };
 
@@ -32,23 +31,21 @@ impl Store {
         self.path.join("objects/")
     }
 
-    /// Returns an iterator over the paths of the prefix directories.
-    pub fn prefix_dirs(
-        &self,
-    ) -> Result<impl Iterator<Item = Result<PrefixDir, anyhow::Error>>, io::Error> {
-        Ok(fs::read_dir(self.objects_path())?.map(|entry| PrefixDir::try_new(entry?.path())))
+    /// Returns all prefix directories under `.git/objects/`.
+    ///
+    /// At most 256 of them exist, so they are collected eagerly.
+    pub fn prefix_dirs(&self) -> Result<Vec<PrefixDir>, anyhow::Error> {
+        fs::read_dir(self.objects_path())?
+            .map(|entry| PrefixDir::try_new(entry?.path()))
+            .collect()
     }
 
     /// Finds a [PrefixDir] in .git/objects/
     pub fn prefix_dir(&self, prefix: HashPrefix) -> Result<PrefixDir, anyhow::Error> {
         self.prefix_dirs()?
             .into_iter()
-            .find_map(|prefix_dir| {
-                prefix_dir
-                    .map(|dir| (dir.prefix == prefix).then_some(dir))
-                    .transpose()
-            })
-            .context("couldn't find prefix dir")?
+            .find(|dir| dir.prefix == prefix)
+            .context("couldn't find prefix dir")
     }
 
     pub fn objects(
@@ -56,7 +53,8 @@ impl Store {
     ) -> Result<impl Iterator<Item = Result<LazyObject, anyhow::Error>>, anyhow::Error> {
         Ok(self
             .prefix_dirs()?
-            .map(|prefix_dir| PrefixDir::objects(prefix_dir?))
+            .into_iter()
+            .map(PrefixDir::objects)
             .flatten_ok()
             .map(Result::flatten))
     }

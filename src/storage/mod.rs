@@ -1,13 +1,18 @@
 use std::{
-    fs::{self, DirEntry},
+    fs::{self},
     io,
     path::PathBuf,
 };
 
-use anyhow::bail;
+use anyhow::{Context, bail};
+
+use crate::{
+    hash::HashPrefix,
+    storage::{object::LazyObject, prefix_dir::PrefixDir},
+};
 
 pub mod object;
-pub mod prefix;
+pub mod prefix_dir;
 
 pub struct Store {
     path: PathBuf,
@@ -23,39 +28,35 @@ impl Store {
     }
 
     pub fn objects_path(&self) -> PathBuf {
-        self.0.join("objects/")
+        self.path.join("objects/")
     }
 
     /// Returns an iterator over the paths of the prefix directories.
-    pub fn prefix_dirs(&self) -> Result<impl Iterator<Item = DirEntry>, io::Error> {
-        let entries = fs::read_dir(self.objects_path())?;
-
-        Ok(entries.filter_map(Result::ok))
+    pub fn prefix_dirs(&self) -> Result<impl Iterator<Item = PrefixDir>, io::Error> {
+        Ok(fs::read_dir(self.objects_path())?
+            .into_iter()
+            .filter_map(Result::ok)
+            .filter_map(|entry| PrefixDir::try_new(entry.path()).ok()))
     }
 
-    /// Returns an iterator over pairs of object hashes and their paths.
-    pub fn objects(&self) -> Result<impl Iterator<Item = (String, PathBuf)>, io::Error> {
-        let prefix_dirs = self.prefix_dirs()?;
-
-        Ok(prefix_dirs
-            .filter(|entry| entry.file_name().len() == 2)
-            .flat_map(|prefix_dir| {
-                let prefix = prefix_dir.file_name();
-
-                fs::read_dir(prefix_dir.path())
-                    .into_iter()
-                    .flatten()
-                    .filter_map(Result::ok)
-                    .map(move |file| {
-                        (
-                            format!(
-                                "{}{}",
-                                prefix.to_string_lossy(),
-                                file.file_name().to_string_lossy()
-                            ),
-                            file.path(),
-                        )
-                    })
-            }))
+    /// Finds a [PrefixDir] in .git/objects/
+    pub fn prefix_dir(&self, prefix: HashPrefix) -> Result<PrefixDir, anyhow::Error> {
+        self.prefix_dirs()?
+            .into_iter()
+            .find(|x| x.prefix == prefix)
+            .context("couldn't find prefix dir")
     }
+
+    pub fn objects(&self) -> Result<impl Iterator<Item = LazyObject>, anyhow::Error> {
+        Ok(self
+            .prefix_dirs()?
+            .filter_map(|dir| dir.objects().ok())
+            .flatten())
+    }
+
+    // /// Writes an object to the database.
+    // pub fn add_object(&self, object: Object) -> Result<(), io::Error> {
+    //     let hash = object.hash()?;
+    //     let prefix = hash.prefix();
+    // }
 }

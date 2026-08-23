@@ -1,6 +1,6 @@
 use std::{fmt::Display, str::FromStr};
 
-use anyhow::{Context, anyhow, ensure};
+use anyhow::{Context, anyhow};
 use sha1::digest::{array::Array, consts::U20};
 
 /// A hash that identifies an [`crate::object::Object`].

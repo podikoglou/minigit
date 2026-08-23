@@ -28,9 +28,9 @@ impl PrefixDir {
     }
 
     /// Returns an iterator over [LazyObject].
-    pub fn objects(self) -> Result<impl Iterator<Item = LazyObject>, anyhow::Error> {
-        Ok(fs::read_dir(self.path)?
-            .filter_map(Result::ok)
-            .filter_map(|path| LazyObject::try_new(path.path()).ok()))
+    pub fn objects(
+        self,
+    ) -> Result<impl Iterator<Item = Result<LazyObject, anyhow::Error>>, anyhow::Error> {
+        Ok(fs::read_dir(self.path)?.map(|path| LazyObject::try_new(path?.path())))
     }
 }

@@ -1,6 +1,6 @@
 use bpaf::Bpaf;
 
-use crate::object::ObjectType;
+use crate::{hash::HashPrefix, object::ObjectType};
 
 #[derive(Debug, Clone, Bpaf)]
 #[bpaf(options)]
@@ -31,5 +31,8 @@ pub enum Options {
 
     /// List objects in the repository
     #[bpaf(command("ls-objects"))]
-    LsObjectsCommand {},
+    LsObjectsCommand {
+        #[bpaf(positional("prefix-dirs"))]
+        prefix_dirs: Vec<HashPrefix>,
+    },
 }

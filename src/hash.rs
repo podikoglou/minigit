@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, str::FromStr};
 
 use anyhow::{Context, anyhow, ensure};
 use sha1::digest::{array::Array, consts::U20};
@@ -55,7 +55,7 @@ impl TryFrom<String> for ObjectHash {
 }
 
 /// Prefix (first byte) of an [ObjectHash].
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub struct HashPrefix(u8);
 
 impl Display for HashPrefix {
@@ -86,6 +86,14 @@ impl<'a> TryFrom<std::borrow::Cow<'a, str>> for HashPrefix {
 
     fn try_from(value: std::borrow::Cow<'a, str>) -> Result<Self, Self::Error> {
         Self::try_from(value.as_ref())
+    }
+}
+
+impl FromStr for HashPrefix {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::try_from(s)
     }
 }
 

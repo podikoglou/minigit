@@ -7,7 +7,7 @@ use std::{
 use crate::{
     cli::{Options, options},
     object::{Object, ObjectType, blob::Blob},
-    storage::Store,
+    storage::{Store, object::LazyObject},
 };
 
 pub mod hash;
@@ -73,8 +73,22 @@ fn main() -> anyhow::Result<()> {
                 }
             }
         }
-        Options::LsObjectsCommand {} => {
-            for object in store.objects()? {
+        Options::LsObjectsCommand { prefix_dirs } => {
+            // TODO: can we remove this box?
+            let objects: Box<dyn Iterator<Item = LazyObject>> = if prefix_dirs.is_empty() {
+                Box::new(store.objects()?)
+            } else {
+                Box::new(
+                    prefix_dirs
+                        .into_iter()
+                        .filter_map(|prefix| store.prefix_dir(prefix).ok())
+                        .map(|prefix_dir| prefix_dir.objects())
+                        .filter_map(Result::ok)
+                        .flatten(),
+                )
+            };
+
+            for object in objects {
                 println!("{}", object.hash);
             }
         }

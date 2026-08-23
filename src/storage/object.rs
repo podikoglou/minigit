@@ -3,7 +3,7 @@ use std::{fs, io, path::PathBuf};
 use anyhow::{Context, bail};
 
 use crate::{
-    hash::HashPrefix,
+    hash::{HashPrefix, ObjectHash},
     object::{Object, ObjectType},
 };
 
@@ -15,6 +15,7 @@ use crate::{
 /// At any given time it can be turned into a real [Object] using [`Self::into_object`].
 pub struct LazyObject {
     pub path: PathBuf,
+    pub hash: ObjectHash,
     pub prefix: HashPrefix,
 }
 
@@ -23,15 +24,22 @@ impl LazyObject {
     pub fn try_new(path: PathBuf) -> Result<Self, anyhow::Error> {
         match fs::exists(&path) {
             Ok(true) => {
-                let prefix: HashPrefix = path
+                let prefix = path
                     .components()
                     .nth_back(1)
                     .context("couldn't find prefix")?
                     .as_os_str()
-                    .to_string_lossy()
-                    .try_into()?;
+                    .to_string_lossy();
 
-                Ok(Self { prefix, path })
+                let file_name = path.file_name().context("couldn't get file name")?;
+
+                let hash: ObjectHash = format!("{prefix:?}{file_name:?}")
+                    .try_into()
+                    .context("couldn't parse object hash")?;
+
+                let prefix = hash.prefix();
+
+                Ok(Self { hash, prefix, path })
             }
             Ok(false) => bail!("file does not exist"),
             Err(err) => Err(err.into()),

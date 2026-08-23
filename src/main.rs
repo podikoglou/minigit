@@ -78,6 +78,11 @@ fn main() -> anyhow::Result<()> {
                 println!("{}", object.hash);
             }
         }
+        Options::LsPrefixDirs {} => {
+            for prefix_dir in store.prefix_dirs()? {
+                println!("{}", prefix_dir.prefix);
+            }
+        }
     }
 
     Ok(())

@@ -25,6 +25,10 @@ pub enum Options {
         files: Vec<String>,
     },
 
+    /// List prefix dirs in the repository
+    #[bpaf(command("ls-prefix-dirs"))]
+    LsPrefixDirs {},
+
     /// List objects in the repository
     #[bpaf(command("ls-objects"))]
     LsObjectsCommand {},

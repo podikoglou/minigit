@@ -27,7 +27,13 @@ impl PrefixDir {
         }
     }
 
-    /// Returns an iterator over [LazyObject].
+    /// Returns a lazy iterator over the [LazyObject]s in this prefix directory.
+    ///
+    /// A prefix directory can hold thousands of objects, so its contents are
+    /// not read eagerly.
+    ///
+    /// Takes `self` by value: the iterator streams from the directory, so the
+    /// caller gives the handle away.
     pub fn objects(
         self,
     ) -> Result<impl Iterator<Item = Result<LazyObject, anyhow::Error>>, anyhow::Error> {

@@ -10,7 +10,6 @@ use crate::{
     storage::{Store, object::LazyObject, prefix_dir::PrefixDir},
 };
 
-pub mod hash;
 pub mod object;
 pub mod storage;
 

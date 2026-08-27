@@ -1,6 +1,6 @@
 use bpaf::Bpaf;
 
-use crate::{hash::HashPrefix, object::ObjectType};
+use crate::{object::ObjectType, object::hash::HashPrefix};
 
 #[derive(Debug, Clone, Bpaf)]
 #[bpaf(options)]

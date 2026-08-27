@@ -2,7 +2,7 @@ use std::{fs, path::PathBuf};
 
 use anyhow::{Context, bail};
 
-use crate::{hash::HashPrefix, storage::object::LazyObject};
+use crate::{object::hash::HashPrefix, storage::object::LazyObject};
 
 /// A directory containing objects, under `.git/objects/`
 pub struct PrefixDir {

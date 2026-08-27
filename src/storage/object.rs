@@ -2,9 +2,9 @@ use std::{fs, io, path::PathBuf};
 
 use anyhow::{Context, bail};
 
-use crate::{
+use crate::object::{
+    Object, ObjectType,
     hash::{HashPrefix, ObjectHash},
-    object::{Object, ObjectType},
 };
 
 /// A lazily loaded object which has not been loaded yet.

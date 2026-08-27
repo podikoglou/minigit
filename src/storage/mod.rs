@@ -7,7 +7,7 @@ use anyhow::{Context, bail};
 use itertools::Itertools;
 
 use crate::{
-    hash::HashPrefix,
+    object::hash::HashPrefix,
     storage::{object::LazyObject, prefix_dir::PrefixDir},
 };
 

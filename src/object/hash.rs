@@ -23,7 +23,7 @@ use std::{fmt::Display, str::FromStr};
 use anyhow::{Context, anyhow};
 use sha1::digest::{array::Array, consts::U20};
 
-/// A hash that identifies an [`crate::object::Object`]. It is a SHA1 hash of the header and
+/// A hash that identifies an [`super::Object`]. It is a SHA1 hash of the header and
 /// contents of the object.
 pub struct ObjectHash(Array<u8, U20>);
 
@@ -37,12 +37,6 @@ impl ObjectHash {
 impl From<Array<u8, U20>> for ObjectHash {
     fn from(value: Array<u8, U20>) -> Self {
         ObjectHash(value)
-    }
-}
-
-impl Display for ObjectHash {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", hex::encode(self.0))
     }
 }
 
@@ -75,7 +69,13 @@ impl TryFrom<String> for ObjectHash {
     }
 }
 
-/// Prefix (first byte) of an [ObjectHash].
+impl Display for ObjectHash {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", hex::encode(self.0))
+    }
+}
+
+/// Prefix of an [ObjectHash]. This is the first byte of the hash.
 ///
 /// This is used in the object store for indexing objects by the first byte of their hash.
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
@@ -130,7 +130,7 @@ impl TryFrom<String> for HashPrefix {
 
 #[cfg(test)]
 mod test {
-    use crate::hash::HashPrefix;
+    use crate::object::hash::HashPrefix;
 
     #[test]
     fn test_hash_prefix_display() {

@@ -1,6 +1,8 @@
 pub mod blob;
 pub mod tree;
 
+pub mod hash;
+
 use std::io::{self, Write};
 
 use blob::Blob;
@@ -8,7 +10,7 @@ use sha1::{Digest, Sha1};
 use strum::{EnumDiscriminants, EnumString};
 use tree::Tree;
 
-use crate::{hash::ObjectHash, storage::object::LazyObject};
+use crate::{object::hash::ObjectHash, storage::object::LazyObject};
 
 #[derive(Debug, EnumDiscriminants)]
 #[strum_discriminants(name(ObjectType))]

@@ -7,6 +7,8 @@ use crate::object::{
     hash::{HashPrefix, ObjectHash},
 };
 
+pub mod prefix_dir;
+
 /// A lazily loaded object which has not been loaded yet.
 ///
 /// The existence of a [LazyObject] struct ensures that the object actually exists in the object

@@ -8,11 +8,10 @@ use itertools::Itertools;
 
 use crate::{
     object::hash::HashPrefix,
-    storage::{object::LazyObject, prefix_dir::PrefixDir},
+    storage::object::{LazyObject, prefix_dir::PrefixDir},
 };
 
 pub mod object;
-pub mod prefix_dir;
 
 pub struct Store {
     path: PathBuf,

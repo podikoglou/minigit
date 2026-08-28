@@ -7,7 +7,10 @@ use std::{
 use crate::{
     cli::{Options, options},
     object::{Object, ObjectType, blob::Blob},
-    storage::{Store, object::LazyObject, prefix_dir::PrefixDir},
+    storage::{
+        Store,
+        object::{LazyObject, prefix_dir::PrefixDir},
+    },
 };
 
 pub mod object;

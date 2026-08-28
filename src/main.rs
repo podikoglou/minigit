@@ -9,7 +9,7 @@ use crate::{
     object::{Object, ObjectType, blob::Blob},
     storage::{
         Store,
-        object::{LazyObject, prefix_dir::PrefixDir},
+        object::{LazyObject, bucket::ObjectsBucket},
     },
 };
 
@@ -85,7 +85,7 @@ fn main() -> anyhow::Result<()> {
                         prefix_dirs
                             .into_iter()
                             .filter_map(|prefix| store.prefix_dir(prefix).ok())
-                            .map(PrefixDir::objects)
+                            .map(ObjectsBucket::objects)
                             .filter_map(Result::ok)
                             .flatten(),
                     )

@@ -8,7 +8,7 @@ use itertools::Itertools;
 
 use crate::{
     object::hash::HashPrefix,
-    storage::object::{LazyObject, prefix_dir::PrefixDir},
+    storage::object::{LazyObject, bucket::ObjectsBucket},
 };
 
 pub mod object;
@@ -33,14 +33,14 @@ impl Store {
     /// Returns all prefix directories under `.git/objects/`.
     ///
     /// At most 256 of them exist, so they are collected eagerly.
-    pub fn prefix_dirs(&self) -> Result<Vec<PrefixDir>, anyhow::Error> {
+    pub fn prefix_dirs(&self) -> Result<Vec<ObjectsBucket>, anyhow::Error> {
         fs::read_dir(self.objects_path())?
-            .map(|entry| PrefixDir::try_new(entry?.path()))
+            .map(|entry| ObjectsBucket::try_new(entry?.path()))
             .collect()
     }
 
-    /// Finds a [PrefixDir] in .git/objects/
-    pub fn prefix_dir(&self, prefix: HashPrefix) -> Result<PrefixDir, anyhow::Error> {
+    /// Finds a [ObjectsBucket] in .git/objects/
+    pub fn prefix_dir(&self, prefix: HashPrefix) -> Result<ObjectsBucket, anyhow::Error> {
         self.prefix_dirs()?
             .into_iter()
             .find(|dir| dir.prefix == prefix)
@@ -53,7 +53,7 @@ impl Store {
         Ok(self
             .prefix_dirs()?
             .into_iter()
-            .map(PrefixDir::objects)
+            .map(ObjectsBucket::objects)
             .flatten_ok()
             .map(Result::flatten))
     }

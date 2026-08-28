@@ -5,14 +5,14 @@ use anyhow::{Context, bail};
 use crate::{object::hash::HashPrefix, storage::object::LazyObject};
 
 /// A directory containing objects, under `.git/objects/`
-pub struct PrefixDir {
+pub struct ObjectsBucket {
     path: PathBuf,
     pub prefix: HashPrefix,
 }
 
-impl PrefixDir {
-    /// Tries to create a new [PrefixDir], validating that it exists.
-    pub fn try_new(path: PathBuf) -> Result<PrefixDir, anyhow::Error> {
+impl ObjectsBucket {
+    /// Tries to create a new [ObjectsBucket], validating that it exists.
+    pub fn try_new(path: PathBuf) -> Result<ObjectsBucket, anyhow::Error> {
         let name = path
             .file_name()
             .context("couldn't get file name")
@@ -27,10 +27,9 @@ impl PrefixDir {
         }
     }
 
-    /// Returns a lazy iterator over the [LazyObject]s in this prefix directory.
+    /// Returns a lazy iterator over the [LazyObject]s in this bucket.
     ///
-    /// A prefix directory can hold thousands of objects, so its contents are
-    /// not read eagerly.
+    /// A bucket can hold thousands of objects, so its contents are not read eagerly.
     ///
     /// Takes `self` by value: the iterator streams from the directory, so the
     /// caller gives the handle away.

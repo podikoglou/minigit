@@ -7,7 +7,7 @@ use crate::object::{
     hash::{HashPrefix, ObjectHash},
 };
 
-pub mod prefix_dir;
+pub mod bucket;
 
 /// A lazily loaded object which has not been loaded yet.
 ///

@@ -4,7 +4,7 @@ use anyhow::{Context, bail};
 
 use crate::{object::hash::HashPrefix, storage::object::LazyObject};
 
-/// A directory containing objects, under `.git/objects/`
+/// A directory containing objects which start with a certain prefix, placed under `.git/objects/`.
 pub struct ObjectsBucket {
     path: PathBuf,
     pub prefix: HashPrefix,

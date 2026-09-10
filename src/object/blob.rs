@@ -1,4 +1,6 @@
-/// An object which simply contains some bytes. [`super::Tree`] refer to blobs, usually.
+/// An blob: an object that simply contains some bytes.
+///
+/// [trees](`super::Tree`) refer to blobs, usually.
 #[derive(Debug)]
 pub struct Blob(pub Vec<u8>);
 

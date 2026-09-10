@@ -22,15 +22,17 @@ pub enum Object {
 }
 
 impl Object {
+    /// Creates a [`Self::Blob`] out of a [`Blob`].
     pub fn blob(blob: Blob) -> Self {
         Self::Blob(blob)
     }
 
+    /// Creates a [`Self::Tree`] out of a [`Tree`].
     pub fn tree(tree: Tree) -> Self {
         Self::Tree(tree)
     }
 
-    /// Writes the header of the object, depending on the kind of object, to a [`Write`].
+    /// Writes the header of the object, to a [`Write`].
     pub fn write_header<W: Write>(&self, mut writer: W) -> Result<(), std::io::Error> {
         match self {
             Object::Blob(blob) => {

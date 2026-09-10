@@ -10,3 +10,7 @@ hex = "0.4.3"
 itertools = "0.15.0"
 sha1 = "0.11.0"
 strum = { version = "0.28.0", features = ["derive"] }
+
+[dev-dependencies]
+tar = "0.4.46"
+tempfile = "3.27.0"

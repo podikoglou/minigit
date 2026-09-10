@@ -10,7 +10,7 @@ use sha1::{Digest, Sha1};
 use strum::{EnumDiscriminants, EnumString};
 use tree::Tree;
 
-use crate::{object::hash::ObjectHash, storage::object::lazy::LazyObject};
+use crate::{object::hash::ObjectHash, storage::object::LazyObject};
 
 #[derive(Debug, EnumDiscriminants)]
 #[strum_discriminants(name(ObjectType))]

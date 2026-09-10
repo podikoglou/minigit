@@ -39,11 +39,9 @@ impl Object {
         self.write_header(&mut writer)?;
 
         match self {
-            Object::Blob(blob) => writer.write(&blob.0)?,
-            Object::Tree(_) => todo!(),
-        };
-
-        Ok(())
+            Object::Blob(blob) => blob.write(writer),
+            Object::Tree(tree) => tree.write(writer),
+        }
     }
 
     /// Creates a SHA1 hash of the object.

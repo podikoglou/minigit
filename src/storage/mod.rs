@@ -8,7 +8,7 @@ use itertools::Itertools;
 
 use crate::{
     object::hash::HashPrefix,
-    storage::object::{LazyObject, bucket::ObjectsBucket},
+    storage::object::{bucket::ObjectsBucket, lazy::LazyObject},
 };
 
 pub mod object;

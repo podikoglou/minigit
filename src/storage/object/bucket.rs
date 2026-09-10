@@ -2,7 +2,7 @@ use std::{fs, path::PathBuf};
 
 use anyhow::{Context, bail};
 
-use crate::{object::hash::HashPrefix, storage::object::LazyObject};
+use crate::{object::hash::HashPrefix, storage::object::lazy::LazyObject};
 
 /// A directory containing objects which start with a certain prefix, placed under `.git/objects/`.
 pub struct ObjectsBucket {

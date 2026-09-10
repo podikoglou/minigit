@@ -9,7 +9,7 @@ use crate::{
     object::{Object, ObjectType, blob::Blob},
     storage::{
         Store,
-        object::{LazyObject, bucket::ObjectsBucket},
+        object::{bucket::ObjectsBucket, lazy::LazyObject},
     },
 };
 

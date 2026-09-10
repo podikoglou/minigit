@@ -83,7 +83,7 @@ pub struct HashPrefix(u8);
 
 impl Display for HashPrefix {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:2x}", self.0)
+        write!(f, "{:02x}", self.0)
     }
 }
 
@@ -136,5 +136,6 @@ mod test {
     fn test_hash_prefix_display() {
         assert_eq!(format!("{}", HashPrefix(0x00)), "00".to_string());
         assert_eq!(format!("{}", HashPrefix(0x2f)), "2f".to_string());
+        assert_eq!(format!("{}", HashPrefix(0x10)), "10".to_string());
     }
 }

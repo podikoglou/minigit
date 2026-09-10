@@ -1,5 +1,7 @@
 use std::io::Write;
 
+use crate::writable::Writable;
+
 /// An blob: an object that simply contains some bytes.
 ///
 /// [trees](`super::Tree`) refer to blobs, usually.
@@ -12,11 +14,11 @@ impl Blob {
     }
 }
 
-impl Blob {
+impl Writable for Blob {
     /// Writes the blob into a writer.
     ///
     /// This simply writes the raw bytes.
-    pub fn write<W: Write>(&self, mut writer: W) -> Result<(), std::io::Error> {
+    fn write<W: Write>(&self, writer: &mut W) -> std::io::Result<()> {
         writer.write_all(&self.0)
     }
 }

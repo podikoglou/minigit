@@ -1,6 +1,6 @@
 use bpaf::Bpaf;
 
-use crate::{object::ObjectType, object::hash::HashPrefix};
+use minigit::{object::ObjectType, object::hash::HashPrefix};
 
 #[derive(Debug, Clone, Bpaf)]
 #[bpaf(options)]

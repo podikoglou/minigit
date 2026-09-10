@@ -4,17 +4,15 @@ use std::{
     io::{self, Read},
 };
 
-use crate::{
-    cli::{Options, options},
+use crate::cli::{Options, options};
+
+use minigit::{
     object::{Object, ObjectType, blob::Blob},
     storage::{
         Store,
         object::{LazyObject, ObjectsBucket},
     },
 };
-
-pub mod object;
-pub mod storage;
 
 mod cli;
 

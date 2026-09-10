@@ -22,6 +22,12 @@ use std::{fmt::Display, str::FromStr};
 
 use anyhow::{Context, anyhow};
 use sha1::digest::{array::Array, consts::U20};
+use winnow::{
+    ModalResult, Parser,
+    ascii::hex_uint,
+    combinator::repeat,
+    error::{ContextError, ErrMode, ModalError, ParserError},
+};
 
 /// A hash that identifies an [`super::Object`]. It is a SHA1 hash of the header and
 /// contents of the object.
@@ -40,32 +46,14 @@ impl From<Array<u8, U20>> for ObjectHash {
     }
 }
 
-impl TryFrom<&str> for ObjectHash {
-    type Error = anyhow::Error;
+impl FromStr for ObjectHash {
+    type Err = anyhow::Error;
 
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        let decoded = hex::decode(value)?;
-        let bytes: [u8; 20] = decoded
-            .try_into()
-            .map_err(|_| anyhow!("couldn't turn hash into a 20-byte array"))?;
-
-        Ok(ObjectHash(bytes.into()))
-    }
-}
-
-impl<'a> TryFrom<std::borrow::Cow<'a, str>> for ObjectHash {
-    type Error = anyhow::Error;
-
-    fn try_from(value: std::borrow::Cow<'a, str>) -> Result<Self, Self::Error> {
-        Self::try_from(value.as_ref())
-    }
-}
-
-impl TryFrom<String> for ObjectHash {
-    type Error = anyhow::Error;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        Self::try_from(value.as_str())
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        repeat(20..=20, hex_uint::<&str, u8, ContextError>)
+            .parse(s)
+            .map(|e: Vec<u8>| ObjectHash(Array::<u8, U20>::from_iter(e)))
+            .map_err(|e| anyhow::format_err!("{e}"))
     }
 }
 

@@ -34,7 +34,8 @@ impl LazyObject {
                 let file_name = path.file_name().context("couldn't get file name")?;
 
                 let hash: ObjectHash = format!("{prefix:?}{file_name:?}")
-                    .try_into()
+                    .as_str()
+                    .parse()
                     .context("couldn't parse object hash")?;
 
                 let prefix = hash.prefix();

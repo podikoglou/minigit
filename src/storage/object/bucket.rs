@@ -18,7 +18,7 @@ impl ObjectsBucket {
             .context("couldn't get file name")
             .map(|name| name.to_string_lossy())?;
 
-        let prefix = HashPrefix::try_from(name)?;
+        let prefix = name.parse()?;
 
         match fs::exists(&path) {
             Ok(true) => Ok(Self { path, prefix }),

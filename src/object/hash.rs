@@ -40,32 +40,16 @@ impl From<Array<u8, U20>> for ObjectHash {
     }
 }
 
-impl TryFrom<&str> for ObjectHash {
-    type Error = anyhow::Error;
+impl FromStr for ObjectHash {
+    type Err = anyhow::Error;
 
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
         let decoded = hex::decode(value)?;
         let bytes: [u8; 20] = decoded
             .try_into()
             .map_err(|_| anyhow!("couldn't turn hash into a 20-byte array"))?;
 
         Ok(ObjectHash(bytes.into()))
-    }
-}
-
-impl<'a> TryFrom<std::borrow::Cow<'a, str>> for ObjectHash {
-    type Error = anyhow::Error;
-
-    fn try_from(value: std::borrow::Cow<'a, str>) -> Result<Self, Self::Error> {
-        Self::try_from(value.as_ref())
-    }
-}
-
-impl TryFrom<String> for ObjectHash {
-    type Error = anyhow::Error;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        Self::try_from(value.as_str())
     }
 }
 
@@ -93,38 +77,14 @@ impl From<u8> for HashPrefix {
     }
 }
 
-impl TryFrom<&str> for HashPrefix {
-    type Error = anyhow::Error;
-
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        let decoded = hex::decode(value)?;
-        let first_byte = *(decoded.first().context("couldn't get first decoded byte")?);
-
-        Ok(HashPrefix(first_byte))
-    }
-}
-
-impl<'a> TryFrom<std::borrow::Cow<'a, str>> for HashPrefix {
-    type Error = anyhow::Error;
-
-    fn try_from(value: std::borrow::Cow<'a, str>) -> Result<Self, Self::Error> {
-        Self::try_from(value.as_ref())
-    }
-}
-
 impl FromStr for HashPrefix {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Self::try_from(s)
-    }
-}
+        let decoded = hex::decode(s)?;
+        let first_byte = *(decoded.first().context("couldn't get first decoded byte")?);
 
-impl TryFrom<String> for HashPrefix {
-    type Error = anyhow::Error;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        Self::try_from(value.as_str())
+        Ok(HashPrefix(first_byte))
     }
 }
 

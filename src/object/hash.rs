@@ -1,9 +1,9 @@
 //! Types and functions dealing with hashing of objects.
 //!
-//! In the git object store (`.git/objects`), objects are indexed by their [ObjectHash] represented
-//! in hexadecimal. In particular they are placed in buckets named after the [HashPrefix], (i.e. the
-//! first two characters of the hexadecimal hash), and the prefix is removed from the object file
-//! name.
+//! In the loose object store (`.git/objects`), objects are indexed by their [ObjectHash]
+//! represented in hexadecimal. In particular, they are placed in buckets named after the
+//! [HashPrefix], (i.e. the first two characters of the hexadecimal hash), and the prefix is removed
+//! from the object file name.
 //!
 //! ```txt
 //! .git/objects

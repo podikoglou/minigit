@@ -130,12 +130,43 @@ impl TryFrom<String> for HashPrefix {
 
 #[cfg(test)]
 mod test {
-    use crate::object::hash::HashPrefix;
+    use crate::object::hash::{HashPrefix, ObjectHash};
 
     #[test]
     fn test_hash_prefix_display() {
         assert_eq!(format!("{}", HashPrefix(0x00)), "00".to_string());
         assert_eq!(format!("{}", HashPrefix(0x2f)), "2f".to_string());
         assert_eq!(format!("{}", HashPrefix(0x10)), "10".to_string());
+    }
+
+    #[test]
+    fn test_hash_display() {
+        assert_eq!(
+            format!(
+                "{}",
+                ObjectHash(
+                    [
+                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+                    ]
+                    .into()
+                )
+            ),
+            "0000000000000000000000000000000000000000".to_string()
+        );
+
+        assert_eq!(
+            format!(
+                "{}",
+                ObjectHash(
+                    [
+                        0xdb, 0xc7, 0x4b, 0x22, 0x44, 0xf5, 0x7e, 0xd7, 0xdd, 0xf6, 0xe5, 0xb5,
+                        0x3c, 0x17, 0x82, 0x6b, 0xfb, 0xf9, 0xbe, 0x51
+                    ]
+                    .into()
+                )
+            ),
+            "dbc74b2244f57ed7ddf6e5b53c17826bfbf9be51".to_string()
+        );
     }
 }

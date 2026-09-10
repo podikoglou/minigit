@@ -58,7 +58,7 @@ fn main() -> anyhow::Result<()> {
                                 // create a Blob out of this
                                 let blob = Blob::new(bytes);
 
-                                Ok(Object::blob(blob))
+                                Ok(Object::Blob(blob))
                             }
                             Err(err) => Err(err),
                         });

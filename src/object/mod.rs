@@ -22,16 +22,6 @@ pub enum Object {
 }
 
 impl Object {
-    /// Creates a [`Self::Blob`] out of a [`Blob`].
-    pub fn blob(blob: Blob) -> Self {
-        Self::Blob(blob)
-    }
-
-    /// Creates a [`Self::Tree`] out of a [`Tree`].
-    pub fn tree(tree: Tree) -> Self {
-        Self::Tree(tree)
-    }
-
     /// Writes the header of the object, to a [`Write`].
     pub fn write_header<W: Write>(&self, mut writer: W) -> Result<(), std::io::Error> {
         match self {
@@ -67,13 +57,13 @@ impl Object {
 
 impl From<Blob> for Object {
     fn from(val: Blob) -> Self {
-        Self::blob(val)
+        Self::Blob(val)
     }
 }
 
 impl From<Tree> for Object {
     fn from(val: Tree) -> Self {
-        Self::tree(val)
+        Self::Tree(val)
     }
 }
 

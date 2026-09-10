@@ -24,14 +24,12 @@ pub enum Object {
 impl Object {
     /// Writes the header of the object, to a [`Write`].
     pub fn write_header<W: Write>(&self, mut writer: W) -> Result<(), std::io::Error> {
-        match self {
-            Object::Blob(blob) => {
-                write!(writer, "blob {}\0", blob.0.len())
-            }
+        let (tag, size) = match self {
+            Object::Blob(blob) => ("blob", blob.0.len()),
             Object::Tree(_) => todo!(),
-        }?;
+        };
 
-        Ok(())
+        write!(writer, "{} {}\0", tag, size)
     }
 
     /// Writes the uncompressed object, including its header, to a [`Write`].

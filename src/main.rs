@@ -84,7 +84,7 @@ fn main() -> anyhow::Result<()> {
                     Box::new(
                         prefix_dirs
                             .into_iter()
-                            .filter_map(|prefix| store.prefix_dir(prefix).ok())
+                            .filter_map(|prefix| store.bucket(prefix).ok())
                             .map(ObjectsBucket::objects)
                             .filter_map(Result::ok)
                             .flatten(),
@@ -95,9 +95,9 @@ fn main() -> anyhow::Result<()> {
                 println!("{}", object?.hash);
             }
         }
-        Options::LsPrefixDirs {} => {
-            for prefix_dir in store.prefix_dirs()? {
-                println!("{}", prefix_dir.prefix);
+        Options::LsBuckets {} => {
+            for bucket in store.buckets()? {
+                println!("{}", bucket.prefix);
             }
         }
     }

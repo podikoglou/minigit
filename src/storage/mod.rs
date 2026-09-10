@@ -30,18 +30,18 @@ impl Store {
         self.path.join("objects/")
     }
 
-    /// Returns all prefix directories under `.git/objects/`.
+    /// Returns all buckets (directories named after the prefix of a hash) under `.git/objects/`.
     ///
     /// At most 256 of them exist, so they are collected eagerly.
-    pub fn prefix_dirs(&self) -> Result<Vec<ObjectsBucket>, anyhow::Error> {
+    pub fn buckets(&self) -> Result<Vec<ObjectsBucket>, anyhow::Error> {
         fs::read_dir(self.objects_path())?
             .map(|entry| ObjectsBucket::try_new(entry?.path()))
             .collect()
     }
 
-    /// Finds a [ObjectsBucket] in .git/objects/
-    pub fn prefix_dir(&self, prefix: HashPrefix) -> Result<ObjectsBucket, anyhow::Error> {
-        self.prefix_dirs()?
+    /// Finds an [ObjectsBucket] in .git/objects/
+    pub fn bucket(&self, prefix: HashPrefix) -> Result<ObjectsBucket, anyhow::Error> {
+        self.buckets()?
             .into_iter()
             .find(|dir| dir.prefix == prefix)
             .context("couldn't find prefix dir")
@@ -51,7 +51,7 @@ impl Store {
         &self,
     ) -> Result<impl Iterator<Item = Result<LazyObject, anyhow::Error>>, anyhow::Error> {
         Ok(self
-            .prefix_dirs()?
+            .buckets()?
             .into_iter()
             .map(ObjectsBucket::objects)
             .flatten_ok()

@@ -9,7 +9,7 @@ fn test_objects_iter() {
 
     let count = store.objects().unwrap().count();
 
-    // there is one commit which is one file, thus there are three objects in this repo:
+    // there is one commit which contains one file, thus there are three objects in this repo:
     // - 1 blob
     // - 1 tree
     // - 1 commit

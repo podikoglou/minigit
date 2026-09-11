@@ -1,6 +1,6 @@
 use std::{fs, io, path::PathBuf};
 
-use anyhow::{Context, bail};
+use anyhow::bail;
 
 use crate::object::{
     Object, ObjectType,

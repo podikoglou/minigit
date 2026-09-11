@@ -20,7 +20,7 @@
 //! - `00f856dd6c92aec1cbd77b2204cf409d47580cb5`
 use std::{
     fmt::Display,
-    path::{Path, PathBuf},
+    path::PathBuf,
     str::FromStr,
 };
 

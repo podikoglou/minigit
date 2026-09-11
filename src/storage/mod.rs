@@ -21,7 +21,7 @@ impl Store {
     pub fn try_new(path: PathBuf) -> Result<Self, anyhow::Error> {
         match fs::exists(&path) {
             Ok(true) => Ok(Self { path }),
-            Ok(false) => bail!("directory does not exist"),
+            Ok(false) => bail!("git directory does not exist"),
             Err(err) => bail!(err),
         }
     }

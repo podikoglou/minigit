@@ -32,7 +32,7 @@ pub enum Options {
     /// List objects in the repository
     #[bpaf(command("ls-objects"))]
     LsObjectsCommand {
-        #[bpaf(positional("prefix-dirs"))]
-        prefix_dirs: Vec<HashPrefix>,
+        #[bpaf(positional("buckets"))]
+        buckets: Vec<HashPrefix>,
     },
 }

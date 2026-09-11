@@ -70,14 +70,14 @@ fn main() -> anyhow::Result<()> {
                 }
             }
         }
-        Options::LsObjectsCommand { prefix_dirs } => {
+        Options::LsObjectsCommand { buckets } => {
             // TODO: can we remove this box?
             let objects: Box<dyn Iterator<Item = Result<LazyObject, anyhow::Error>>> =
-                if prefix_dirs.is_empty() {
+                if buckets.is_empty() {
                     Box::new(repo.store.objects()?)
                 } else {
                     Box::new(
-                        prefix_dirs
+                        buckets
                             .into_iter()
                             .filter_map(|prefix| repo.store.bucket(prefix).ok())
                             .map(ObjectsBucket::objects)

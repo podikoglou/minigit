@@ -1,13 +1,13 @@
-use minigit::storage::Store;
+use minigit::Repo;
 
 mod common;
 
 #[test]
 fn test_objects_iter() {
-    let repo = include_repo!("fixtures/repo-1.tar");
-    let store = Store::try_new(repo.path().into()).unwrap();
+    let path = include_repo!("fixtures/repo-1.tar");
+    let repo = Repo::open(path.path().into()).unwrap();
 
-    let count = store.objects().unwrap().count();
+    let count = repo.store.objects().unwrap().count();
 
     // there is one commit which contains one file, thus there are three objects in this repo:
     // - 1 blob

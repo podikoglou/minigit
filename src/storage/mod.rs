@@ -19,7 +19,9 @@ pub struct Store {
 
 impl Store {
     /// Opens an already existing git database.
-    pub fn open(path: PathBuf) -> Result<Self, anyhow::Error> {
+    pub fn open(path: impl Into<PathBuf>) -> Result<Self, anyhow::Error> {
+        let path = path.into();
+
         match fs::exists(&path) {
             Ok(true) => Ok(Self { path }),
             Ok(false) => bail!("git directory does not exist"),

@@ -39,7 +39,7 @@ impl Store {
             .filter_map(|result| match result {
                 Err(err) => Some(Err(anyhow::format_err!("{err}"))),
                 Ok(entry) if entry.file_name().len() == 2 => {
-                    Some(ObjectsBucket::try_new(entry.path()))
+                    Some(ObjectsBucket::open(entry.path()))
                 }
                 Ok(_) => None,
             })

@@ -11,8 +11,8 @@ pub struct ObjectsBucket {
 }
 
 impl ObjectsBucket {
-    /// Tries to create a new [ObjectsBucket], validating that it exists.
-    pub fn try_new(path: impl Into<PathBuf>) -> Result<ObjectsBucket, anyhow::Error> {
+    /// Tries to open a [ObjectsBucket], validating that it exists.
+    pub fn open(path: impl Into<PathBuf>) -> Result<ObjectsBucket, anyhow::Error> {
         let path = path.into();
 
         let name = path

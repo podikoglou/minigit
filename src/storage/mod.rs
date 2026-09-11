@@ -13,6 +13,7 @@ use crate::{
 
 pub mod object;
 
+#[derive(Debug)]
 pub struct Store {
     path: PathBuf,
 }

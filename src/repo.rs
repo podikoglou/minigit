@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use crate::storage::Store;
 
 /// A Git repository, containing a `.git` directory.
+#[derive(Debug)]
 pub struct Repo {
     path: PathBuf,
     pub store: Store,

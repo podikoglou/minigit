@@ -130,7 +130,7 @@ mod test {
             .unwrap();
 
         assert_eq!(
-            ObjectHash::try_from(path).expect("can't parse PathBuf into ObjectHash"),
+            ObjectHash::try_from(&path).expect("can't parse PathBuf into ObjectHash"),
             ObjectHash(
                 [
                     0x9d, 0x54, 0x76, 0xd9, 0x6d, 0x32, 0x62, 0xb6, 0x9f, 0x03, 0xf2, 0xaf, 0x27,

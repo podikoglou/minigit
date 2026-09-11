@@ -35,7 +35,13 @@ impl Store {
     /// At most 256 of them exist, so they are collected eagerly.
     pub fn buckets(&self) -> Result<Vec<ObjectsBucket>, anyhow::Error> {
         fs::read_dir(self.objects_path())?
-            .map(|entry| ObjectsBucket::try_new(entry?.path()))
+            .filter_map(|result| match result {
+                Err(err) => Some(Err(anyhow::format_err!("{err}"))),
+                Ok(entry) if entry.file_name().len() == 2 => {
+                    Some(ObjectsBucket::try_new(entry.path()))
+                }
+                Ok(_) => None,
+            })
             .collect()
     }
 

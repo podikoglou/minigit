@@ -7,11 +7,9 @@ use std::{
 use crate::cli::{Options, options};
 
 use minigit::{
+    Repo,
     object::{Object, ObjectType, blob::Blob},
-    storage::{
-        Store,
-        object::{LazyObject, ObjectsBucket},
-    },
+    storage::object::{LazyObject, ObjectsBucket},
 };
 
 mod cli;
@@ -19,8 +17,7 @@ mod cli;
 fn main() -> anyhow::Result<()> {
     let opts = options().run();
 
-    let git_dir = env::current_dir()?.join(".git");
-    let store = Store::try_new(git_dir)?;
+    let repo = Repo::open(env::current_dir()?)?;
 
     match opts {
         Options::HashObjectCommand {
@@ -77,12 +74,12 @@ fn main() -> anyhow::Result<()> {
             // TODO: can we remove this box?
             let objects: Box<dyn Iterator<Item = Result<LazyObject, anyhow::Error>>> =
                 if prefix_dirs.is_empty() {
-                    Box::new(store.objects()?)
+                    Box::new(repo.store.objects()?)
                 } else {
                     Box::new(
                         prefix_dirs
                             .into_iter()
-                            .filter_map(|prefix| store.bucket(prefix).ok())
+                            .filter_map(|prefix| repo.store.bucket(prefix).ok())
                             .map(ObjectsBucket::objects)
                             .filter_map(Result::ok)
                             .flatten(),
@@ -94,7 +91,7 @@ fn main() -> anyhow::Result<()> {
             }
         }
         Options::LsBuckets {} => {
-            for bucket in store.buckets()? {
+            for bucket in repo.store.buckets()? {
                 println!("{}", bucket.prefix);
             }
         }

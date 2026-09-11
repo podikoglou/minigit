@@ -11,7 +11,7 @@ pub struct Repo {
 impl Repo {
     /// Opens an already existing Git repository, constructing a [Repo].
     pub fn open(path: PathBuf) -> Result<Repo, anyhow::Error> {
-        let store = Store::try_new(path.join(".git"))?;
+        let store = Store::open(path.join(".git"))?;
 
         Ok(Repo { path, store })
     }

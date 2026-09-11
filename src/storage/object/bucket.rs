@@ -12,7 +12,9 @@ pub struct ObjectsBucket {
 
 impl ObjectsBucket {
     /// Tries to create a new [ObjectsBucket], validating that it exists.
-    pub fn try_new(path: PathBuf) -> Result<ObjectsBucket, anyhow::Error> {
+    pub fn try_new(path: impl Into<PathBuf>) -> Result<ObjectsBucket, anyhow::Error> {
+        let path = path.into();
+
         let name = path
             .file_name()
             .context("couldn't get file name")

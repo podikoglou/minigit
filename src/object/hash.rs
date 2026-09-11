@@ -18,13 +18,18 @@
 //! - `0077a275f2a44ea4c1ea187e9bbb95998a468e43`
 //! - `0087288858ff994e811024ebe37e0035fafad790`
 //! - `00f856dd6c92aec1cbd77b2204cf409d47580cb5`
-use std::{fmt::Display, str::FromStr};
+use std::{
+    fmt::Display,
+    path::{Path, PathBuf},
+    str::FromStr,
+};
 
 use anyhow::{Context, anyhow};
 use sha1::digest::{array::Array, consts::U20};
 
 /// A hash that identifies an [`super::Object`]. It is a SHA1 hash of the header and
 /// contents of the object.
+#[derive(Debug, PartialEq)]
 pub struct ObjectHash(Array<u8, U20>);
 
 impl ObjectHash {
@@ -50,6 +55,30 @@ impl FromStr for ObjectHash {
             .map_err(|_| anyhow!("couldn't turn hash into a 20-byte array"))?;
 
         Ok(ObjectHash(bytes.into()))
+    }
+}
+
+impl TryFrom<&PathBuf> for ObjectHash {
+    type Error = anyhow::Error;
+
+    /// Converts a [PathBuf] into an [ObjectHash]. This expects a path to a loose object that is
+    /// under a bucket directory.
+    fn try_from(value: &PathBuf) -> Result<Self, Self::Error> {
+        let prefix = value
+            .parent()
+            .context("couldn't get parent directory")?
+            .file_name()
+            .context("couldn't get parent directory name")?
+            .to_string_lossy();
+
+        let name = value
+            .file_name()
+            .context("couldn't get file name")?
+            .to_string_lossy();
+
+        let hash_str = format!("{prefix}{name}");
+
+        hash_str.parse()
     }
 }
 
@@ -90,7 +119,27 @@ impl FromStr for HashPrefix {
 
 #[cfg(test)]
 mod test {
+    use std::path::PathBuf;
+
     use crate::object::hash::{HashPrefix, ObjectHash};
+
+    #[test]
+    fn test_parse_objecthash_try_from_path() {
+        let path = "/home/alex/minigit/.git/objects/9d/5476d96d3262b69f03f2af27750a495cca43b6"
+            .parse::<PathBuf>()
+            .unwrap();
+
+        assert_eq!(
+            ObjectHash::try_from(path).expect("can't parse PathBuf into ObjectHash"),
+            ObjectHash(
+                [
+                    0x9d, 0x54, 0x76, 0xd9, 0x6d, 0x32, 0x62, 0xb6, 0x9f, 0x03, 0xf2, 0xaf, 0x27,
+                    0x75, 0x0a, 0x49, 0x5c, 0xca, 0x43, 0xb6
+                ]
+                .into()
+            )
+        );
+    }
 
     #[test]
     fn test_hash_prefix_display() {

@@ -24,19 +24,7 @@ impl LazyObject {
     pub fn try_new(path: PathBuf) -> Result<Self, anyhow::Error> {
         match fs::exists(&path) {
             Ok(true) => {
-                let prefix = path
-                    .components()
-                    .nth_back(1)
-                    .context("couldn't find prefix")?
-                    .as_os_str()
-                    .to_string_lossy();
-
-                let file_name = path.file_name().context("couldn't get file name")?;
-
-                let hash: ObjectHash = format!("{prefix:?}{file_name:?}")
-                    .parse()
-                    .context("couldn't parse object hash")?;
-
+                let hash = ObjectHash::try_from(&path)?;
                 let prefix = hash.prefix();
 
                 Ok(Self { hash, prefix, path })

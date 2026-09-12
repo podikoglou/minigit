@@ -54,7 +54,7 @@ impl Store {
         self.buckets()?
             .into_iter()
             .find(|dir| dir.prefix == prefix)
-            .ok_or_else(|| MinigitError::BucketNotFound)
+            .ok_or(MinigitError::BucketNotFound)
     }
 
     pub fn objects(

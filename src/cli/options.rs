@@ -1,4 +1,5 @@
 use bpaf::Bpaf;
+use minigit::MinigitError;
 
 use crate::cli::commands::{
     hash_object::{HashObjectCommand, hash_object_command},
@@ -15,7 +16,7 @@ pub enum Options {
 }
 
 impl Options {
-    pub fn run(self) -> anyhow::Result<()> {
+    pub fn run(self) -> Result<(), MinigitError> {
         match self {
             Self::HashObject(cmd) => cmd.run(),
             Self::LsBuckets(cmd) => cmd.run(),

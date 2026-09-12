@@ -1,7 +1,7 @@
 use std::env;
 
 use bpaf::Bpaf;
-use minigit::Repo;
+use minigit::{MinigitError, Repo};
 
 #[derive(Debug, Clone, Bpaf)]
 #[bpaf(command("ls-buckets"))]
@@ -9,7 +9,7 @@ use minigit::Repo;
 pub struct LsBucketsCommand {}
 
 impl LsBucketsCommand {
-    pub fn run(self) -> Result<(), anyhow::Error> {
+    pub fn run(self) -> Result<(), MinigitError> {
         let repo = Repo::open(env::current_dir()?)?;
 
         for bucket in repo.store.buckets()? {

@@ -4,7 +4,10 @@ use std::{
 };
 
 use bpaf::Bpaf;
-use minigit::object::{Object, ObjectType, blob::Blob};
+use minigit::{
+    MinigitError,
+    object::{Object, ObjectType, blob::Blob},
+};
 
 #[derive(Debug, Clone, Bpaf)]
 #[bpaf(command("hash-object"))]
@@ -28,7 +31,7 @@ pub struct HashObjectCommand {
 }
 
 impl HashObjectCommand {
-    pub fn run(self) -> Result<(), anyhow::Error> {
+    pub fn run(self) -> Result<(), MinigitError> {
         let HashObjectCommand {
             r#type,
             stdin,

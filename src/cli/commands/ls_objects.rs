@@ -2,7 +2,7 @@ use std::env;
 
 use bpaf::Bpaf;
 use minigit::{
-    Repo,
+    MinigitError, Repo,
     object::{self, hash::HashPrefix},
     storage::object::{LazyObject, ObjectsBucket},
 };
@@ -17,12 +17,12 @@ pub struct LsObjectsCommand {
 }
 
 impl LsObjectsCommand {
-    pub fn run(self) -> Result<(), anyhow::Error> {
+    pub fn run(self) -> Result<(), MinigitError> {
         let LsObjectsCommand { buckets, pretty } = self;
         let repo = Repo::open(env::current_dir()?)?;
 
         // TODO: can we remove this box?
-        let objects: Box<dyn Iterator<Item = Result<LazyObject, anyhow::Error>>> =
+        let objects: Box<dyn Iterator<Item = Result<LazyObject, MinigitError>>> =
             if buckets.is_empty() {
                 Box::new(repo.store.objects()?)
             } else {

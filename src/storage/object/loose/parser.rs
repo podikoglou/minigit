@@ -23,18 +23,23 @@ pub fn object_type(input: &mut &[u8]) -> ModalResult<ObjectType> {
         literal("blob").map(|_| ObjectType::Blob),
         literal("tree").map(|_| ObjectType::Tree),
     ))
-    .context(StrContext::Expected(StrContextValue::Description("type")))
+    .context(StrContext::Label("type"))
+    .context(StrContext::Expected(StrContextValue::Description(
+        "blob | tree",
+    )))
     .parse_next(input)
 }
 
 /// Given an input (which it consumes), read the object type and size of the rest of the object
 pub fn header(input: &mut &[u8]) -> ModalResult<(ObjectType, usize)> {
-    let mut size = dec_uint::<_, usize, ErrMode<ContextError>>.context(StrContext::Expected(
-        StrContextValue::Description("payload size"),
-    ));
+    let mut size = dec_uint::<_, usize, ErrMode<ContextError>>
+        .context(StrContext::Label("payload size"))
+        .context(StrContext::Expected(StrContextValue::Description(
+            "bytes amount",
+        )));
 
     seq!(object_type, _: " ", size, _: "\0")
-        .context(StrContext::Expected(StrContextValue::Description("header")))
+        .context(StrContext::Label("header"))
         .parse_next(input)
 }
 

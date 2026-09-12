@@ -4,7 +4,7 @@ pub mod bucket;
 pub mod parser;
 
 use crate::{MinigitError, object::Object};
-use flate2::write::ZlibDecoder;
+use flate2::read::ZlibDecoder;
 pub use parser::parse_object;
 use std::{fs::File, io::Read, path::Path};
 

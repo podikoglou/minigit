@@ -8,7 +8,7 @@ use winnow::{
     ModalResult, Parser,
     ascii::dec_uint,
     combinator::{alt, seq},
-    error::{ContextError, ErrMode},
+    error::{ContextError, ErrMode, StrContext, StrContextValue},
     token::{literal, rest, take},
 };
 
@@ -23,14 +23,19 @@ pub fn object_type(input: &mut &[u8]) -> ModalResult<ObjectType> {
         literal("blob").map(|_| ObjectType::Blob),
         literal("tree").map(|_| ObjectType::Tree),
     ))
+    .context(StrContext::Expected(StrContextValue::Description("type")))
     .parse_next(input)
 }
 
 /// Given an input (which it consumes), read the object type and size of the rest of the object
 pub fn header(input: &mut &[u8]) -> ModalResult<(ObjectType, usize)> {
-    let mut size = dec_uint::<_, usize, ErrMode<ContextError>>;
+    let mut size = dec_uint::<_, usize, ErrMode<ContextError>>.context(StrContext::Expected(
+        StrContextValue::Description("payload size"),
+    ));
 
-    seq!(object_type, _: " ", size, _: "\0").parse_next(input)
+    seq!(object_type, _: " ", size, _: "\0")
+        .context(StrContext::Expected(StrContextValue::Description("header")))
+        .parse_next(input)
 }
 
 /// Parses an object from some input.

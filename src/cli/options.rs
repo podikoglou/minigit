@@ -1,38 +1,25 @@
 use bpaf::Bpaf;
 
-use minigit::{object::ObjectType, object::hash::HashPrefix};
+use crate::cli::commands::{
+    hash_object::{HashObjectCommand, hash_object_command},
+    ls_buckets::{LsBucketsCommand, ls_buckets_command},
+    ls_objects::{LsObjectsCommand, ls_objects_command},
+};
 
 #[derive(Debug, Clone, Bpaf)]
 #[bpaf(options)]
 pub enum Options {
-    #[bpaf(command("hash-object"))]
-    /// Compute object ID and optionally create an object from a file
-    HashObjectCommand {
-        /// Specify the type of the object to be created (default: "blob").
-        /// Possible values are blob, tree.
-        #[bpaf(long("type"), short('t'))]
-        r#type: Option<ObjectType>,
+    HashObject(#[bpaf(external(hash_object_command))] HashObjectCommand),
+    LsBuckets(#[bpaf(external(ls_buckets_command))] LsBucketsCommand),
+    LsObjects(#[bpaf(external(ls_objects_command))] LsObjectsCommand),
+}
 
-        /// Read the object from the standard input instead of from a file.
-        #[bpaf(flag(true, false))]
-        stdin: bool,
-
-        /// Actually write the object into the object database.
-        #[bpaf(short('w'))]
-        write: bool,
-
-        #[bpaf(positional("file"))]
-        files: Vec<String>,
-    },
-
-    /// List buckets in the repository
-    #[bpaf(command("ls-buckets"))]
-    LsBuckets {},
-
-    /// List objects in the repository
-    #[bpaf(command("ls-objects"))]
-    LsObjectsCommand {
-        #[bpaf(positional("buckets"))]
-        buckets: Vec<HashPrefix>,
-    },
+impl Options {
+    pub fn run(self) -> anyhow::Result<()> {
+        match self {
+            Self::HashObject(cmd) => cmd.run(),
+            Self::LsBuckets(cmd) => cmd.run(),
+            Self::LsObjects(cmd) => cmd.run(),
+        }
+    }
 }

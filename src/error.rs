@@ -12,4 +12,7 @@ pub enum MinigitError {
 
     #[error("Bucket not found")]
     BucketNotFound,
+
+    #[error("Object not found")]
+    ObjectNotFound,
 }

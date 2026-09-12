@@ -1,8 +1,7 @@
 use std::{fs, path::PathBuf};
 
-use anyhow::bail;
-
 use crate::{
+    MinigitError,
     object::{
         Object,
         hash::{HashPrefix, ObjectHash},
@@ -25,7 +24,7 @@ pub struct LazyObject {
 
 impl LazyObject {
     /// Creates a new [LazyObject], validating that it exists.
-    pub fn try_new(path: PathBuf) -> Result<Self, anyhow::Error> {
+    pub fn try_new(path: PathBuf) -> Result<Self, MinigitError> {
         match fs::exists(&path) {
             Ok(true) => {
                 let hash = ObjectHash::try_from(&path)?;
@@ -33,13 +32,13 @@ impl LazyObject {
 
                 Ok(Self { hash, prefix, path })
             }
-            Ok(false) => bail!("file does not exist"),
+            Ok(false) => Err(MinigitError::ObjectNotFound),
             Err(err) => Err(err.into()),
         }
     }
 
     /// Reads the full object.
-    pub fn into_object(&self) -> Result<Object, anyhow::Error> {
+    pub fn into_object(&self) -> Result<Object, MinigitError> {
         loose::read_object(&self.path)
     }
 }

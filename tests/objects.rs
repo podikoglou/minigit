@@ -5,13 +5,12 @@ mod common;
 #[test]
 fn test_objects_iter() {
     let path = include_repo!("fixtures/repo-1.tar");
-    let repo = Repo::open(path.path()).unwrap();
+    let repo = Repo::open(path.path()).expect("should be able to open repo");
 
-    let count = repo.store.objects().unwrap().count();
+    let objects = repo
+        .store
+        .objects()
+        .expect("should be able to list objects");
 
-    // there is one commit which contains one file, thus there are three objects in this repo:
-    // - 1 blob
-    // - 1 tree
-    // - 1 commit
-    assert_eq!(count, 3);
+    assert_eq!(objects.count(), 3, "should have 3 objects");
 }

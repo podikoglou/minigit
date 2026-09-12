@@ -8,10 +8,10 @@ use winnow::{
     ascii::dec_uint,
     combinator::{alt, seq},
     error::{ContextError, ErrMode},
-    token::literal,
+    token::{literal, rest, take},
 };
 
-use crate::object::ObjectType;
+use crate::object::{Object, ObjectType, blob::Blob};
 
 /// Parses an object type string from some bytes.
 pub fn object_type(input: &mut &[u8]) -> ModalResult<ObjectType> {
@@ -29,11 +29,31 @@ pub fn header(input: &mut &[u8]) -> ModalResult<(ObjectType, usize)> {
     seq!(object_type, _: " ", size, _: "\0").parse_next(input)
 }
 
+/// Parses an object from some input.
+pub fn object(input: &mut &[u8]) -> ModalResult<Object> {
+    let (typee, size) = header.parse_next(input)?;
+    let mut bytes = take(size).parse_next(input)?;
+
+    match typee {
+        ObjectType::Blob => blob.map(Object::Blob).parse_next(&mut bytes),
+        ObjectType::Tree => todo!(),
+    }
+}
+
+/// Parses a blob object's content.
+pub fn blob(input: &mut &[u8]) -> ModalResult<Blob> {
+    rest.map(|e: &[u8]| Blob(e.into())).parse_next(input)
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{
-        object::ObjectType,
-        storage::object::loose::parser::{header, object_type},
+        object::{
+            Object::{self},
+            ObjectType,
+            blob::Blob,
+        },
+        storage::object::loose::parser::{header, object, object_type},
     };
     use std::assert_matches;
     use winnow::{Parser, error::ErrMode};
@@ -76,5 +96,13 @@ mod tests {
         assert_matches!(header.parse_peek(b"tree\0"), Err(ErrMode::Backtrack(_)));
         assert_matches!(header.parse_peek(b"3"), Err(ErrMode::Backtrack(_)));
         assert_matches!(header.parse_peek(b"3\0"), Err(ErrMode::Backtrack(_)));
+    }
+
+    #[test]
+    fn object_parses_basic_objects() {
+        assert_eq!(
+            object.parse_peek(b"blob 3\0\x03\x03\x01"),
+            Ok((&b""[..], Object::Blob(Blob(vec![0x03, 0x03, 0x01]))))
+        );
     }
 }

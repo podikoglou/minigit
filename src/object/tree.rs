@@ -1,7 +1,7 @@
 use std::io::Write;
 
 /// A tree: an object that associates file names to [blobs](`super::Blob`) and other trees.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Tree {}
 
 impl Tree {

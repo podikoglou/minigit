@@ -3,20 +3,22 @@ use std::env;
 use bpaf::Bpaf;
 use minigit::{
     Repo,
-    object::hash::HashPrefix,
+    object::{self, hash::HashPrefix},
     storage::object::{LazyObject, ObjectsBucket},
 };
+use strum::IntoDiscriminant;
 
 #[derive(Debug, Clone, Bpaf)]
 #[bpaf(command("ls-objects"))]
 /// List objects in the repository
 pub struct LsObjectsCommand {
     buckets: Vec<HashPrefix>,
+    pretty: bool,
 }
 
 impl LsObjectsCommand {
     pub fn run(self) -> Result<(), anyhow::Error> {
-        let LsObjectsCommand { buckets } = self;
+        let LsObjectsCommand { buckets, pretty } = self;
         let repo = Repo::open(env::current_dir()?)?;
 
         // TODO: can we remove this box?
@@ -34,8 +36,18 @@ impl LsObjectsCommand {
                 )
             };
 
-        for object in objects {
-            println!("{}", object?.hash);
+        if !pretty {
+            // default output, just print object hashes
+            for object in objects {
+                println!("{}", object?.hash);
+            }
+        } else {
+            // pretty output, print object types
+            for lazy_object in objects.filter_map(Result::ok) {
+                let object = lazy_object.into_object()?;
+
+                println!("{} {:?}", lazy_object.hash, object.discriminant());
+            }
         }
 
         Ok(())

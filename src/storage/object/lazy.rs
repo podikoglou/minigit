@@ -2,12 +2,15 @@ use std::{fs, io, path::PathBuf};
 
 use anyhow::bail;
 
-use crate::object::{
-    Object, ObjectType,
-    hash::{HashPrefix, ObjectHash},
+use crate::{
+    object::{
+        Object,
+        hash::{HashPrefix, ObjectHash},
+    },
+    storage::object::loose,
 };
 
-/// A lazily loaded object which has not been loaded yet.
+/// An object which has not been loaded yet.
 ///
 /// The existence of a [LazyObject] struct ensures that the object actually exists in the object
 /// database, or at least, that it existed during its creation.
@@ -36,7 +39,7 @@ impl LazyObject {
     }
 
     /// Reads the full object.
-    pub fn into_object(&self) -> Result<Object, io::Error> {
-        todo!()
+    pub fn into_object(&self) -> Result<Object, anyhow::Error> {
+        loose::read_object(&self.path)
     }
 }

@@ -10,7 +10,7 @@ use sha1::{Digest, Sha1};
 use strum::{EnumDiscriminants, EnumString};
 use tree::Tree;
 
-use crate::{object::hash::ObjectHash, storage::object::LazyObject};
+use crate::{MinigitError, object::hash::ObjectHash, storage::object::LazyObject};
 
 #[derive(Debug, PartialEq, Eq, Clone, EnumDiscriminants)]
 #[strum_discriminants(name(ObjectType))]
@@ -43,7 +43,7 @@ impl Object {
     }
 
     /// Creates a SHA1 hash of the object.
-    pub fn hash(&self) -> Result<ObjectHash, io::Error> {
+    pub fn hash(&self) -> Result<ObjectHash, MinigitError> {
         let mut buf = Vec::new();
         self.write(&mut buf)?;
 

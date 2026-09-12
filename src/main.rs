@@ -1,9 +1,10 @@
-use minigit::MinigitError;
-
 use crate::cli::options;
 
 mod cli;
 
-fn main() -> Result<(), MinigitError> {
-    options().run().run()
+fn main() {
+    if let Err(err) = options().run().run() {
+        eprintln!("error: {err}");
+        std::process::exit(1);
+    }
 }

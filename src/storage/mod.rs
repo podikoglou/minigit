@@ -3,10 +3,10 @@ use std::{
     path::PathBuf,
 };
 
-use anyhow::{Context, bail};
 use itertools::Itertools;
 
 use crate::{
+    MinigitError,
     object::hash::HashPrefix,
     storage::object::{LazyObject, ObjectsBucket},
 };
@@ -20,13 +20,13 @@ pub struct Store {
 
 impl Store {
     /// Opens an already existing git database.
-    pub fn open(path: impl Into<PathBuf>) -> Result<Self, anyhow::Error> {
+    pub fn open(path: impl Into<PathBuf>) -> Result<Self, MinigitError> {
         let path = path.into();
 
         match fs::exists(&path) {
             Ok(true) => Ok(Self { path }),
-            Ok(false) => bail!("git directory does not exist"),
-            Err(err) => bail!(err),
+            Ok(false) => Err(MinigitError::NoGitDirectory),
+            Err(err) => Err(err.into()),
         }
     }
 
@@ -37,10 +37,10 @@ impl Store {
     /// Returns all buckets (directories named after the prefix of a hash) under `.git/objects/`.
     ///
     /// At most 256 of them exist, so they are collected eagerly.
-    pub fn buckets(&self) -> Result<Vec<ObjectsBucket>, anyhow::Error> {
+    pub fn buckets(&self) -> Result<Vec<ObjectsBucket>, MinigitError> {
         fs::read_dir(self.objects_path())?
             .filter_map(|result| match result {
-                Err(err) => Some(Err(anyhow::format_err!("{err}"))),
+                Err(err) => Some(Err(err.into())),
                 Ok(entry) if entry.file_name().len() == 2 => {
                     Some(ObjectsBucket::open(entry.path()))
                 }
@@ -50,16 +50,16 @@ impl Store {
     }
 
     /// Finds an [ObjectsBucket] in .git/objects/
-    pub fn bucket(&self, prefix: HashPrefix) -> Result<ObjectsBucket, anyhow::Error> {
+    pub fn bucket(&self, prefix: HashPrefix) -> Result<ObjectsBucket, MinigitError> {
         self.buckets()?
             .into_iter()
             .find(|dir| dir.prefix == prefix)
-            .context("couldn't find prefix dir")
+            .ok_or_else(|| MinigitError::BucketNotFound)
     }
 
     pub fn objects(
         &self,
-    ) -> Result<impl Iterator<Item = Result<LazyObject, anyhow::Error>>, anyhow::Error> {
+    ) -> Result<impl Iterator<Item = Result<LazyObject, MinigitError>>, MinigitError> {
         Ok(self
             .buckets()?
             .into_iter()

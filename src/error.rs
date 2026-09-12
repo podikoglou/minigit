@@ -5,7 +5,7 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum MinigitError {
-    #[error("IO Error")]
+    #[error("IO Error: {0}")]
     IO(#[from] io::Error),
 
     #[error("Invalid file name")]
@@ -26,6 +26,6 @@ pub enum MinigitError {
     #[error("Error parsing: {0}")]
     ParserError(String),
 
-    #[error("Hex decoding error")]
+    #[error("Hex decoding error: {0}")]
     HexDecodingError(#[from] FromHexError),
 }

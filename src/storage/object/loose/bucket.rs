@@ -1,3 +1,23 @@
+//! This module deals with buckets in a loose object store.
+//!
+//! In the loose object database (`.git/objects/`), objects are indexed by their
+//! [crate::object::hash::ObjectHash] represented in hexadecimal. In particular, they are placed in
+//! *buckets* named after the [HashPrefix], (i.e. the first two characters of the hexadecimal hash),
+//! and the prefix is removed from the object file name.
+//!
+//! ```txt
+//! .git/objects
+//! ├── 00
+//! │   ├── 77a275f2a44ea4c1ea187e9bbb95998a468e43
+//! │   ├── 87288858ff994e811024ebe37e0035fafad790
+//! │   ├── f856dd6c92aec1cbd77b2204cf409d47580cb5
+//! │   └
+//! ```
+//!
+//! In this object database for example, there exist three objects with the following hashes:
+//! - `0077a275f2a44ea4c1ea187e9bbb95998a468e43`
+//! - `0087288858ff994e811024ebe37e0035fafad790`
+//! - `00f856dd6c92aec1cbd77b2204cf409d47580cb5`
 use std::{fs, path::PathBuf};
 
 use anyhow::{Context, bail};

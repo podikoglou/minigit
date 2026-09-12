@@ -13,6 +13,9 @@ macro_rules! include_repo {
         let mut archive = tar::Archive::new(cursor);
         archive.unpack(&dir).unwrap();
 
-        dir
+        (
+            Repo::open(dir.path()).expect("should be able to open repo"),
+            dir,
+        )
     }};
 }

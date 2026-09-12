@@ -4,8 +4,7 @@ mod common;
 
 #[test]
 fn test_objects_iter() {
-    let path = include_repo!("fixtures/repo-1.tar");
-    let repo = Repo::open(path.path()).expect("should be able to open repo");
+    let (repo, _dir) = include_repo!("fixtures/repo-1.tar");
 
     let objects = repo
         .store

@@ -20,9 +20,7 @@
 //! - `00f856dd6c92aec1cbd77b2204cf409d47580cb5`
 use std::{fs, path::PathBuf};
 
-use anyhow::{Context, bail};
-
-use crate::{object::hash::HashPrefix, storage::object::lazy::LazyObject};
+use crate::{MinigitError, object::hash::HashPrefix, storage::object::lazy::LazyObject};
 
 /// A directory containing objects which start with a certain prefix, placed under `.git/objects/`.
 pub struct ObjectsBucket {
@@ -32,20 +30,20 @@ pub struct ObjectsBucket {
 
 impl ObjectsBucket {
     /// Tries to open a [ObjectsBucket], validating that it exists.
-    pub fn open(path: impl Into<PathBuf>) -> Result<ObjectsBucket, anyhow::Error> {
+    pub fn open(path: impl Into<PathBuf>) -> Result<ObjectsBucket, MinigitError> {
         let path = path.into();
 
         let name = path
             .file_name()
-            .context("couldn't get file name")
-            .map(|name| name.to_string_lossy())?;
+            .map(|name| name.to_string_lossy())
+            .ok_or(MinigitError::InvalidFileName)?;
 
         let prefix = name.parse()?;
 
         match fs::exists(&path) {
             Ok(true) => Ok(Self { path, prefix }),
-            Ok(false) => bail!("couldn't find prefix dir"),
-            Err(err) => bail!(err),
+            Ok(false) => Err(MinigitError::BucketNotFound),
+            Err(err) => Err(err.into()),
         }
     }
 
@@ -57,7 +55,7 @@ impl ObjectsBucket {
     /// caller gives the handle away.
     pub fn objects(
         self,
-    ) -> Result<impl Iterator<Item = Result<LazyObject, anyhow::Error>>, anyhow::Error> {
+    ) -> Result<impl Iterator<Item = Result<LazyObject, MinigitError>>, MinigitError> {
         Ok(fs::read_dir(self.path)?.map(|path| LazyObject::try_new(path?.path())))
     }
 }

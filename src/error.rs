@@ -1,5 +1,6 @@
 use std::io;
 
+use hex::FromHexError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -24,4 +25,7 @@ pub enum MinigitError {
     // lifetime every time we use it.
     #[error("Error parsing: {0}")]
     ParserError(String),
+
+    #[error("Hex decoding error")]
+    HexDecodingError(#[from] FromHexError),
 }

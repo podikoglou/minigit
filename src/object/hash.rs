@@ -1,8 +1,9 @@
 //! Types and functions dealing with hashing of objects.
 use std::{fmt::Display, path::PathBuf, str::FromStr};
 
-use anyhow::{Context, anyhow};
 use sha1::digest::{array::Array, consts::U20};
+
+use crate::MinigitError;
 
 /// A hash that identifies an [`super::Object`]. It is a SHA1 hash of the header and
 /// contents of the object.
@@ -23,34 +24,36 @@ impl From<Array<u8, U20>> for ObjectHash {
 }
 
 impl FromStr for ObjectHash {
-    type Err = anyhow::Error;
+    type Err = MinigitError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         let decoded = hex::decode(value)?;
-        let bytes: [u8; 20] = decoded
-            .try_into()
-            .map_err(|_| anyhow!("couldn't turn hash into a 20-byte array"))?;
+        let bytes: [u8; 20] = decoded.try_into().map_err(|_| {
+            MinigitError::ParserError(String::from(
+                "Couldn't parse 20 bytes from hexadecimal hash",
+            ))
+        })?;
 
         Ok(ObjectHash(bytes.into()))
     }
 }
 
 impl TryFrom<&PathBuf> for ObjectHash {
-    type Error = anyhow::Error;
+    type Error = MinigitError;
 
     /// Converts a [PathBuf] into an [ObjectHash]. This expects a path to a loose object that is
     /// under a bucket directory.
     fn try_from(value: &PathBuf) -> Result<Self, Self::Error> {
         let prefix = value
             .parent()
-            .context("couldn't get parent directory")?
+            .ok_or(MinigitError::BucketNotFound)?
             .file_name()
-            .context("couldn't get parent directory name")?
+            .ok_or(MinigitError::InvalidFileName)?
             .to_string_lossy();
 
         let name = value
             .file_name()
-            .context("couldn't get file name")?
+            .ok_or(MinigitError::InvalidFileName)?
             .to_string_lossy();
 
         let hash_str = format!("{prefix}{name}");

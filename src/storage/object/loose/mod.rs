@@ -3,17 +3,20 @@
 pub mod bucket;
 pub mod parser;
 
-pub use parser::parse_object;
-
-use std::{fs, path::Path};
-
 use crate::{MinigitError, object::Object};
+use flate2::write::ZlibDecoder;
+pub use parser::parse_object;
+use std::{fs::File, io::Read, path::Path};
 
-/// Reads and parses an [Object] from a [PathBuf].
+/// Reads, decompresses and parses an [Object] from a [PathBuf].
 ///
 /// Objects are typically small enough, so this is not a streaming operation.
 pub fn read_object(path: impl AsRef<Path>) -> Result<Object, MinigitError> {
-    let contents = fs::read(path)?;
+    let file = File::open(path)?;
+    let mut decoder = ZlibDecoder::new(file);
 
-    parse_object(&contents)
+    let mut buf = Vec::new();
+    decoder.read_to_end(&mut buf)?;
+
+    parse_object(&buf)
 }

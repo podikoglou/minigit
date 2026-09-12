@@ -10,12 +10,12 @@ pub struct LsBucketsCommand {}
 
 impl LsBucketsCommand {
     pub fn run(self) -> Result<(), anyhow::Error> {
-    let repo = Repo::open(env::current_dir()?)?;
+        let repo = Repo::open(env::current_dir()?)?;
 
-    for bucket in repo.store.buckets()? {
-        println!("{}", bucket.prefix);
-    }
+        for bucket in repo.store.buckets()? {
+            println!("{}", bucket.prefix);
+        }
 
-    Ok(())
+        Ok(())
     }
 }

@@ -38,48 +38,48 @@ impl HashObjectCommand {
 
         let ty = r#type.unwrap_or(ObjectType::Blob);
 
-    match ty {
-        ObjectType::Blob => {
-            // if stdin, deal with this first
-            let stdin_data: Option<Vec<u8>> = if stdin {
-                let stdin = io::stdin();
-                let mut buf = Vec::new();
+        match ty {
+            ObjectType::Blob => {
+                // if stdin, deal with this first
+                let stdin_data: Option<Vec<u8>> = if stdin {
+                    let stdin = io::stdin();
+                    let mut buf = Vec::new();
 
-                let mut lock = stdin.lock();
+                    let mut lock = stdin.lock();
 
-                lock.read_to_end(&mut buf)?;
+                    lock.read_to_end(&mut buf)?;
 
-                Some(buf)
-            } else {
-                None
-            };
+                    Some(buf)
+                } else {
+                    None
+                };
 
-            let objects = stdin_data
-                .map(Ok)
-                .into_iter()
-                .chain(files.into_iter().map(fs::read))
-                .map(|contents| match contents {
-                    Ok(bytes) => {
-                        // create a Blob out of this
-                        let blob = Blob::new(bytes);
+                let objects = stdin_data
+                    .map(Ok)
+                    .into_iter()
+                    .chain(files.into_iter().map(fs::read))
+                    .map(|contents| match contents {
+                        Ok(bytes) => {
+                            // create a Blob out of this
+                            let blob = Blob::new(bytes);
 
-                        Ok(Object::Blob(blob))
+                            Ok(Object::Blob(blob))
+                        }
+                        Err(err) => Err(err),
+                    });
+
+                for object in objects {
+                    match object {
+                        Ok(object) => println!("{}", object.hash()?),
+                        Err(err) => println!("{}", err),
                     }
-                    Err(err) => Err(err),
-                });
-
-            for object in objects {
-                match object {
-                    Ok(object) => println!("{}", object.hash()?),
-                    Err(err) => println!("{}", err),
                 }
             }
+            ObjectType::Tree => {
+                todo!()
+            }
         }
-        ObjectType::Tree => {
-            todo!()
-        }
-    }
 
-    Ok(())
+        Ok(())
     }
 }

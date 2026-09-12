@@ -17,27 +17,27 @@ pub struct LsObjectsCommand {
 impl LsObjectsCommand {
     pub fn run(self) -> Result<(), anyhow::Error> {
         let LsObjectsCommand { buckets } = self;
-    let repo = Repo::open(env::current_dir()?)?;
+        let repo = Repo::open(env::current_dir()?)?;
 
-    // TODO: can we remove this box?
-    let objects: Box<dyn Iterator<Item = Result<LazyObject, anyhow::Error>>> = if buckets.is_empty()
-    {
-        Box::new(repo.store.objects()?)
-    } else {
-        Box::new(
-            buckets
-                .into_iter()
-                .filter_map(|prefix| repo.store.bucket(prefix).ok())
-                .map(ObjectsBucket::objects)
-                .filter_map(Result::ok)
-                .flatten(),
-        )
-    };
+        // TODO: can we remove this box?
+        let objects: Box<dyn Iterator<Item = Result<LazyObject, anyhow::Error>>> =
+            if buckets.is_empty() {
+                Box::new(repo.store.objects()?)
+            } else {
+                Box::new(
+                    buckets
+                        .into_iter()
+                        .filter_map(|prefix| repo.store.bucket(prefix).ok())
+                        .map(ObjectsBucket::objects)
+                        .filter_map(Result::ok)
+                        .flatten(),
+                )
+            };
 
-    for object in objects {
-        println!("{}", object?.hash);
-    }
+        for object in objects {
+            println!("{}", object?.hash);
+        }
 
-    Ok(())
+        Ok(())
     }
 }

@@ -29,7 +29,7 @@ pub fn header(input: &mut &[u8]) -> ModalResult<(ObjectType, usize)> {
 mod tests {
     use crate::{
         object::ObjectType,
-        storage::object::loose::{header, object_type},
+        storage::object::loose::parser::{header, object_type},
     };
     use std::assert_matches;
     use winnow::{Parser, error::ErrMode};

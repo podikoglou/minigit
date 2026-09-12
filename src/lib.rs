@@ -1,3 +1,6 @@
+mod error;
+pub use error::MinigitError;
+
 pub mod object;
 pub mod storage;
 

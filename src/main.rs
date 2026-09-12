@@ -1,7 +1,9 @@
+use minigit::MinigitError;
+
 use crate::cli::options;
 
 mod cli;
 
-fn main() -> anyhow::Result<()> {
+fn main() -> Result<(), MinigitError> {
     options().run().run()
 }

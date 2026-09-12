@@ -18,4 +18,10 @@ pub enum MinigitError {
 
     #[error("Object not found")]
     ObjectNotFound,
+
+    // Ideally, we'd take advante of winnow's `ParseError`, but it contains a lifetime and we'd need
+    // to make this type something like `MinigitError<'a>`, which means we'd need to specify the
+    // lifetime every time we use it.
+    #[error("Error parsing: {0}")]
+    ParserError(String),
 }

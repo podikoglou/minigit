@@ -12,7 +12,10 @@ use winnow::{
     token::{literal, rest, take},
 };
 
-use crate::object::{Object, ObjectType, blob::Blob};
+use crate::{
+    MinigitError,
+    object::{Object, ObjectType, blob::Blob},
+};
 
 /// Parses an object type string from some bytes.
 pub fn object_type(input: &mut &[u8]) -> ModalResult<ObjectType> {
@@ -47,10 +50,10 @@ pub fn blob(input: &mut &[u8]) -> ModalResult<Blob> {
 }
 
 /// High level function to parse an [Object] from some bytes.
-pub fn parse_object(input: &[u8]) -> Result<Object, anyhow::Error> {
+pub fn parse_object(input: &[u8]) -> Result<Object, MinigitError> {
     object
         .parse(input)
-        .map_err(|err| anyhow::format_err!("{err}"))
+        .map_err(|err| MinigitError::ParserError(err.to_string()))
 }
 
 #[cfg(test)]

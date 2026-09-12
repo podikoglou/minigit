@@ -87,12 +87,13 @@ impl From<u8> for HashPrefix {
 }
 
 impl FromStr for HashPrefix {
-    type Err = MinigitError;
+    type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let hash = s.parse::<ObjectHash>()?;
+        let decoded = hex::decode(s)?;
+        let first_byte = *(decoded.first().context("couldn't get first decoded byte")?);
 
-        Ok(HashPrefix(hash.0[0]))
+        Ok(HashPrefix(first_byte))
     }
 }
 

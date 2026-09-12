@@ -1,8 +1,9 @@
-/// This module deals with parsing loose object files. It contains several incremental parsers built
-/// using the `winnow` parser combinator crate.
-///
-/// It should be stressed that parsers here will not fail if they have excess input, as they are
-/// incremental and built to be combined.
+//! This module deals with parsing loose object files. The most important function is [`parse_object`].
+//!
+//! This module contains several incremental parsers built using the `winnow` parser combinator
+//! crate. It should be stressed that they will not fail if they have excess input, as they are
+//! incremental and built to be combined.
+
 use winnow::{
     ModalResult, Parser,
     ascii::dec_uint,
@@ -43,6 +44,13 @@ pub fn object(input: &mut &[u8]) -> ModalResult<Object> {
 /// Parses a blob object's content.
 pub fn blob(input: &mut &[u8]) -> ModalResult<Blob> {
     rest.map(|e: &[u8]| Blob(e.into())).parse_next(input)
+}
+
+/// High level function to parse an [Object] from some bytes.
+pub fn parse_object(input: &[u8]) -> Result<Object, anyhow::Error> {
+    object
+        .parse(input)
+        .map_err(|err| anyhow::format_err!("{err}"))
 }
 
 #[cfg(test)]

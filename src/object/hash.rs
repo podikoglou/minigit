@@ -6,7 +6,7 @@ use sha1::digest::{array::Array, consts::U20};
 
 /// A hash that identifies an [`super::Object`]. It is a SHA1 hash of the header and
 /// contents of the object.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct ObjectHash(Array<u8, U20>);
 
 impl ObjectHash {

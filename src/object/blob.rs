@@ -3,7 +3,7 @@ use std::io::Write;
 /// An blob: an object that simply contains some bytes.
 ///
 /// [trees](`super::Tree`) refer to blobs, usually.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Blob(pub Vec<u8>);
 
 impl Blob {

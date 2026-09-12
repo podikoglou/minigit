@@ -13,6 +13,7 @@ use crate::object::{
 /// database, or at least, that it existed during its creation.
 ///
 /// At any given time it can be turned into a real [Object] using [`Self::into_object`].
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct LazyObject {
     pub path: PathBuf,
     pub hash: ObjectHash,
@@ -32,11 +33,6 @@ impl LazyObject {
             Ok(false) => bail!("file does not exist"),
             Err(err) => Err(err.into()),
         }
-    }
-
-    /// Reads the first few bytes to figure out the type of object.
-    pub fn object_type(&self) -> Result<ObjectType, io::Error> {
-        todo!()
     }
 
     /// Reads the full object.

@@ -12,7 +12,7 @@ use tree::Tree;
 
 use crate::{object::hash::ObjectHash, storage::object::LazyObject};
 
-#[derive(Debug, PartialEq, Eq, EnumDiscriminants)]
+#[derive(Debug, PartialEq, Eq, Clone, EnumDiscriminants)]
 #[strum_discriminants(name(ObjectType))]
 #[strum_discriminants(derive(EnumString))]
 #[strum_discriminants(strum(ascii_case_insensitive))]

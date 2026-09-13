@@ -7,15 +7,15 @@
 use sha1::digest::{array::Array, consts::U20};
 use winnow::{
     ModalResult, Parser,
-    ascii::{dec_uint, oct_digit1},
-    combinator::{alt, seq},
+    ascii::{dec_uint, newline, oct_digit1, space1, till_line_ending},
+    combinator::{alt, seq, terminated},
     error::{ContextError, ErrMode, StrContext, StrContextValue},
     token::{literal, rest, take},
 };
 
 use crate::{
     MinigitError,
-    object::{Object, ObjectType, blob::Blob, hash::ObjectHash},
+    object::{Object, ObjectType, blob::Blob, hash::ObjectHash, tree::TreeEntry},
 };
 
 /// Parses an object type string from some bytes.
@@ -79,6 +79,17 @@ pub fn object_hash(input: &mut &[u8]) -> ModalResult<ObjectHash> {
         .parse_next(input)
 }
 
+/// Parses a file name in a tree entry.
+///
+/// Due to the format tree entry format, this reads until a newline.
+pub fn file_name<'a>(input: &mut &'a [u8]) -> ModalResult<&'a str> {
+    terminated(
+        till_line_ending.map(str::from_utf8).verify_map(Result::ok),
+        newline,
+    )
+    .parse_next(input)
+}
+
 /// High level function to parse an [Object] from some bytes.
 pub fn parse_object(input: &[u8]) -> Result<Object, MinigitError> {
     object
@@ -94,7 +105,7 @@ mod tests {
             ObjectType,
             blob::Blob,
         },
-        storage::object::loose::parser::{header, mode, object, object_type},
+        storage::object::loose::parser::{file_name, header, mode, object, object_type},
     };
     use std::assert_matches;
     use winnow::{Parser, error::ErrMode};
@@ -143,6 +154,24 @@ mod tests {
     fn mode_parses_valid_modes() {
         assert_eq!(mode.parse_peek(b"000000"), Ok((&b""[..], 0)));
         assert_eq!(mode.parse_peek(b"100644"), Ok((&b""[..], 0o100644)));
+    }
+
+    #[test]
+    fn file_name_parses_valid_inputs() {
+        assert_eq!(
+            file_name.parse_peek(b"foo.bar\n"),
+            Ok((&b""[..], "foo.bar"))
+        );
+
+        assert_eq!(
+            file_name.parse_peek(b"even this!!\n"),
+            Ok((&b""[..], "even this!!"))
+        );
+    }
+
+    #[test]
+    fn file_name_rejects_invalid_inputs() {
+        assert_matches!(file_name.parse_peek(b"foo.bar"), Err(ErrMode::Backtrack(_)));
     }
 
     #[test]

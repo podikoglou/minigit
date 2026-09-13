@@ -6,7 +6,7 @@
 
 use winnow::{
     ModalResult, Parser,
-    ascii::dec_uint,
+    ascii::{dec_uint, oct_digit1},
     combinator::{alt, seq},
     error::{ContextError, ErrMode, StrContext, StrContextValue},
     token::{literal, rest, take},
@@ -59,6 +59,15 @@ pub fn blob(input: &mut &[u8]) -> ModalResult<Blob> {
     rest.map(|e: &[u8]| Blob(e.into())).parse_next(input)
 }
 
+/// Parses a file mode such as 100644, used in the tree
+pub fn mode(input: &mut &[u8]) -> ModalResult<u16> {
+    oct_digit1
+        .map(str::from_utf8)
+        .verify_map(Result::ok)
+        .map(|str| u16::from_str_radix(str, 8))
+        .verify_map(Result::ok)
+        .parse_next(input)
+}
 /// High level function to parse an [Object] from some bytes.
 pub fn parse_object(input: &[u8]) -> Result<Object, MinigitError> {
     object
@@ -74,7 +83,7 @@ mod tests {
             ObjectType,
             blob::Blob,
         },
-        storage::object::loose::parser::{header, object, object_type},
+        storage::object::loose::parser::{header, mode, object, object_type},
     };
     use std::assert_matches;
     use winnow::{Parser, error::ErrMode};
@@ -117,6 +126,12 @@ mod tests {
         assert_matches!(header.parse_peek(b"tree\0"), Err(ErrMode::Backtrack(_)));
         assert_matches!(header.parse_peek(b"3"), Err(ErrMode::Backtrack(_)));
         assert_matches!(header.parse_peek(b"3\0"), Err(ErrMode::Backtrack(_)));
+    }
+
+    #[test]
+    fn mode_parses_valid_modes() {
+        assert_eq!(mode.parse_peek(b"000000"), Ok((&b""[..], 0)));
+        assert_eq!(mode.parse_peek(b"100644"), Ok((&b""[..], 0o100644)));
     }
 
     #[test]

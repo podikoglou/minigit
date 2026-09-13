@@ -2,7 +2,7 @@
 Implementation of (some of) Git in Rust.
 
 I started working on this project when I was inspired by what
-[https://cursor.com/blog/git-at-any-scale](Cursor was doing with Git) and got
+[Cursor was doing with Git](https://cursor.com/blog/git-at-any-scale) and got
 to learn about how neat Git really is.
 
 This project is in the form of a library + a CLI with *some* of the original

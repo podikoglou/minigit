@@ -4,6 +4,7 @@
 //! crate. It should be stressed that they will not fail if they have excess input, as they are
 //! incremental and built to be combined.
 
+use sha1::digest::{array::Array, consts::U20};
 use winnow::{
     ModalResult, Parser,
     ascii::{dec_uint, oct_digit1},
@@ -14,7 +15,7 @@ use winnow::{
 
 use crate::{
     MinigitError,
-    object::{Object, ObjectType, blob::Blob},
+    object::{Object, ObjectType, blob::Blob, hash::ObjectHash},
 };
 
 /// Parses an object type string from some bytes.
@@ -68,6 +69,16 @@ pub fn mode(input: &mut &[u8]) -> ModalResult<u16> {
         .verify_map(Result::ok)
         .parse_next(input)
 }
+
+/// Parses a hash (binary-encoded, as per how trees are encoded)
+pub fn object_hash(input: &mut &[u8]) -> ModalResult<ObjectHash> {
+    take(20usize)
+        .map(Array::try_from)
+        .verify_map(Result::ok)
+        .map(ObjectHash::from)
+        .parse_next(input)
+}
+
 /// High level function to parse an [Object] from some bytes.
 pub fn parse_object(input: &[u8]) -> Result<Object, MinigitError> {
     object

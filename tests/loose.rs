@@ -1,4 +1,7 @@
-use minigit::{object::Object, storage::object::loose::read_object};
+use minigit::{
+    object::{Object, tree::TreeEntry},
+    storage::object::{LazyObject, loose::read_object},
+};
 
 #[test]
 fn test_read_loose_blob() {
@@ -14,4 +17,23 @@ fn test_read_loose_blob() {
         object.hash().unwrap().to_string(),
         "be27a74ddcc0445b1710e25dd8df96fad679a10d"
     );
+}
+
+#[test]
+fn test_read_loose_tree() {
+    let bytes = include_bytes!("fixtures/objects/tree-1");
+    let object = read_object(&bytes[..]).expect("should be able to read loose tree object");
+
+    let Object::Tree(tree) = &object else {
+        panic!("expected Object::Tree, got {object:?}");
+    };
+
+    assert_eq!(tree.entries.len(), 1);
+    // assert_eq!(
+    //     tree.entries.first_key_value(),
+    //     Some((
+    //         &String::from("README.md"),
+    //         TreeEntry::new(0o100644 /* TODO */,)
+    //     ))
+    // );
 }

@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, io::Write};
 
-use crate::storage::object::LazyObject;
+use crate::object::hash::ObjectHash;
 
 /// A tree: an object that associates file names to [tree entries](TreeEntry).
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -33,11 +33,11 @@ impl Tree {
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct TreeEntry {
     pub mode: u16,
-    pub object: LazyObject,
+    pub object: ObjectHash,
 }
 
 impl TreeEntry {
-    pub fn new(mode: u16, object: LazyObject) -> Self {
+    pub fn new(mode: u16, object: ObjectHash) -> Self {
         Self { mode, object }
     }
 }

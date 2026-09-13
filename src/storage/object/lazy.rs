@@ -39,6 +39,7 @@ impl LazyObject {
 
     /// Reads the full object.
     pub fn into_object(&self) -> Result<Object, MinigitError> {
-        loose::read_object(&self.path)
+        let file = fs::File::open(&self.path)?;
+        loose::read_object(file)
     }
 }

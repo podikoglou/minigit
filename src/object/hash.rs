@@ -23,6 +23,12 @@ impl From<Array<u8, U20>> for ObjectHash {
     }
 }
 
+impl From<[u8; 20]> for ObjectHash {
+    fn from(value: [u8; 20]) -> Self {
+        ObjectHash(value.into())
+    }
+}
+
 impl FromStr for ObjectHash {
     type Err = MinigitError;
 

@@ -60,6 +60,11 @@ pub fn blob(input: &mut &[u8]) -> ModalResult<Blob> {
     rest.map(|e: &[u8]| Blob(e.into())).parse_next(input)
 }
 
+/// Parses a tree object's entry into a tuple `(mode, name, hash)`
+pub fn tree_entry<'a>(input: &mut &'a [u8]) -> ModalResult<(u16, &'a str, ObjectHash)> {
+    seq!((mode, _: " ", file_name, object_hash)).parse_next(input)
+}
+
 /// Parses a file mode such as 100644, used in the tree
 pub fn mode(input: &mut &[u8]) -> ModalResult<u16> {
     oct_digit1
@@ -107,7 +112,9 @@ mod tests {
             ObjectType,
             blob::Blob,
         },
-        storage::object::loose::parser::{file_name, header, mode, object, object_type},
+        storage::object::loose::parser::{
+            file_name, header, mode, object, object_type, tree_entry,
+        },
     };
     use std::assert_matches;
     use winnow::{Parser, error::ErrMode};
@@ -177,6 +184,14 @@ mod tests {
         assert_matches!(
             file_name.parse_peek(b"foo.bar\n"),
             Err(ErrMode::Backtrack(_))
+        );
+    }
+
+    #[test]
+    fn tree_entry_parses_valid_entries() {
+        assert_eq!(
+            tree_entry.parse_peek(b"100644 cli.rs\0\x29\xf3\x23\xb3\x1a\xd1\x29\x96\x4f\xfb\x4f\x97\xf2\x03\xbe\x9c\x2f\x35\x10\x7d"),
+            Ok((&b""[..], (0o100644, "cli.rs", [0x29, 0xf3, 0x23, 0xb3, 0x1a, 0xd1, 0x29, 0x96, 0x4f, 0xfb, 0x4f, 0x97, 0xf2, 0x03, 0xbe, 0x9c, 0x2f, 0x35, 0x10, 0x7d].into() )))
         );
     }
 

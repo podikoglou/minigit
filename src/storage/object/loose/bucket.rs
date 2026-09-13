@@ -56,6 +56,6 @@ impl ObjectsBucket {
     pub fn objects(
         self,
     ) -> Result<impl Iterator<Item = Result<LazyObject, MinigitError>>, MinigitError> {
-        Ok(fs::read_dir(self.path)?.map(|path| LazyObject::try_new(path?.path())))
+        Ok(fs::read_dir(self.path)?.map(|path| Ok(LazyObject::loose(path?.path()))))
     }
 }

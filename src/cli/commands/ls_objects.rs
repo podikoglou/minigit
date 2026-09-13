@@ -39,14 +39,14 @@ impl LsObjectsCommand {
         if !pretty {
             // default output, just print object hashes
             for object in objects {
-                println!("{}", object?.hash);
+                println!("{}", object?.hash()?);
             }
         } else {
             // pretty output, print object types
             for lazy_object in objects.filter_map(Result::ok) {
                 let object = lazy_object.into_object()?;
 
-                println!("{} {:?}", lazy_object.hash, object.discriminant());
+                println!("{} {:?}", lazy_object.hash()?, object.discriminant());
             }
         }
 

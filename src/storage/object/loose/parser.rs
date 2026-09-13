@@ -4,18 +4,25 @@
 //! crate. It should be stressed that they will not fail if they have excess input, as they are
 //! incremental and built to be combined.
 
+use std::collections::BTreeMap;
+
 use sha1::digest::array::Array;
 use winnow::{
     ModalResult, Parser,
     ascii::{dec_uint, oct_digit1},
-    combinator::{alt, seq, terminated},
+    combinator::{alt, repeat, seq, terminated},
     error::{ContextError, ErrMode, StrContext, StrContextValue},
     token::{literal, rest, take, take_until},
 };
 
 use crate::{
     MinigitError,
-    object::{Object, ObjectType, blob::Blob, hash::ObjectHash},
+    object::{
+        Object, ObjectType,
+        blob::Blob,
+        hash::ObjectHash,
+        tree::{Tree, TreeEntry},
+    },
 };
 
 /// Parses an object type string from some bytes.
@@ -51,13 +58,27 @@ pub fn object(input: &mut &[u8]) -> ModalResult<Object> {
 
     match typee {
         ObjectType::Blob => blob.map(Object::Blob).parse_next(&mut bytes),
-        ObjectType::Tree => todo!(),
+        ObjectType::Tree => tree.map(Object::Tree).parse_next(&mut bytes),
     }
 }
 
 /// Parses a blob object's content.
 pub fn blob(input: &mut &[u8]) -> ModalResult<Blob> {
     rest.map(|e: &[u8]| Blob(e.into())).parse_next(input)
+}
+
+pub fn tree<'a>(input: &mut &'a [u8]) -> ModalResult<Tree> {
+    // NOTE: not sure if this should be `0..` or `1..`
+    // should we be able to parse empty trees?
+    repeat(0.., tree_entry)
+        .map(|entries: Vec<(u16, &'a str, ObjectHash)>| {
+            entries
+                .into_iter()
+                .map(|(mode, name, hash)| (name.to_string(), TreeEntry::new(mode, hash)))
+                .collect::<BTreeMap<String, TreeEntry>>()
+        })
+        .map(Tree::new)
+        .parse_next(input)
 }
 
 /// Parses a tree object's entry into a tuple `(mode, name, hash)`

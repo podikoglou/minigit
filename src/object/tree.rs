@@ -26,8 +26,18 @@ impl Tree {
     }
 }
 
+/// An entry inside a [Tree].
+///
+/// This doesn't include the name of the file, because it's the key of the key of the
+/// [`Tree::entries`] map.
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct TreeEntry {
     pub mode: u16,
     pub object: LazyObject,
+}
+
+impl TreeEntry {
+    pub fn new(mode: u16, object: LazyObject) -> Self {
+        Self { mode, object }
+    }
 }

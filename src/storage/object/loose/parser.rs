@@ -4,18 +4,18 @@
 //! crate. It should be stressed that they will not fail if they have excess input, as they are
 //! incremental and built to be combined.
 
-use sha1::digest::{array::Array, consts::U20};
+use sha1::digest::array::Array;
 use winnow::{
     ModalResult, Parser,
-    ascii::{dec_uint, newline, oct_digit1, space1, till_line_ending},
-    combinator::{alt, repeat, seq, terminated},
+    ascii::{dec_uint, oct_digit1},
+    combinator::{alt, seq, terminated},
     error::{ContextError, ErrMode, StrContext, StrContextValue},
-    token::{any, literal, rest, take, take_until},
+    token::{literal, rest, take, take_until},
 };
 
 use crate::{
     MinigitError,
-    object::{Object, ObjectType, blob::Blob, hash::ObjectHash, tree::TreeEntry},
+    object::{Object, ObjectType, blob::Blob, hash::ObjectHash},
 };
 
 /// Parses an object type string from some bytes.

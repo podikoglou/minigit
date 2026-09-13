@@ -3,7 +3,7 @@ use std::env;
 use bpaf::Bpaf;
 use minigit::{
     MinigitError, Repo,
-    object::{self, hash::HashPrefix},
+    object::hash::HashPrefix,
     storage::object::{LazyObject, ObjectsBucket},
 };
 use strum::IntoDiscriminant;

@@ -67,11 +67,11 @@ pub fn blob(input: &mut &[u8]) -> ModalResult<Blob> {
     rest.map(|e: &[u8]| Blob(e.into())).parse_next(input)
 }
 
-pub fn tree<'a>(input: &mut &'a [u8]) -> ModalResult<Tree> {
+pub fn tree(input: &mut &[u8]) -> ModalResult<Tree> {
     // NOTE: not sure if this should be `0..` or `1..`
     // should we be able to parse empty trees?
     repeat(0.., tree_entry)
-        .map(|entries: Vec<(u16, &'a str, ObjectHash)>| {
+        .map(|entries: Vec<(u16, &str, ObjectHash)>| {
             entries
                 .into_iter()
                 .map(|(mode, name, hash)| (name.to_string(), TreeEntry::new(mode, hash)))

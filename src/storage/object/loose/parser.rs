@@ -8,9 +8,9 @@ use sha1::digest::{array::Array, consts::U20};
 use winnow::{
     ModalResult, Parser,
     ascii::{dec_uint, newline, oct_digit1, space1, till_line_ending},
-    combinator::{alt, seq, terminated},
+    combinator::{alt, repeat, seq, terminated},
     error::{ContextError, ErrMode, StrContext, StrContextValue},
-    token::{literal, rest, take},
+    token::{any, literal, rest, take, take_until},
 };
 
 use crate::{
@@ -81,11 +81,13 @@ pub fn object_hash(input: &mut &[u8]) -> ModalResult<ObjectHash> {
 
 /// Parses a file name in a tree entry.
 ///
-/// Due to the format tree entry format, this reads until a newline.
+/// Due to the format tree entry format, this reads until a NUL character.
 pub fn file_name<'a>(input: &mut &'a [u8]) -> ModalResult<&'a str> {
     terminated(
-        till_line_ending.map(str::from_utf8).verify_map(Result::ok),
-        newline,
+        take_until(1.., 0x00)
+            .map(str::from_utf8)
+            .verify_map(Result::ok),
+        0x00,
     )
     .parse_next(input)
 }
@@ -159,12 +161,12 @@ mod tests {
     #[test]
     fn file_name_parses_valid_inputs() {
         assert_eq!(
-            file_name.parse_peek(b"foo.bar\n"),
+            file_name.parse_peek(b"foo.bar\0"),
             Ok((&b""[..], "foo.bar"))
         );
 
         assert_eq!(
-            file_name.parse_peek(b"even this!!\n"),
+            file_name.parse_peek(b"even this!!\0"),
             Ok((&b""[..], "even this!!"))
         );
     }
@@ -172,6 +174,10 @@ mod tests {
     #[test]
     fn file_name_rejects_invalid_inputs() {
         assert_matches!(file_name.parse_peek(b"foo.bar"), Err(ErrMode::Backtrack(_)));
+        assert_matches!(
+            file_name.parse_peek(b"foo.bar\n"),
+            Err(ErrMode::Backtrack(_))
+        );
     }
 
     #[test]

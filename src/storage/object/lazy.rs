@@ -19,7 +19,6 @@ use crate::{
 pub struct LazyObject {
     pub path: PathBuf,
     pub hash: ObjectHash,
-    pub prefix: HashPrefix,
 }
 
 impl LazyObject {
@@ -28,9 +27,8 @@ impl LazyObject {
         match fs::exists(&path) {
             Ok(true) => {
                 let hash = ObjectHash::try_from(&path)?;
-                let prefix = hash.prefix();
 
-                Ok(Self { hash, prefix, path })
+                Ok(Self { hash, path })
             }
             Ok(false) => Err(MinigitError::ObjectNotFound),
             Err(err) => Err(err.into()),

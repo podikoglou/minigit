@@ -239,7 +239,7 @@ pub fn identity<'a>(input: &mut Stream<'a>) -> ModalResult<Identity> {
     }}
     .context(StrContext::Label("identity"))
     .context(StrContext::Expected(StrContextValue::Description(
-        "Your Name <your@name.com>",
+        "<name> <<email>>",
     )))
     .parse_next(input)
 }

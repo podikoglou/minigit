@@ -8,6 +8,7 @@ use std::collections::BTreeMap;
 
 use chrono::{DateTime, FixedOffset};
 use sha1::digest::array::Array;
+use simdutf8::basic::from_utf8;
 use winnow::{
     ModalResult, Parser,
     ascii::{dec_uint, digit1, oct_digit1},
@@ -119,13 +120,13 @@ pub fn multiline_property<'a>(
         _: key,
         _: " ",
         terminated(take_until(0.., "\n"), "\n")
-            .map(str::from_utf8)
+            .map(from_utf8)
             .verify_map(Result::ok),
         repeat(
             0..,
             seq!(_: " ", terminated(take_until(0.., "\n"), "\n"))
                 .map(|(line,)| line)
-                .map(str::from_utf8)
+                .map(from_utf8)
                 .verify_map(Result::ok),
         ),
     )
@@ -141,11 +142,11 @@ pub fn multiline_property<'a>(
 pub fn extra_property<'a>(input: &mut Stream<'a>) -> ModalResult<CommitProperty> {
     seq!(
         take_till(1.., (b' ', b'\n'))
-            .map(str::from_utf8)
+            .map(from_utf8)
             .verify_map(Result::ok),
         _: " ",
         terminated(take_until(0.., "\n"), "\n")
-            .map(str::from_utf8)
+            .map(from_utf8)
             .verify_map(Result::ok),
     )
     .map(|(key, value)| (key.to_owned(), value.to_owned()))
@@ -162,7 +163,7 @@ pub fn commit<'a>(input: &mut Stream<'a>) -> ModalResult<Commit> {
         gpg_signature: opt(multiline_property("gpgsig")),
         extra: repeat(0.., extra_property),
         _: "\n",
-        description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
+        description: rest.map(from_utf8).verify_map(Result::ok).map(str::to_owned),
     }}
     .context(StrContext::Label("commit object"))
     .parse_next(input)
@@ -178,7 +179,7 @@ pub fn tree_entry<'a>(input: &mut Stream<'a>) -> ModalResult<(u16, &'a str, Obje
 /// Parses a UTF-8 encoded file mode such as 100644 from some bytes.
 pub fn mode<'a>(input: &mut Stream<'a>) -> ModalResult<u16> {
     oct_digit1
-        .map(str::from_utf8)
+        .map(from_utf8)
         .verify_map(Result::ok)
         .map(|str| u16::from_str_radix(str, 8))
         .verify_map(Result::ok)
@@ -206,7 +207,7 @@ pub fn object_hash<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectHash> {
 /// To parse a binary-encoded hash, see [object_hash].
 pub fn object_hash_str<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectHash> {
     take(40usize)
-        .map(str::from_utf8)
+        .map(from_utf8)
         .verify_map(Result::ok)
         .map(str::parse::<ObjectHash>)
         .verify_map(Result::ok)
@@ -220,9 +221,7 @@ pub fn object_hash_str<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectHash> {
 /// Parses a null-terminated UTF-8 encoded file name in a tree entry.
 pub fn file_name<'a>(input: &mut Stream<'a>) -> ModalResult<&'a str> {
     terminated(
-        take_until(1.., 0x00)
-            .map(str::from_utf8)
-            .verify_map(Result::ok),
+        take_until(1.., 0x00).map(from_utf8).verify_map(Result::ok),
         0x00,
     )
     .context(StrContext::Label("file name"))
@@ -232,9 +231,9 @@ pub fn file_name<'a>(input: &mut Stream<'a>) -> ModalResult<&'a str> {
 /// Parses an identity in the form of `John Doe <john@doe.com>` from some bytes.
 pub fn identity<'a>(input: &mut Stream<'a>) -> ModalResult<Identity> {
     seq! {Identity{
-        name: take_until(1.., " <").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned).context(StrContext::Label("name")),
+        name: take_until(1.., " <").map(from_utf8).verify_map(Result::ok).map(str::to_owned).context(StrContext::Label("name")),
         _: " <",
-        email: take_until(0.., ">").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned).context(StrContext::Label("email")),
+        email: take_until(0.., ">").map(from_utf8).verify_map(Result::ok).map(str::to_owned).context(StrContext::Label("email")),
         _: ">",
     }}
     .context(StrContext::Label("identity"))

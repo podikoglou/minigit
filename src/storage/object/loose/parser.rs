@@ -11,9 +11,9 @@ use sha1::digest::array::Array;
 use winnow::{
     ModalResult, Parser,
     ascii::{dec_uint, digit1, oct_digit1},
-    combinator::{alt, opt, repeat, separated_pair, seq, terminated},
+    combinator::{alt, opt, repeat, seq, terminated},
     error::{ContextError, ErrMode, StrContext, StrContextValue},
-    token::{literal, rest, take, take_until},
+    token::{literal, rest, take, take_till, take_until},
 };
 
 use crate::{
@@ -139,12 +139,17 @@ pub fn multiline_property<'a>(
 
 /// Parses an arbitrary commit property including its name and value.
 pub fn extra_property<'a>(input: &mut Stream<'a>) -> ModalResult<CommitProperty> {
-    separated_pair(take_until(1.., " "), " ", take_until(1.., "\n"))
-        .map(|(key, value)| (str::from_utf8(key), str::from_utf8(value)))
-        .map(|(key, value)| (key.ok(), value.ok()))
-        .verify_map(|(key, value)| key.zip(value))
-        .map(|(key, value)| (key.to_owned(), value.to_owned()))
-        .parse_next(input)
+    seq!(
+        take_till(1.., (b' ', b'\n'))
+            .map(str::from_utf8)
+            .verify_map(Result::ok),
+        _: " ",
+        terminated(take_until(0.., "\n"), "\n")
+            .map(str::from_utf8)
+            .verify_map(Result::ok),
+    )
+    .map(|(key, value)| (key.to_owned(), value.to_owned()))
+    .parse_next(input)
 }
 
 /// Parses a commit object from some bytes.
@@ -265,8 +270,8 @@ mod tests {
     use crate::{
         object::{ObjectType, commit::Identity},
         storage::object::loose::parser::{
-            file_name, header, identity, mode, multiline_property, object_hash_str, object_type,
-            timestamp, tree_entry,
+            extra_property, file_name, header, identity, mode, multiline_property,
+            object_hash_str, object_type, timestamp, tree_entry,
         },
     };
     use chrono::{DateTime, FixedOffset, NaiveDateTime};
@@ -411,6 +416,30 @@ mod tests {
                 &b""[..],
                 "-----BEGIN PGP SIGNATURE-----\n\nwsFcBAABCAAQBQJqc1jACRC1aQ7uu5UhlAAAFfgQACyD2HIkYM5SeaWNsgzpZsVu\n-----END PGP SIGNATURE-----\n".to_string()
             ))
+        );
+    }
+
+    #[test]
+    fn extra_property_parses_single_line_property() {
+        let input = b"change-id xnxouqnvmpzvuvkotwynowookslovtno\n\nmessage";
+        assert_eq!(
+            extra_property.parse_peek(input),
+            Ok((
+                &b"\nmessage"[..],
+                (
+                    "change-id".to_string(),
+                    "xnxouqnvmpzvuvkotwynowookslovtno".to_string()
+                )
+            ))
+        );
+    }
+
+    #[test]
+    fn extra_property_rejects_empty_line() {
+        assert_matches!(extra_property.parse_peek(b"\n"), Err(ErrMode::Backtrack(_)));
+        assert_matches!(
+            extra_property.parse_peek(b"\ncommit message\n"),
+            Err(ErrMode::Backtrack(_))
         );
     }
 }

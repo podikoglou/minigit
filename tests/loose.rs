@@ -1,12 +1,10 @@
-use minigit::{
-    object::{Object, hash::ObjectHash, tree::TreeEntry},
-    storage::object::{LazyObject, loose::read_object},
-};
+use minigit::{error::ParserContext, object::Object, storage::object::loose::read_object};
 
 #[test]
 fn test_read_loose_blob() {
     let bytes = include_bytes!("fixtures/objects/blob-1");
-    let object = read_object(&bytes[..]).expect("should be able to read loose blob object");
+    let object = read_object(&bytes[..], ParserContext::None)
+        .expect("should be able to read loose blob object");
 
     let Object::Blob(blob) = &object else {
         panic!("expected Object::Blob, got {object:?}");
@@ -22,7 +20,8 @@ fn test_read_loose_blob() {
 #[test]
 fn test_read_loose_tree() {
     let bytes = include_bytes!("fixtures/objects/tree-1");
-    let object = read_object(&bytes[..]).expect("should be able to read loose tree object");
+    let object = read_object(&bytes[..], ParserContext::None)
+        .expect("should be able to read loose tree object");
 
     let Object::Tree(tree) = &object else {
         panic!("expected Object::Tree, got {object:?}");
@@ -41,7 +40,8 @@ fn test_read_loose_tree() {
 #[test]
 fn test_read_loose_commit() {
     let bytes = include_bytes!("fixtures/objects/commit-1");
-    let object = read_object(&bytes[..]).expect("should be able to read loose commit object");
+    let object = read_object(&bytes[..], ParserContext::None)
+        .expect("should be able to read loose commit object");
 
     let Object::Commit(commit) = &object else {
         panic!("expected Object::Commit, got {object:?}");
@@ -61,7 +61,8 @@ fn test_read_loose_commit() {
 #[test]
 fn test_read_loose_non_root_commit() {
     let bytes = include_bytes!("fixtures/objects/commit-2");
-    let object = read_object(&bytes[..]).expect("should be able to read loose commit object");
+    let object = read_object(&bytes[..], ParserContext::None)
+        .expect("should be able to read loose commit object");
 
     let Object::Commit(commit) = &object else {
         panic!("expected Object::Commit, got {object:?}");
@@ -85,7 +86,8 @@ fn test_read_loose_non_root_commit() {
 #[test]
 fn test_read_loose_merge_commit() {
     let bytes = include_bytes!("fixtures/objects/commit-3");
-    let object = read_object(&bytes[..]).expect("should be able to read loose commit object");
+    let object = read_object(&bytes[..], ParserContext::None)
+        .expect("should be able to read loose commit object");
 
     let Object::Commit(commit) = &object else {
         panic!("expected Object::Commit, got {object:?}");
@@ -108,4 +110,3 @@ fn test_read_loose_merge_commit() {
     assert_eq!(commit.committer.0.email, "alex.podikoglou@gmail.com");
     assert_eq!(commit.description, "Merge branch 'feature'\n");
 }
-

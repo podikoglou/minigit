@@ -192,7 +192,7 @@ pub fn commit(input: &mut &[u8]) -> ModalResult<Commit> {
 #[cfg(test)]
 mod tests {
     use crate::{
-        object::{ ObjectType, commit::Identity},
+        object::{ObjectType, commit::Identity},
         storage::object::loose::parser::{
             file_name, header, identity, mode, object_hash_str, object_type, timestamp, tree_entry,
         },

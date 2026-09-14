@@ -11,7 +11,7 @@ use sha1::digest::array::Array;
 use winnow::{
     ModalResult, Parser,
     ascii::{dec_uint, digit1, oct_digit1},
-    combinator::{alt, repeat, seq, terminated},
+    combinator::{alt, delimited, opt, repeat, seq, terminated},
     error::{ContextError, ErrMode, StrContext, StrContextValue},
     token::{literal, rest, take, take_until},
 };
@@ -117,6 +117,7 @@ pub fn commit<'a>(input: &mut Stream<'a>) -> ModalResult<Commit> {
         parents: repeat(0.., property("parent", object_hash_str)),
         author: property("author", seq!(identity, _: " ", timestamp)),
         committer: property("committer", seq!(identity, _: " ", timestamp)),
+        gpg_signature: opt(property("gpgsig", gpg_signature)),
         _: "\n",
         description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
     }}
@@ -221,12 +222,27 @@ pub fn timestamp<'a>(input: &mut Stream<'a>) -> ModalResult<DateTime<FixedOffset
     .parse_next(input)
 }
 
+/// Parses a GPG signature from some bytes.
+pub fn gpg_signature<'a>(input: &mut Stream<'a>) -> ModalResult<String> {
+    delimited(
+        literal("-----BEGIN PGP SIGNATURE-----"),
+        take_until(0.., "-----END PGP SIGNATURE-----")
+            .map(str::from_utf8)
+            .verify_map(Result::ok)
+            .map(str::to_owned),
+        literal("-----END PGP SIGNATURE-----"),
+    )
+    .context(StrContext::Label("gpg signature"))
+    .parse_next(input)
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{
         object::{ObjectType, commit::Identity},
         storage::object::loose::parser::{
-            file_name, header, identity, mode, object_hash_str, object_type, timestamp, tree_entry,
+            file_name, gpg_signature, header, identity, mode, object_hash_str, object_type,
+            timestamp, tree_entry,
         },
     };
     use chrono::{DateTime, FixedOffset, NaiveDateTime};
@@ -358,6 +374,18 @@ mod tests {
                     NaiveDateTime::from_timestamp(1789057194, 0),
                     FixedOffset::east_opt(3 * 3600).unwrap(),
                 )
+            ))
+        );
+    }
+
+    #[test]
+    fn gpg_signature_parses_valid_signature() {
+        let input = b"-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v2\n\nsome_signature_data\n-----END PGP SIGNATURE-----";
+        assert_eq!(
+            gpg_signature.parse_peek(input),
+            Ok((
+                &b""[..],
+                "\nVersion: GnuPG v2\n\nsome_signature_data\n".to_string()
             ))
         );
     }

@@ -79,7 +79,9 @@ pub fn object_type<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectType> {
 
 /// Parses a blob object's content from some bytes.
 pub fn blob<'a>(input: &mut Stream<'a>) -> ModalResult<Blob> {
-    rest.map(|e: Stream| Blob(e.into())).parse_next(input)
+    rest.map(|e: Stream| Blob(e.into()))
+        .context(StrContext::Label("blob object"))
+        .parse_next(input)
 }
 
 /// Parses a tree object from some bytes.
@@ -93,6 +95,7 @@ pub fn tree<'a>(input: &mut Stream<'a>) -> ModalResult<Tree> {
                 .map(|(mode, name, hash)| (name.to_string(), TreeEntry::new(mode, hash)))
                 .collect::<BTreeMap<String, TreeEntry>>()
         })
+        .context(StrContext::Label("tree object"))
         .map(Tree::new)
         .parse_next(input)
 }
@@ -117,12 +120,15 @@ pub fn commit<'a>(input: &mut Stream<'a>) -> ModalResult<Commit> {
         _: "\n",
         description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
     }}
+    .context(StrContext::Label("commit object"))
     .parse_next(input)
 }
 
 /// Parses a tree object's entry into a tuple `(mode, name, hash)` from some bytes.
 pub fn tree_entry<'a>(input: &mut Stream<'a>) -> ModalResult<(u16, &'a str, ObjectHash)> {
-    seq!((mode, _: " ", file_name, object_hash)).parse_next(input)
+    seq!((mode, _: " ", file_name, object_hash))
+        .context(StrContext::Label("tree entry"))
+        .parse_next(input)
 }
 
 /// Parses a UTF-8 encoded file mode such as 100644 from some bytes.
@@ -132,6 +138,7 @@ pub fn mode<'a>(input: &mut Stream<'a>) -> ModalResult<u16> {
         .verify_map(Result::ok)
         .map(|str| u16::from_str_radix(str, 8))
         .verify_map(Result::ok)
+        .context(StrContext::Label("file mode"))
         .parse_next(input)
 }
 
@@ -143,6 +150,10 @@ pub fn object_hash<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectHash> {
         .map(Array::try_from)
         .verify_map(Result::ok)
         .map(ObjectHash::from)
+        .context(StrContext::Label("object hash"))
+        .context(StrContext::Expected(StrContextValue::Description(
+            "hash bytes",
+        )))
         .parse_next(input)
 }
 
@@ -155,6 +166,10 @@ pub fn object_hash_str<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectHash> {
         .verify_map(Result::ok)
         .map(str::parse::<ObjectHash>)
         .verify_map(Result::ok)
+        .context(StrContext::Label("object hash"))
+        .context(StrContext::Expected(StrContextValue::Description(
+            "hash string",
+        )))
         .parse_next(input)
 }
 
@@ -166,17 +181,22 @@ pub fn file_name<'a>(input: &mut Stream<'a>) -> ModalResult<&'a str> {
             .verify_map(Result::ok),
         0x00,
     )
+    .context(StrContext::Label("file name"))
     .parse_next(input)
 }
 
 /// Parses an identity in the form of `John Doe <john@doe.com>` from some bytes.
 pub fn identity<'a>(input: &mut Stream<'a>) -> ModalResult<Identity> {
     seq! {Identity{
-        name: take_until(1.., " <").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
+        name: take_until(1.., " <").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned).context(StrContext::Label("name")),
         _: " <",
-        email: take_until(1.., ">").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
+        email: take_until(1.., ">").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned).context(StrContext::Label("email")),
         _: ">",
     }}
+    .context(StrContext::Label("identity"))
+    .context(StrContext::Expected(StrContextValue::Description(
+        "Your Name <your@name.com>",
+    )))
     .parse_next(input)
 }
 
@@ -194,6 +214,10 @@ pub fn timestamp<'a>(input: &mut Stream<'a>) -> ModalResult<DateTime<FixedOffset
 
         DateTime::from_timestamp(secs, 0).map(|dt| dt.with_timezone(&offset))
     })
+    .context(StrContext::Label("timestamp"))
+    .context(StrContext::Expected(StrContextValue::Description(
+        "<unix time> <offset>",
+    )))
     .parse_next(input)
 }
 

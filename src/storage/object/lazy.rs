@@ -2,6 +2,7 @@ use std::{fs, path::PathBuf};
 
 use crate::{
     MinigitError,
+    error::ParserContext,
     object::{Object, hash::ObjectHash},
     storage::object::loose,
 };
@@ -23,8 +24,10 @@ impl LazyObject {
     pub fn into_object(&self) -> Result<Object, MinigitError> {
         match self {
             LazyObject::Loose(path) => {
-                let file = fs::File::open(path)?;
-                loose::read_object(file)
+                // TODO: remove clones here?
+                let file = fs::File::open(path.clone())?;
+
+                loose::read_object(file, ParserContext::File(path.clone()))
             }
         }
     }

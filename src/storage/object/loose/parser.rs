@@ -18,6 +18,7 @@ use winnow::{
 
 use crate::{
     MinigitError,
+    error::ParserContext,
     object::{
         Object, ObjectType,
         blob::Blob,
@@ -32,10 +33,10 @@ type Stream<'a> = &'a [u8];
 /// Parses an [Object] from some bytes.
 ///
 /// Unless you're building your own parsers this is the function you're looking for.
-pub fn parse_object(input: &[u8]) -> Result<Object, MinigitError> {
+pub fn parse_object(input: &[u8], context: ParserContext) -> Result<Object, MinigitError> {
     object
         .parse(input)
-        .map_err(|err| MinigitError::ParserError(err.to_string()))
+        .map_err(|err| MinigitError::ParserError(err.to_string(), context))
 }
 
 /// Parses an [Object] from some input.

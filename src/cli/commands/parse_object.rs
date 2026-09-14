@@ -1,0 +1,65 @@
+use std::{
+    fs::{self},
+    io::{self, Read},
+    path::PathBuf,
+};
+
+use bpaf::Bpaf;
+use minigit::error::ParserContext;
+use minigit::{MinigitError, storage::object::loose::read_object};
+
+#[derive(Debug, Clone, Bpaf)]
+#[bpaf(command("parse-object"))]
+/// Reads an object from a file or stdin and parses it
+pub struct ParseObjectCommand {
+    /// Read the object from the standard input instead of from a file.
+    #[bpaf(flag(true, false))]
+    stdin: bool,
+
+    #[bpaf(positional("file"))]
+    files: Vec<String>,
+}
+
+impl ParseObjectCommand {
+    pub fn run(self) -> Result<(), MinigitError> {
+        let ParseObjectCommand { stdin, files } = self;
+
+        // if stdin, deal with this first
+        let stdin_data: Option<Vec<u8>> = if stdin {
+            let stdin = io::stdin();
+            let mut buf = Vec::new();
+
+            let mut lock = stdin.lock();
+
+            lock.read_to_end(&mut buf)?;
+
+            Some(buf)
+        } else {
+            None
+        };
+
+        let objects = stdin_data
+            .map(|data| (data, ParserContext::None))
+            .map(Ok)
+            .into_iter()
+            .chain(
+                files
+                    .into_iter()
+                    .map(PathBuf::from)
+                    .map(|path| fs::read(&path).map(|bytes| (bytes, ParserContext::File(path)))),
+            )
+            .map(|contents| match contents {
+                Ok((bytes, context)) => read_object(bytes.as_slice(), context),
+                Err(err) => Err(MinigitError::from(err)),
+            });
+
+        for object in objects {
+            match object {
+                Ok(object) => println!("{}", object.hash()?),
+                Err(err) => println!("{}", err),
+            }
+        }
+
+        Ok(())
+    }
+}

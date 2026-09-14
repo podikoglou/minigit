@@ -11,12 +11,13 @@ Git commands (and some that I came up with). Concretely:
 Usage: minigit COMMAND ...
 
 Available options:
-    -h, --help   Prints help information
+    -h, --help    Prints help information
 
 Available commands:
-    hash-object  Compute object ID and optionally create an object from a file
-    ls-buckets   List buckets in the repository
-    ls-objects   List objects in the repository
+    hash-object   Compute object ID and optionally create an object from a file
+    ls-buckets    List buckets in the repository
+    ls-objects    List objects in the repository
+    parse-object  Reads an object from a file or stdin and parses it
 ```
 
 ## AI Disclaimer

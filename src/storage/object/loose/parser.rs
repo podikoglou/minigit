@@ -27,6 +27,15 @@ use crate::{
     },
 };
 
+/// Parses an [Object] from some bytes.
+///
+/// Unless you're building your own parsers this is the function you're looking for.
+pub fn parse_object(input: &[u8]) -> Result<Object, MinigitError> {
+    object
+        .parse(input)
+        .map_err(|err| MinigitError::ParserError(err.to_string()))
+}
+
 /// Parses an object type string from some bytes.
 pub fn object_type(input: &mut &[u8]) -> ModalResult<ObjectType> {
     alt((
@@ -130,13 +139,6 @@ pub fn file_name<'a>(input: &mut &'a [u8]) -> ModalResult<&'a str> {
         0x00,
     )
     .parse_next(input)
-}
-
-/// High level function to parse an [Object] from some bytes.
-pub fn parse_object(input: &[u8]) -> Result<Object, MinigitError> {
-    object
-        .parse(input)
-        .map_err(|err| MinigitError::ParserError(err.to_string()))
 }
 
 pub fn identity(input: &mut &[u8]) -> ModalResult<Identity> {

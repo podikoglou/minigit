@@ -27,6 +27,8 @@ use crate::{
     },
 };
 
+type Stream<'a> = &'a [u8];
+
 /// Parses an [Object] from some bytes.
 ///
 /// Unless you're building your own parsers this is the function you're looking for.
@@ -37,9 +39,9 @@ pub fn parse_object(input: &[u8]) -> Result<Object, MinigitError> {
 }
 
 /// Parses an [Object] from some input.
-pub fn object(input: &mut &[u8]) -> ModalResult<Object> {
+pub fn object<'a>(input: &mut Stream<'a>) -> ModalResult<Object> {
     let (typee, size) = header.parse_next(input)?;
-    let mut bytes = take(size).parse_next(input)?;
+    let mut bytes: Stream<'a> = take(size).parse_next(input)?;
 
     match typee {
         ObjectType::Blob => blob.map(Object::Blob).parse_next(&mut bytes),
@@ -49,7 +51,7 @@ pub fn object(input: &mut &[u8]) -> ModalResult<Object> {
 }
 
 /// Parse a header (object type and size) from some bytes.
-pub fn header(input: &mut &[u8]) -> ModalResult<(ObjectType, usize)> {
+pub fn header<'a>(input: &mut Stream<'a>) -> ModalResult<(ObjectType, usize)> {
     let mut size = dec_uint::<_, usize, ErrMode<ContextError>>
         .context(StrContext::Label("payload size"))
         .context(StrContext::Expected(StrContextValue::Description(
@@ -62,7 +64,7 @@ pub fn header(input: &mut &[u8]) -> ModalResult<(ObjectType, usize)> {
 }
 
 /// Parses an object type string from some bytes.
-pub fn object_type(input: &mut &[u8]) -> ModalResult<ObjectType> {
+pub fn object_type<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectType> {
     alt((
         literal("blob").value(ObjectType::Blob),
         literal("tree").value(ObjectType::Tree),
@@ -76,12 +78,12 @@ pub fn object_type(input: &mut &[u8]) -> ModalResult<ObjectType> {
 }
 
 /// Parses a blob object's content from some bytes.
-pub fn blob(input: &mut &[u8]) -> ModalResult<Blob> {
-    rest.map(|e: &[u8]| Blob(e.into())).parse_next(input)
+pub fn blob<'a>(input: &mut Stream<'a>) -> ModalResult<Blob> {
+    rest.map(|e: Stream| Blob(e.into())).parse_next(input)
 }
 
 /// Parses a tree object from some bytes.
-pub fn tree(input: &mut &[u8]) -> ModalResult<Tree> {
+pub fn tree<'a>(input: &mut Stream<'a>) -> ModalResult<Tree> {
     // NOTE: not sure if this should be `0..` or `1..`
     // should we be able to parse empty trees?
     repeat(0.., tree_entry)
@@ -96,7 +98,7 @@ pub fn tree(input: &mut &[u8]) -> ModalResult<Tree> {
 }
 
 /// Parses a commit object from some bytes.
-pub fn commit(input: &mut &[u8]) -> ModalResult<Commit> {
+pub fn commit<'a>(input: &mut Stream<'a>) -> ModalResult<Commit> {
     seq! {Commit{
         _: "tree ",
         tree: object_hash_str,
@@ -119,12 +121,12 @@ pub fn commit(input: &mut &[u8]) -> ModalResult<Commit> {
 }
 
 /// Parses a tree object's entry into a tuple `(mode, name, hash)` from some bytes.
-pub fn tree_entry<'a>(input: &mut &'a [u8]) -> ModalResult<(u16, &'a str, ObjectHash)> {
+pub fn tree_entry<'a>(input: &mut Stream<'a>) -> ModalResult<(u16, &'a str, ObjectHash)> {
     seq!((mode, _: " ", file_name, object_hash)).parse_next(input)
 }
 
 /// Parses a UTF-8 encoded file mode such as 100644 from some bytes.
-pub fn mode(input: &mut &[u8]) -> ModalResult<u16> {
+pub fn mode<'a>(input: &mut Stream<'a>) -> ModalResult<u16> {
     oct_digit1
         .map(str::from_utf8)
         .verify_map(Result::ok)
@@ -136,7 +138,7 @@ pub fn mode(input: &mut &[u8]) -> ModalResult<u16> {
 /// Parses a binary hash from some bytes.
 ///
 /// To parse a UTF-8 hash, see [object_hash_str].
-pub fn object_hash(input: &mut &[u8]) -> ModalResult<ObjectHash> {
+pub fn object_hash<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectHash> {
     take(20usize)
         .map(Array::try_from)
         .verify_map(Result::ok)
@@ -147,7 +149,7 @@ pub fn object_hash(input: &mut &[u8]) -> ModalResult<ObjectHash> {
 /// Parses a UTF-8 encoded hash from some bytes.
 ///
 /// To parse a binary-encoded hash, see [object_hash].
-pub fn object_hash_str(input: &mut &[u8]) -> ModalResult<ObjectHash> {
+pub fn object_hash_str<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectHash> {
     take(40usize)
         .map(str::from_utf8)
         .verify_map(Result::ok)
@@ -157,7 +159,7 @@ pub fn object_hash_str(input: &mut &[u8]) -> ModalResult<ObjectHash> {
 }
 
 /// Parses a null-terminated UTF-8 encoded file name in a tree entry.
-pub fn file_name<'a>(input: &mut &'a [u8]) -> ModalResult<&'a str> {
+pub fn file_name<'a>(input: &mut Stream<'a>) -> ModalResult<&'a str> {
     terminated(
         take_until(1.., 0x00)
             .map(str::from_utf8)
@@ -168,7 +170,7 @@ pub fn file_name<'a>(input: &mut &'a [u8]) -> ModalResult<&'a str> {
 }
 
 /// Parses an identity in the form of `John Doe <john@doe.com>` from some bytes.
-pub fn identity(input: &mut &[u8]) -> ModalResult<Identity> {
+pub fn identity<'a>(input: &mut Stream<'a>) -> ModalResult<Identity> {
     seq! {Identity{
         name: take_until(1.., " <").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
         _: " <",
@@ -179,7 +181,7 @@ pub fn identity(input: &mut &[u8]) -> ModalResult<Identity> {
 }
 
 /// Parses a [DateTime<FixedOffset>] from some bytes.
-pub fn timestamp(input: &mut &[u8]) -> ModalResult<DateTime<FixedOffset>> {
+pub fn timestamp<'a>(input: &mut Stream<'a>) -> ModalResult<DateTime<FixedOffset>> {
     seq!(
         digit1.parse_to::<i64>(),
         _: " ",

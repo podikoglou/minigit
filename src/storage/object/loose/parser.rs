@@ -11,9 +11,9 @@ use sha1::digest::array::Array;
 use winnow::{
     ModalResult, Parser,
     ascii::{dec_uint, digit1, oct_digit1},
-    combinator::{alt, opt, repeat, seq, terminated},
+    combinator::{alt, repeat, seq, terminated},
     error::{ContextError, ErrMode, StrContext, StrContextValue},
-    token::{any, literal, one_of, rest, take, take_until},
+    token::{literal, rest, take, take_until},
 };
 
 use crate::{
@@ -190,18 +190,12 @@ pub fn commit(input: &mut &[u8]) -> ModalResult<Commit> {
 #[cfg(test)]
 mod tests {
     use crate::{
-        object::{
-            Object::{self},
-            ObjectType,
-            blob::Blob,
-            commit::Identity,
-        },
+        object::{ ObjectType, commit::Identity},
         storage::object::loose::parser::{
-            file_name, header, identity, mode, object, object_hash_str, object_type, timestamp,
-            tree_entry,
+            file_name, header, identity, mode, object_hash_str, object_type, timestamp, tree_entry,
         },
     };
-    use chrono::{DateTime, FixedOffset, NaiveDateTime, Offset, TimeZone};
+    use chrono::{DateTime, FixedOffset, NaiveDateTime};
     use std::assert_matches;
     use winnow::{Parser, error::ErrMode};
 

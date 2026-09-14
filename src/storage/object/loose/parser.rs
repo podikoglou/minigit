@@ -6,11 +6,11 @@
 
 use std::collections::BTreeMap;
 
-use chrono::{DateTime, FixedOffset, Utc};
+use chrono::{DateTime, FixedOffset};
 use sha1::digest::array::Array;
 use winnow::{
     ModalResult, Parser,
-    ascii::{dec_uint, oct_digit1, till_line_ending},
+    ascii::{dec_uint, oct_digit1},
     combinator::{alt, repeat, seq, terminated},
     error::{ContextError, ErrMode, StrContext, StrContextValue},
     token::{literal, rest, take, take_until},

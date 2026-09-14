@@ -6,7 +6,7 @@ use std::io::Write;
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Commit {
     pub tree: ObjectHash,
-    pub parent: Option<ObjectHash>,
+    pub parents: Vec<ObjectHash>,
     pub author: (Identity, DateTime<FixedOffset>),
     pub committer: (Identity, DateTime<FixedOffset>),
 
@@ -16,14 +16,14 @@ pub struct Commit {
 impl Commit {
     pub fn new(
         tree: ObjectHash,
-        parent: Option<ObjectHash>,
+        parents: Vec<ObjectHash>,
         author: (Identity, DateTime<FixedOffset>),
         committer: (Identity, DateTime<FixedOffset>),
         description: String,
     ) -> Self {
         Self {
             tree,
-            parent,
+            parents,
             author,
             committer,
             description,

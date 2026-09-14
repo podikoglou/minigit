@@ -171,7 +171,7 @@ pub fn commit(input: &mut &[u8]) -> ModalResult<Commit> {
         tree: object_hash_str,
         _: "\n",
 
-        parent: opt(seq!(_: "parent ", object_hash_str, _: "\n")).map(|opt| opt.map(|(hash,)| hash)),
+        parents: repeat(0.., seq!(_: "parent ", object_hash_str, _: "\n").map(|(hash,)| hash)),
 
         _: "author ",
         author: seq!(identity, _: " ", timestamp),

@@ -1,4 +1,4 @@
-mod error;
+pub mod error;
 pub use error::MinigitError;
 
 pub mod object;

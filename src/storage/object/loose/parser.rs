@@ -6,10 +6,11 @@
 
 use std::collections::BTreeMap;
 
+use chrono::{DateTime, FixedOffset, Utc};
 use sha1::digest::array::Array;
 use winnow::{
     ModalResult, Parser,
-    ascii::{dec_uint, oct_digit1},
+    ascii::{dec_uint, oct_digit1, till_line_ending},
     combinator::{alt, repeat, seq, terminated},
     error::{ContextError, ErrMode, StrContext, StrContextValue},
     token::{literal, rest, take, take_until},
@@ -20,6 +21,7 @@ use crate::{
     object::{
         Object, ObjectType,
         blob::Blob,
+        commit::{Commit, Identity},
         hash::ObjectHash,
         tree::{Tree, TreeEntry},
     },
@@ -30,10 +32,11 @@ pub fn object_type(input: &mut &[u8]) -> ModalResult<ObjectType> {
     alt((
         literal("blob").map(|_| ObjectType::Blob),
         literal("tree").map(|_| ObjectType::Tree),
+        literal("commit").map(|_| ObjectType::Commit),
     ))
     .context(StrContext::Label("type"))
     .context(StrContext::Expected(StrContextValue::Description(
-        "blob | tree",
+        "blob | tree | commit",
     )))
     .parse_next(input)
 }
@@ -59,6 +62,7 @@ pub fn object(input: &mut &[u8]) -> ModalResult<Object> {
     match typee {
         ObjectType::Blob => blob.map(Object::Blob).parse_next(&mut bytes),
         ObjectType::Tree => tree.map(Object::Tree).parse_next(&mut bytes),
+        ObjectType::Commit => commit.map(Object::Commit).parse_next(&mut bytes),
     }
 }
 
@@ -105,6 +109,16 @@ pub fn object_hash(input: &mut &[u8]) -> ModalResult<ObjectHash> {
         .parse_next(input)
 }
 
+/// Parses a hash (binary-encoded, as per how trees are encoded)
+pub fn object_hash_str(input: &mut &[u8]) -> ModalResult<ObjectHash> {
+    take(40usize)
+        .map(str::from_utf8)
+        .verify_map(Result::ok)
+        .map(str::parse::<ObjectHash>)
+        .verify_map(Result::ok)
+        .parse_next(input)
+}
+
 /// Parses a file name in a tree entry.
 ///
 /// Due to the format tree entry format, this reads until a NUL character.
@@ -123,6 +137,39 @@ pub fn parse_object(input: &[u8]) -> Result<Object, MinigitError> {
     object
         .parse(input)
         .map_err(|err| MinigitError::ParserError(err.to_string()))
+}
+
+pub fn identity(input: &mut &[u8]) -> ModalResult<Identity> {
+    seq! {Identity{
+        _: "author",
+        name: take_until(1.., " <").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
+        _: " <",
+        email: take_until(1.., ">").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
+        _: "> ",
+    }}
+    .parse_next(input)
+}
+
+pub fn timestamp(input: &mut &[u8]) -> ModalResult<DateTime<FixedOffset>> {
+    take_until(0.., "\n")
+        .map(str::from_utf8)
+        .verify_map(Result::ok)
+        .map(|f| DateTime::parse_from_str(f, "%s %z"))
+        .verify_map(Result::ok)
+        .parse_next(input)
+}
+
+pub fn commit(input: &mut &[u8]) -> ModalResult<Commit> {
+    seq! {Commit{
+        _: "tree ",
+        tree: object_hash_str,
+
+        author: seq!(identity, _: " ", timestamp),
+        committer: seq!(identity, _: " ", timestamp),
+
+        description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned)
+    }}
+    .parse_next(input)
 }
 
 #[cfg(test)]

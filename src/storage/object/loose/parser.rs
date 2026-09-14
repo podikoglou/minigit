@@ -184,9 +184,11 @@ mod tests {
             commit::Identity,
         },
         storage::object::loose::parser::{
-            file_name, header, identity, mode, object, object_hash_str, object_type, tree_entry,
+            file_name, header, identity, mode, object, object_hash_str, object_type, timestamp,
+            tree_entry,
         },
     };
+    use chrono::{DateTime, FixedOffset, NaiveDateTime, Offset, TimeZone};
     use std::assert_matches;
     use winnow::{Parser, error::ErrMode};
 
@@ -302,6 +304,21 @@ mod tests {
         assert_matches!(identity.parse_peek(b"john@doe.com"), Err(_));
         // TODO: should this validate emails?
         assert_matches!(identity.parse_peek(b"johndoe.com"), Err(_));
+    }
+
+    #[test]
+    fn timestamp_parses_basic_timestamps() {
+        assert_eq!(
+            timestamp.parse_peek(b"1789057194 +0300"),
+            Ok((
+                &b""[..],
+                DateTime::<FixedOffset>::from_naive_utc_and_offset(
+                    #[allow(deprecated)]
+                    NaiveDateTime::from_timestamp(1789057194, 0),
+                    FixedOffset::east_opt(3 * 3600).unwrap(),
+                )
+            ))
+        );
     }
 
     #[test]

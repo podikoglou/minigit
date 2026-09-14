@@ -1,5 +1,5 @@
 use minigit::{
-    object::{Object, tree::TreeEntry},
+    object::{Object, hash::ObjectHash, tree::TreeEntry},
     storage::object::{LazyObject, loose::read_object},
 };
 
@@ -70,6 +70,10 @@ fn test_read_loose_non_root_commit() {
     assert_eq!(
         commit.tree.to_string(),
         "f1596e78773e04b539660b10d75c02928ff38703"
+    );
+    assert_eq!(
+        commit.parent,
+        Some("497b458b242ad074b046386ec56b9f19361b2691".parse().unwrap())
     );
     assert_eq!(commit.author.0.name, "alex");
     assert_eq!(commit.author.0.email, "alex.podikoglou@gmail.com");

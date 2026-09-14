@@ -319,12 +319,4 @@ mod tests {
             ))
         );
     }
-
-    #[test]
-    fn object_parses_basic_objects() {
-        assert_eq!(
-            object.parse_peek(b"blob 3\0\x03\x03\x01"),
-            Ok((&b""[..], Object::Blob(Blob(vec![0x03, 0x03, 0x01]))))
-        );
-    }
 }

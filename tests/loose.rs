@@ -143,3 +143,36 @@ fn test_read_loose_signed_commit() {
     );
 }
 
+#[test]
+fn test_read_loose_commit_with_extra_properties() {
+    let bytes = include_bytes!("fixtures/objects/commit-5");
+    let object = read_object(&bytes[..], ParserContext::None)
+        .expect("should be able to read loose commit object");
+
+    let Object::Commit(commit) = &object else {
+        panic!("expected Object::Commit, got {object:?}");
+    };
+
+    assert_eq!(
+        commit.tree.to_string(),
+        "512310236d7623ac3a86fc96c24b94280b44bb41"
+    );
+    assert_eq!(
+        commit.parents,
+        vec!["18b593788d6ebd548bcf55b18cc8f3e15d5fb4c3".parse().unwrap()]
+    );
+    assert_eq!(commit.author.0.name, "Nicholas Junge");
+    assert_eq!(commit.author.0.email, "nicho.junge@gmail.com");
+    assert_eq!(commit.committer.0.name, "Nicholas Junge");
+    assert_eq!(commit.committer.0.email, "nicho.junge@gmail.com");
+    assert_eq!(
+        commit.extra,
+        vec![("change-id".to_string(), "xnxouqnvmpzvuvkotwynowookslovtno".to_string())]
+    );
+    assert_eq!(
+        commit.description,
+        "CMake: Set the extension base directory to the duckdb module dir\n\nDuckDB's extension-patch step hardcodes `${CMAKE_SOURCE_DIR}`, which only equals the\nsubmodule root in a standalone build. When DuckDB is pulled in via `add_subdirectory`,\nit resolves to the parent project's root, which causes the patch script and patch-dir\nlookups to happen in the wrong place.\n\nI ran into this because I'm vendoring duckDB as a submodule for a Python bindings project,\nand statically link extensions from the submodule checkout in the build process.\n"
+    );
+}
+
+

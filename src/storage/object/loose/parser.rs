@@ -36,6 +36,31 @@ pub fn parse_object(input: &[u8]) -> Result<Object, MinigitError> {
         .map_err(|err| MinigitError::ParserError(err.to_string()))
 }
 
+/// Parses an [Object] from some input.
+pub fn object(input: &mut &[u8]) -> ModalResult<Object> {
+    let (typee, size) = header.parse_next(input)?;
+    let mut bytes = take(size).parse_next(input)?;
+
+    match typee {
+        ObjectType::Blob => blob.map(Object::Blob).parse_next(&mut bytes),
+        ObjectType::Tree => tree.map(Object::Tree).parse_next(&mut bytes),
+        ObjectType::Commit => commit.map(Object::Commit).parse_next(&mut bytes),
+    }
+}
+
+/// Parse a header (object type and size) from some bytes.
+pub fn header(input: &mut &[u8]) -> ModalResult<(ObjectType, usize)> {
+    let mut size = dec_uint::<_, usize, ErrMode<ContextError>>
+        .context(StrContext::Label("payload size"))
+        .context(StrContext::Expected(StrContextValue::Description(
+            "bytes amount",
+        )));
+
+    seq!(object_type, _: " ", size, _: "\0")
+        .context(StrContext::Label("header"))
+        .parse_next(input)
+}
+
 /// Parses an object type string from some bytes.
 pub fn object_type(input: &mut &[u8]) -> ModalResult<ObjectType> {
     alt((
@@ -50,36 +75,12 @@ pub fn object_type(input: &mut &[u8]) -> ModalResult<ObjectType> {
     .parse_next(input)
 }
 
-/// Given an input (which it consumes), read the object type and size of the rest of the object
-pub fn header(input: &mut &[u8]) -> ModalResult<(ObjectType, usize)> {
-    let mut size = dec_uint::<_, usize, ErrMode<ContextError>>
-        .context(StrContext::Label("payload size"))
-        .context(StrContext::Expected(StrContextValue::Description(
-            "bytes amount",
-        )));
-
-    seq!(object_type, _: " ", size, _: "\0")
-        .context(StrContext::Label("header"))
-        .parse_next(input)
-}
-
-/// Parses an object from some input.
-pub fn object(input: &mut &[u8]) -> ModalResult<Object> {
-    let (typee, size) = header.parse_next(input)?;
-    let mut bytes = take(size).parse_next(input)?;
-
-    match typee {
-        ObjectType::Blob => blob.map(Object::Blob).parse_next(&mut bytes),
-        ObjectType::Tree => tree.map(Object::Tree).parse_next(&mut bytes),
-        ObjectType::Commit => commit.map(Object::Commit).parse_next(&mut bytes),
-    }
-}
-
-/// Parses a blob object's content.
+/// Parses a blob object's content from some bytes.
 pub fn blob(input: &mut &[u8]) -> ModalResult<Blob> {
     rest.map(|e: &[u8]| Blob(e.into())).parse_next(input)
 }
 
+/// Parses a tree object from some bytes.
 pub fn tree(input: &mut &[u8]) -> ModalResult<Tree> {
     // NOTE: not sure if this should be `0..` or `1..`
     // should we be able to parse empty trees?
@@ -94,79 +95,7 @@ pub fn tree(input: &mut &[u8]) -> ModalResult<Tree> {
         .parse_next(input)
 }
 
-/// Parses a tree object's entry into a tuple `(mode, name, hash)`
-pub fn tree_entry<'a>(input: &mut &'a [u8]) -> ModalResult<(u16, &'a str, ObjectHash)> {
-    seq!((mode, _: " ", file_name, object_hash)).parse_next(input)
-}
-
-/// Parses a file mode such as 100644, used in the tree
-pub fn mode(input: &mut &[u8]) -> ModalResult<u16> {
-    oct_digit1
-        .map(str::from_utf8)
-        .verify_map(Result::ok)
-        .map(|str| u16::from_str_radix(str, 8))
-        .verify_map(Result::ok)
-        .parse_next(input)
-}
-
-/// Parses a hash (binary-encoded, as per how trees are encoded)
-pub fn object_hash(input: &mut &[u8]) -> ModalResult<ObjectHash> {
-    take(20usize)
-        .map(Array::try_from)
-        .verify_map(Result::ok)
-        .map(ObjectHash::from)
-        .parse_next(input)
-}
-
-/// Parses a hash (binary-encoded, as per how trees are encoded)
-pub fn object_hash_str(input: &mut &[u8]) -> ModalResult<ObjectHash> {
-    take(40usize)
-        .map(str::from_utf8)
-        .verify_map(Result::ok)
-        .map(str::parse::<ObjectHash>)
-        .verify_map(Result::ok)
-        .parse_next(input)
-}
-
-/// Parses a file name in a tree entry.
-///
-/// Due to the format tree entry format, this reads until a NUL character.
-pub fn file_name<'a>(input: &mut &'a [u8]) -> ModalResult<&'a str> {
-    terminated(
-        take_until(1.., 0x00)
-            .map(str::from_utf8)
-            .verify_map(Result::ok),
-        0x00,
-    )
-    .parse_next(input)
-}
-
-pub fn identity(input: &mut &[u8]) -> ModalResult<Identity> {
-    seq! {Identity{
-        name: take_until(1.., " <").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
-        _: " <",
-        email: take_until(1.., ">").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
-        _: ">",
-    }}
-    .parse_next(input)
-}
-
-pub fn timestamp(input: &mut &[u8]) -> ModalResult<DateTime<FixedOffset>> {
-    seq!(
-        digit1.parse_to::<i64>(),
-        _: " ",
-        alt((b'+'.value(1), b'-'.value(-1))),
-        take(2usize).parse_to::<i32>(),
-        take(2usize).parse_to::<i32>(),
-    )
-    .verify_map(|(secs, sign, hours, minutes)| {
-        let offset = FixedOffset::east_opt(sign * (hours * 3600 + minutes * 60))?;
-
-        DateTime::from_timestamp(secs, 0).map(|dt| dt.with_timezone(&offset))
-    })
-    .parse_next(input)
-}
-
+/// Parses a commit object from some bytes.
 pub fn commit(input: &mut &[u8]) -> ModalResult<Commit> {
     seq! {Commit{
         _: "tree ",
@@ -186,6 +115,83 @@ pub fn commit(input: &mut &[u8]) -> ModalResult<Commit> {
         _: "\n",
         description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
     }}
+    .parse_next(input)
+}
+
+/// Parses a tree object's entry into a tuple `(mode, name, hash)` from some bytes.
+pub fn tree_entry<'a>(input: &mut &'a [u8]) -> ModalResult<(u16, &'a str, ObjectHash)> {
+    seq!((mode, _: " ", file_name, object_hash)).parse_next(input)
+}
+
+/// Parses a UTF-8 encoded file mode such as 100644 from some bytes.
+pub fn mode(input: &mut &[u8]) -> ModalResult<u16> {
+    oct_digit1
+        .map(str::from_utf8)
+        .verify_map(Result::ok)
+        .map(|str| u16::from_str_radix(str, 8))
+        .verify_map(Result::ok)
+        .parse_next(input)
+}
+
+/// Parses a binary hash from some bytes.
+///
+/// To parse a UTF-8 hash, see [object_hash_str].
+pub fn object_hash(input: &mut &[u8]) -> ModalResult<ObjectHash> {
+    take(20usize)
+        .map(Array::try_from)
+        .verify_map(Result::ok)
+        .map(ObjectHash::from)
+        .parse_next(input)
+}
+
+/// Parses a UTF-8 encoded hash from some bytes.
+///
+/// To parse a binary-encoded hash, see [object_hash].
+pub fn object_hash_str(input: &mut &[u8]) -> ModalResult<ObjectHash> {
+    take(40usize)
+        .map(str::from_utf8)
+        .verify_map(Result::ok)
+        .map(str::parse::<ObjectHash>)
+        .verify_map(Result::ok)
+        .parse_next(input)
+}
+
+/// Parses a null-terminated UTF-8 encoded file name in a tree entry.
+pub fn file_name<'a>(input: &mut &'a [u8]) -> ModalResult<&'a str> {
+    terminated(
+        take_until(1.., 0x00)
+            .map(str::from_utf8)
+            .verify_map(Result::ok),
+        0x00,
+    )
+    .parse_next(input)
+}
+
+/// Parses an identity in the form of `John Doe <john@doe.com>` from some bytes.
+pub fn identity(input: &mut &[u8]) -> ModalResult<Identity> {
+    seq! {Identity{
+        name: take_until(1.., " <").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
+        _: " <",
+        email: take_until(1.., ">").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
+        _: ">",
+    }}
+    .parse_next(input)
+}
+
+/// Parses a [DateTime<FixedOffset>] from some bytes.
+pub fn timestamp(input: &mut &[u8]) -> ModalResult<DateTime<FixedOffset>> {
+    seq!(
+        digit1.parse_to::<i64>(),
+        _: " ",
+        alt((b'+'.value(1), b'-'.value(-1))),
+        take(2usize).parse_to::<i32>(),
+        take(2usize).parse_to::<i32>(),
+    )
+    .verify_map(|(secs, sign, hours, minutes)| {
+        let offset = FixedOffset::east_opt(sign * (hours * 3600 + minutes * 60))?;
+
+        DateTime::from_timestamp(secs, 0).map(|dt| dt.with_timezone(&offset))
+    })
     .parse_next(input)
 }
 

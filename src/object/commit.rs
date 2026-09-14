@@ -40,7 +40,7 @@ impl Commit {
 impl Commit {
     /// Writes the commit into a writer.
     pub fn write<W: Write>(&self, mut writer: W) -> Result<(), std::io::Error> {
-        todo!()
+        todo!("write commit")
     }
 }
 
@@ -60,7 +60,7 @@ impl Identity {
 impl Identity {
     /// Writes the identity into a writer.
     pub fn write<W: Write>(&self, mut writer: W) -> Result<(), std::io::Error> {
-        todo!()
+        todo!("write identity")
     }
 }
 

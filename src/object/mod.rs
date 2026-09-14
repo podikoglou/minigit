@@ -32,8 +32,8 @@ impl Object {
     pub fn write_header<W: Write>(&self, mut writer: W) -> Result<(), std::io::Error> {
         let (tag, size) = match self {
             Object::Blob(blob) => ("blob", blob.0.len()),
-            Object::Tree(_) => todo!(),
-            Object::Commit(_) => todo!(),
+            Object::Tree(_) => todo!("write tree header"),
+            Object::Commit(_) => todo!("write commit header"),
         };
 
         write!(writer, "{} {}\0", tag, size)
@@ -75,6 +75,6 @@ impl TryFrom<LazyObject> for Object {
     type Error = io::Error;
 
     fn try_from(value: LazyObject) -> Result<Self, io::Error> {
-        Ok(todo!())
+        Ok(todo!("from lazyobject for object"))
     }
 }

@@ -79,10 +79,10 @@ impl HashObjectCommand {
                 }
             }
             ObjectType::Tree => {
-                todo!()
+                todo!("hash trees")
             }
             ObjectType::Commit => {
-                todo!()
+                todo!("hash commits")
             }
         }
 

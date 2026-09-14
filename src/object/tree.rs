@@ -22,7 +22,7 @@ impl Tree {
     ///
     /// This simply writes the raw bytes.
     pub fn write<W: Write>(&self, mut _writer: W) -> Result<(), std::io::Error> {
-        todo!()
+        todo!("write tree")
     }
 }
 

@@ -234,7 +234,7 @@ pub fn identity<'a>(input: &mut Stream<'a>) -> ModalResult<Identity> {
     seq! {Identity{
         name: take_until(1.., " <").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned).context(StrContext::Label("name")),
         _: " <",
-        email: take_until(1.., ">").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned).context(StrContext::Label("email")),
+        email: take_until(0.., ">").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned).context(StrContext::Label("email")),
         _: ">",
     }}
     .context(StrContext::Label("identity"))

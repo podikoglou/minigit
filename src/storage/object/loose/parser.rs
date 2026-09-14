@@ -144,7 +144,7 @@ pub fn identity(input: &mut &[u8]) -> ModalResult<Identity> {
         name: take_until(1.., " <").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
         _: " <",
         email: take_until(1.., ">").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
-        _: "> ",
+        _: ">",
     }}
     .parse_next(input)
 }
@@ -169,14 +169,18 @@ pub fn commit(input: &mut &[u8]) -> ModalResult<Commit> {
     seq! {Commit{
         _: "tree ",
         tree: object_hash_str,
+        _: "\n",
 
         _: "author ",
         author: seq!(identity, _: " ", timestamp),
+        _: "\n",
 
         _: "committer ",
         committer: seq!(identity, _: " ", timestamp),
+        _: "\n",
 
-        description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned)
+        _: "\n",
+        description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
     }}
     .parse_next(input)
 }

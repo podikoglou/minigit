@@ -300,6 +300,8 @@ mod tests {
         assert_matches!(identity.parse_peek(b"<john@doe.com"), Err(_));
         assert_matches!(identity.parse_peek(b"john@doe.com>"), Err(_));
         assert_matches!(identity.parse_peek(b"john@doe.com"), Err(_));
+        // TODO: should this validate emails?
+        assert_matches!(identity.parse_peek(b"johndoe.com"), Err(_));
     }
 
     #[test]

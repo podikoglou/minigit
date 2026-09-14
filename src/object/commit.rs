@@ -1,20 +1,20 @@
 use crate::object::hash::ObjectHash;
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, FixedOffset};
 use std::io::Write;
 
 /// A commit an object that contains information about a commit.
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Commit {
     pub tree: ObjectHash,
-    pub author: (Identity, DateTime<Utc>),
-    pub committer: (Identity, DateTime<Utc>),
+    pub author: (Identity, DateTime<FixedOffset>),
+    pub committer: (Identity, DateTime<FixedOffset>),
 }
 
 impl Commit {
     pub fn new(
         tree: ObjectHash,
-        author: (Identity, DateTime<Utc>),
-        committer: (Identity, DateTime<Utc>),
+        author: (Identity, DateTime<FixedOffset>),
+        committer: (Identity, DateTime<FixedOffset>),
     ) -> Self {
         Self {
             tree,

@@ -10,10 +10,10 @@ use chrono::{DateTime, FixedOffset};
 use sha1::digest::array::Array;
 use winnow::{
     ModalResult, Parser,
-    ascii::{dec_uint, oct_digit1},
+    ascii::{dec_uint, digit1, oct_digit1},
     combinator::{alt, repeat, seq, terminated},
     error::{ContextError, ErrMode, StrContext, StrContextValue},
-    token::{literal, rest, take, take_until},
+    token::{any, literal, one_of, rest, take, take_until},
 };
 
 use crate::{
@@ -150,11 +150,19 @@ pub fn identity(input: &mut &[u8]) -> ModalResult<Identity> {
 }
 
 pub fn timestamp(input: &mut &[u8]) -> ModalResult<DateTime<FixedOffset>> {
-    rest.map(str::from_utf8)
-        .verify_map(Result::ok)
-        .map(|f| DateTime::parse_from_str(f, "%s %z"))
-        .verify_map(Result::ok)
-        .parse_next(input)
+    seq!(
+        digit1.parse_to::<i64>(),
+        _: " ",
+        alt((b'+'.value(1), b'-'.value(-1))),
+        take(2usize).parse_to::<i32>(),
+        take(2usize).parse_to::<i32>(),
+    )
+    .verify_map(|(secs, sign, hours, minutes)| {
+        let offset = FixedOffset::east_opt(sign * (hours * 3600 + minutes * 60))?;
+
+        DateTime::from_timestamp(secs, 0).map(|dt| dt.with_timezone(&offset))
+    })
+    .parse_next(input)
 }
 
 pub fn commit(input: &mut &[u8]) -> ModalResult<Commit> {

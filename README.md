@@ -18,3 +18,6 @@ Available commands:
     ls-buckets   List buckets in the repository
     ls-objects   List objects in the repository
 ```
+
+## AI Disclaimer
+~90% of the code is human-written.

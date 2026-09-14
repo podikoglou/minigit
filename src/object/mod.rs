@@ -1,4 +1,5 @@
 pub mod blob;
+pub mod commit;
 pub mod tree;
 
 pub mod hash;
@@ -10,7 +11,11 @@ use sha1::{Digest, Sha1};
 use strum::{EnumDiscriminants, EnumString};
 use tree::Tree;
 
-use crate::{MinigitError, object::hash::ObjectHash, storage::object::LazyObject};
+use crate::{
+    MinigitError,
+    object::{commit::Commit, hash::ObjectHash},
+    storage::object::LazyObject,
+};
 
 #[derive(Debug, PartialEq, Eq, Clone, EnumDiscriminants)]
 #[strum_discriminants(name(ObjectType))]
@@ -19,6 +24,7 @@ use crate::{MinigitError, object::hash::ObjectHash, storage::object::LazyObject}
 pub enum Object {
     Blob(Blob),
     Tree(Tree),
+    Commit(Commit),
 }
 
 impl Object {

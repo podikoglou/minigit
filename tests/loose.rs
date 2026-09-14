@@ -177,3 +177,31 @@ fn test_read_loose_commit_with_extra_properties() {
         "CMake: Set the extension base directory to the duckdb module dir\n\nDuckDB's extension-patch step hardcodes `${CMAKE_SOURCE_DIR}`, which only equals the\nsubmodule root in a standalone build. When DuckDB is pulled in via `add_subdirectory`,\nit resolves to the parent project's root, which causes the patch script and patch-dir\nlookups to happen in the wrong place.\n\nI ran into this because I'm vendoring duckDB as a submodule for a Python bindings project,\nand statically link extensions from the submodule checkout in the build process.\n"
     );
 }
+
+#[test]
+fn test_read_loose_commit_with_empty_email() {
+    let bytes = include_bytes!("fixtures/objects/commit-6");
+    let object = read_object(&bytes[..], ParserContext::None)
+        .expect("should be able to read loose commit object");
+
+    let Object::Commit(commit) = &object else {
+        panic!("expected Object::Commit, got {object:?}");
+    };
+
+    assert_eq!(
+        commit.tree.to_string(),
+        "bf2c4695aac832581edbce6bf3e303db98181a71"
+    );
+    assert_eq!(
+        commit.parents,
+        vec!["09e2d957342607904124ebab892be70b0ecf9a10".parse().unwrap()]
+    );
+    assert_eq!(commit.author.0.name, "Virgiel");
+    assert_eq!(commit.author.0.email, "");
+    assert_eq!(commit.committer.0.name, "Virgiel");
+    assert_eq!(commit.committer.0.email, "Virgiel@users.noreply.github.com");
+    assert_eq!(
+        commit.description,
+        "duckdb_interrupt & duckdb_query_progress\n"
+    );
+}

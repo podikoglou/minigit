@@ -9,6 +9,7 @@ pub struct Commit {
     pub parents: Vec<ObjectHash>,
     pub author: (Identity, DateTime<FixedOffset>),
     pub committer: (Identity, DateTime<FixedOffset>),
+    pub gpg_signature: Option<String>,
 
     pub description: String,
 }
@@ -19,6 +20,7 @@ impl Commit {
         parents: Vec<ObjectHash>,
         author: (Identity, DateTime<FixedOffset>),
         committer: (Identity, DateTime<FixedOffset>),
+        gpg_signature: Option<String>,
         description: String,
     ) -> Self {
         Self {
@@ -26,6 +28,7 @@ impl Commit {
             parents,
             author,
             committer,
+            gpg_signature,
             description,
         }
     }

@@ -141,7 +141,6 @@ pub fn parse_object(input: &[u8]) -> Result<Object, MinigitError> {
 
 pub fn identity(input: &mut &[u8]) -> ModalResult<Identity> {
     seq! {Identity{
-        _: "author",
         name: take_until(1.., " <").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
         _: " <",
         email: take_until(1.., ">").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
@@ -164,7 +163,10 @@ pub fn commit(input: &mut &[u8]) -> ModalResult<Commit> {
         _: "tree ",
         tree: object_hash_str,
 
+        _: "author ",
         author: seq!(identity, _: " ", timestamp),
+
+        _: "committer ",
         committer: seq!(identity, _: " ", timestamp),
 
         description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned)
@@ -283,7 +285,7 @@ mod tests {
     #[ignore]
     fn identity_parses_valid_identities() {
         assert_eq!(
-            identity.parse_peek(b"John Doe <john@doe.com>"),
+            identity.parse_peek(b"author John Doe <john@doe.com>"),
             Ok((
                 &b""[..],
                 Identity::new("John Doe".to_string(), "john@doe.com".to_string())

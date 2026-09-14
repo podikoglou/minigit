@@ -102,6 +102,7 @@ pub fn tree<'a>(input: &mut Stream<'a>) -> ModalResult<Tree> {
 
 /// Parses a commit object from some bytes.
 pub fn commit<'a>(input: &mut Stream<'a>) -> ModalResult<Commit> {
+    // TODO: create reusable helper for kv pairs in the form of "<key> <value>\n" such as the below
     seq! {Commit{
         _: "tree ",
         tree: object_hash_str,

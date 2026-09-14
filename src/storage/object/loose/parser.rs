@@ -101,24 +101,22 @@ pub fn tree<'a>(input: &mut Stream<'a>) -> ModalResult<Tree> {
         .parse_next(input)
 }
 
+/// Helper for creating parsers that parse a key value pair found in a commit object, such as
+/// `author <author>`
+fn property<'a, O>(
+    mut key: impl Parser<Stream<'a>, &'a [u8], ErrMode<ContextError>>,
+    mut value: impl Parser<Stream<'a>, O, ErrMode<ContextError>>,
+) -> impl Parser<Stream<'a>, O, ErrMode<ContextError>> {
+    seq!(_: key, _: " ", value, _: "\n").map(|(value,)| value)
+}
+
 /// Parses a commit object from some bytes.
 pub fn commit<'a>(input: &mut Stream<'a>) -> ModalResult<Commit> {
-    // TODO: create reusable helper for kv pairs in the form of "<key> <value>\n" such as the below
     seq! {Commit{
-        _: "tree ",
-        tree: object_hash_str,
-        _: "\n",
-
-        parents: repeat(0.., seq!(_: "parent ", object_hash_str, _: "\n").map(|(hash,)| hash)),
-
-        _: "author ",
-        author: seq!(identity, _: " ", timestamp),
-        _: "\n",
-
-        _: "committer ",
-        committer: seq!(identity, _: " ", timestamp),
-        _: "\n",
-
+        tree: property("tree", object_hash_str),
+        parents: repeat(0.., property("parent", object_hash_str)),
+        author: property("author", seq!(identity, _: " ", timestamp)),
+        committer: property("committer", seq!(identity, _: " ", timestamp)),
         _: "\n",
         description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
     }}

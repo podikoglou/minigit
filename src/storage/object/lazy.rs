@@ -1,4 +1,4 @@
-use std::{fs, path::PathBuf};
+use std::{fs, io::BufReader, path::PathBuf};
 
 use crate::{
     MinigitError,
@@ -25,9 +25,10 @@ impl LazyObject {
         match self {
             LazyObject::Loose(path) => {
                 // TODO: remove clones here?
-                let file = fs::File::open(path.clone())?;
+                let file = fs::File::open(path)?;
+                let reader = BufReader::new(file);
 
-                loose::read_object(file, ParserContext::File(path.clone()))
+                loose::read_object(reader, ParserContext::File(path.clone()))
             }
         }
     }

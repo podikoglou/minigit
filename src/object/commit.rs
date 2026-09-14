@@ -8,6 +8,8 @@ pub struct Commit {
     pub tree: ObjectHash,
     pub author: (Identity, DateTime<FixedOffset>),
     pub committer: (Identity, DateTime<FixedOffset>),
+
+    pub description: String,
 }
 
 impl Commit {
@@ -15,11 +17,13 @@ impl Commit {
         tree: ObjectHash,
         author: (Identity, DateTime<FixedOffset>),
         committer: (Identity, DateTime<FixedOffset>),
+        description: String,
     ) -> Self {
         Self {
             tree,
             author,
             committer,
+            description,
         }
     }
 }

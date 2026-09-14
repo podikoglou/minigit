@@ -33,6 +33,7 @@ impl Object {
         let (tag, size) = match self {
             Object::Blob(blob) => ("blob", blob.0.len()),
             Object::Tree(_) => todo!(),
+            Object::Commit(_) => todo!(),
         };
 
         write!(writer, "{} {}\0", tag, size)
@@ -45,6 +46,7 @@ impl Object {
         match self {
             Object::Blob(blob) => blob.write(writer),
             Object::Tree(tree) => tree.write(writer),
+            Object::Commit(commit) => commit.write(writer),
         }
     }
 

@@ -81,6 +81,9 @@ impl HashObjectCommand {
             ObjectType::Tree => {
                 todo!()
             }
+            ObjectType::Commit => {
+                todo!()
+            }
         }
 
         Ok(())

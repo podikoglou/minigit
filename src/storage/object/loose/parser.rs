@@ -11,7 +11,7 @@ use sha1::digest::array::Array;
 use winnow::{
     ModalResult, Parser,
     ascii::{dec_uint, digit1, oct_digit1},
-    combinator::{alt, repeat, seq, terminated},
+    combinator::{alt, opt, repeat, seq, terminated},
     error::{ContextError, ErrMode, StrContext, StrContextValue},
     token::{any, literal, one_of, rest, take, take_until},
 };
@@ -170,6 +170,8 @@ pub fn commit(input: &mut &[u8]) -> ModalResult<Commit> {
         _: "tree ",
         tree: object_hash_str,
         _: "\n",
+
+        parent: opt(seq!(_: "parent ", object_hash_str, _: "\n")).map(|opt| opt.map(|(hash,)| hash)),
 
         _: "author ",
         author: seq!(identity, _: " ", timestamp),

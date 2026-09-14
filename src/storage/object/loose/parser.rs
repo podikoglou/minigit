@@ -11,7 +11,7 @@ use sha1::digest::array::Array;
 use winnow::{
     ModalResult, Parser,
     ascii::{dec_uint, digit1, oct_digit1},
-    combinator::{alt, opt, repeat, seq, terminated},
+    combinator::{alt, opt, repeat, separated_pair, seq, terminated},
     error::{ContextError, ErrMode, StrContext, StrContextValue},
     token::{literal, rest, take, take_until},
 };
@@ -139,7 +139,7 @@ pub fn multiline_property<'a>(
 
 /// Parses an arbitrary commit property including its name and value.
 pub fn extra_property<'a>(input: &mut Stream<'a>) -> ModalResult<CommitProperty> {
-    seq!(take_until(1.., " "), _: " ", take_until(1.., "\n"))
+    separated_pair(take_until(1.., " "), " ", take_until(1.., "\n"))
         .map(|(key, value)| (str::from_utf8(key), str::from_utf8(value)))
         .map(|(key, value)| (key.ok(), value.ok()))
         .verify_map(|(key, value)| key.zip(value))

@@ -110,3 +110,36 @@ fn test_read_loose_merge_commit() {
     assert_eq!(commit.committer.0.email, "alex.podikoglou@gmail.com");
     assert_eq!(commit.description, "Merge branch 'feature'\n");
 }
+
+#[test]
+fn test_read_loose_signed_commit() {
+    let bytes = include_bytes!("fixtures/objects/commit-4");
+    let object = read_object(&bytes[..], ParserContext::None)
+        .expect("should be able to read loose commit object");
+
+    let Object::Commit(commit) = &object else {
+        panic!("expected Object::Commit, got {object:?}");
+    };
+
+    assert_eq!(
+        commit.tree.to_string(),
+        "d6de8cca32ce6db2c44e2f16fac72ed5d7f6ec2a"
+    );
+    assert_eq!(
+        commit.parents,
+        vec![
+            "759c3dfd40f9d4833b86ca587f1789b4c10772e9".parse().unwrap(),
+            "33ba4daaf56cdd499f4cb8960eb0020db7619616".parse().unwrap(),
+        ]
+    );
+    assert_eq!(commit.author.0.name, "Laurens Kuiper");
+    assert_eq!(commit.author.0.email, "laurens@ducklabs.com");
+    assert_eq!(commit.committer.0.name, "GitHub");
+    assert_eq!(commit.committer.0.email, "noreply@github.com");
+    assert!(commit.gpg_signature.is_some());
+    assert_eq!(
+        commit.description,
+        "`COPY` with `ORDER_BY` without `PARTITION_BY` (#24525)\n\nI didn't get around to doing this, but it was surprisingly a very small\nchange.\n\nCC @Tmonster\n"
+    );
+}
+

@@ -270,8 +270,8 @@ mod tests {
     use crate::{
         object::{ObjectType, commit::Identity},
         storage::object::loose::parser::{
-            extra_property, file_name, header, identity, mode, multiline_property,
-            object_hash_str, object_type, timestamp, tree_entry,
+            extra_property, file_name, header, identity, mode, multiline_property, object_hash_str,
+            object_type, timestamp, tree_entry,
         },
     };
     use chrono::{DateTime, FixedOffset, NaiveDateTime};

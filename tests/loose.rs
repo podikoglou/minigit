@@ -167,12 +167,13 @@ fn test_read_loose_commit_with_extra_properties() {
     assert_eq!(commit.committer.0.email, "nicho.junge@gmail.com");
     assert_eq!(
         commit.extra,
-        vec![("change-id".to_string(), "xnxouqnvmpzvuvkotwynowookslovtno".to_string())]
+        vec![(
+            "change-id".to_string(),
+            "xnxouqnvmpzvuvkotwynowookslovtno".to_string()
+        )]
     );
     assert_eq!(
         commit.description,
         "CMake: Set the extension base directory to the duckdb module dir\n\nDuckDB's extension-patch step hardcodes `${CMAKE_SOURCE_DIR}`, which only equals the\nsubmodule root in a standalone build. When DuckDB is pulled in via `add_subdirectory`,\nit resolves to the parent project's root, which causes the patch script and patch-dir\nlookups to happen in the wrong place.\n\nI ran into this because I'm vendoring duckDB as a submodule for a Python bindings project,\nand statically link extensions from the submodule checkout in the build process.\n"
     );
 }
-
-

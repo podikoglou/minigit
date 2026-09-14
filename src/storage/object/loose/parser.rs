@@ -39,9 +39,9 @@ pub fn parse_object(input: &[u8]) -> Result<Object, MinigitError> {
 /// Parses an object type string from some bytes.
 pub fn object_type(input: &mut &[u8]) -> ModalResult<ObjectType> {
     alt((
-        literal("blob").map(|_| ObjectType::Blob),
-        literal("tree").map(|_| ObjectType::Tree),
-        literal("commit").map(|_| ObjectType::Commit),
+        literal("blob").value(ObjectType::Blob),
+        literal("tree").value(ObjectType::Tree),
+        literal("commit").value(ObjectType::Commit),
     ))
     .context(StrContext::Label("type"))
     .context(StrContext::Expected(StrContextValue::Description(

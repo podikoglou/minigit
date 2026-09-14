@@ -181,7 +181,7 @@ mod tests {
             blob::Blob,
         },
         storage::object::loose::parser::{
-            file_name, header, mode, object, object_type, tree_entry,
+            file_name, header, mode, object, object_hash_str, object_type, tree_entry,
         },
     };
     use std::assert_matches;
@@ -261,6 +261,21 @@ mod tests {
             tree_entry.parse_peek(b"100644 cli.rs\0\x29\xf3\x23\xb3\x1a\xd1\x29\x96\x4f\xfb\x4f\x97\xf2\x03\xbe\x9c\x2f\x35\x10\x7d"),
             Ok((&b""[..], (0o100644, "cli.rs", [0x29, 0xf3, 0x23, 0xb3, 0x1a, 0xd1, 0x29, 0x96, 0x4f, 0xfb, 0x4f, 0x97, 0xf2, 0x03, 0xbe, 0x9c, 0x2f, 0x35, 0x10, 0x7d].into() )))
         );
+    }
+
+    #[test]
+    fn object_hash_str_parses_valid_hashes() {
+        assert_eq!(
+            object_hash_str.parse_peek(b"29f323b31ad129964ffb4f97f203be9c2f35107d"),
+            Ok((
+                &b""[..],
+                [
+                    0x29, 0xf3, 0x23, 0xb3, 0x1a, 0xd1, 0x29, 0x96, 0x4f, 0xfb, 0x4f, 0x97, 0xf2,
+                    0x03, 0xbe, 0x9c, 0x2f, 0x35, 0x10, 0x7d
+                ]
+                .into()
+            ))
+        )
     }
 
     #[test]

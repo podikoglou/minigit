@@ -37,3 +37,23 @@ fn test_read_loose_tree() {
     //     ))
     // );
 }
+
+#[test]
+fn test_read_loose_commit() {
+    let bytes = include_bytes!("fixtures/objects/commit-1");
+    let object = read_object(&bytes[..]).expect("should be able to read loose commit object");
+
+    let Object::Commit(commit) = &object else {
+        panic!("expected Object::Commit, got {object:?}");
+    };
+
+    assert_eq!(
+        commit.tree.to_string(),
+        "7bfeab1d89aa800dff6acaae16b3433e7df44fa6"
+    );
+    assert_eq!(commit.author.0.name, "alex");
+    assert_eq!(commit.author.0.email, "alex.podikoglou@gmail.com");
+    assert_eq!(commit.committer.0.name, "alex");
+    assert_eq!(commit.committer.0.email, "alex.podikoglou@gmail.com");
+    assert_eq!(commit.description, "add readme\n");
+}

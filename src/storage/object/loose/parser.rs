@@ -22,7 +22,7 @@ use crate::{
     object::{
         Object, ObjectType,
         blob::Blob,
-        commit::{Commit, Identity},
+        commit::{Commit, CommitProperty, Identity},
         hash::ObjectHash,
         tree::{Tree, TreeEntry},
     },
@@ -137,6 +137,16 @@ pub fn multiline_property<'a>(
     })
 }
 
+/// Parses an arbitrary commit property including its name and value.
+pub fn extra_property<'a>(input: &mut Stream<'a>) -> ModalResult<CommitProperty> {
+    seq!(take_until(1.., " "), _: " ", take_until(1.., "\n"))
+        .map(|(key, value)| (str::from_utf8(key), str::from_utf8(value)))
+        .map(|(key, value)| (key.ok(), value.ok()))
+        .verify_map(|(key, value)| key.zip(value))
+        .map(|(key, value)| (key.to_owned(), value.to_owned()))
+        .parse_next(input)
+}
+
 /// Parses a commit object from some bytes.
 pub fn commit<'a>(input: &mut Stream<'a>) -> ModalResult<Commit> {
     seq! {Commit{
@@ -145,6 +155,7 @@ pub fn commit<'a>(input: &mut Stream<'a>) -> ModalResult<Commit> {
         author: property("author", seq!(identity, _: " ", timestamp)),
         committer: property("committer", seq!(identity, _: " ", timestamp)),
         gpg_signature: opt(multiline_property("gpgsig")),
+        extra: repeat(0.., extra_property),
         _: "\n",
         description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
     }}

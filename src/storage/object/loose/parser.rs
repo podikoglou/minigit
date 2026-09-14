@@ -11,7 +11,7 @@ use sha1::digest::array::Array;
 use winnow::{
     ModalResult, Parser,
     ascii::{dec_uint, digit1, oct_digit1},
-    combinator::{alt, delimited, opt, repeat, seq, terminated},
+    combinator::{alt, opt, repeat, seq, terminated},
     error::{ContextError, ErrMode, StrContext, StrContextValue},
     token::{literal, rest, take, take_until},
 };
@@ -110,6 +110,33 @@ fn property<'a, O>(
     seq!(_: key, _: " ", value, _: "\n").map(|(value,)| value)
 }
 
+/// Helper for creating parsers that parse a multi-line key value pair found in a commit object,
+/// such as `gpgsig`, where continuation lines start with a single space.
+pub fn multiline_property<'a>(
+    mut key: impl Parser<Stream<'a>, &'a [u8], ErrMode<ContextError>>,
+) -> impl Parser<Stream<'a>, String, ErrMode<ContextError>> {
+    seq!(
+        _: key,
+        _: " ",
+        terminated(take_until(0.., "\n"), "\n")
+            .map(str::from_utf8)
+            .verify_map(Result::ok),
+        repeat(
+            0..,
+            seq!(_: " ", terminated(take_until(0.., "\n"), "\n"))
+                .map(|(line,)| line)
+                .map(str::from_utf8)
+                .verify_map(Result::ok),
+        ),
+    )
+    .map(|(first_line, continuation_lines): (&str, Vec<&str>)| {
+        let mut lines = Vec::with_capacity(1 + continuation_lines.len());
+        lines.push(first_line);
+        lines.extend(continuation_lines);
+        lines.join("\n")
+    })
+}
+
 /// Parses a commit object from some bytes.
 pub fn commit<'a>(input: &mut Stream<'a>) -> ModalResult<Commit> {
     seq! {Commit{
@@ -117,7 +144,7 @@ pub fn commit<'a>(input: &mut Stream<'a>) -> ModalResult<Commit> {
         parents: repeat(0.., property("parent", object_hash_str)),
         author: property("author", seq!(identity, _: " ", timestamp)),
         committer: property("committer", seq!(identity, _: " ", timestamp)),
-        gpg_signature: opt(property("gpgsig", gpg_signature)),
+        gpg_signature: opt(multiline_property("gpgsig")),
         _: "\n",
         description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
     }}
@@ -222,26 +249,12 @@ pub fn timestamp<'a>(input: &mut Stream<'a>) -> ModalResult<DateTime<FixedOffset
     .parse_next(input)
 }
 
-/// Parses a GPG signature from some bytes.
-pub fn gpg_signature<'a>(input: &mut Stream<'a>) -> ModalResult<String> {
-    delimited(
-        literal("-----BEGIN PGP SIGNATURE-----"),
-        take_until(0.., "-----END PGP SIGNATURE-----")
-            .map(str::from_utf8)
-            .verify_map(Result::ok)
-            .map(str::to_owned),
-        literal("-----END PGP SIGNATURE-----"),
-    )
-    .context(StrContext::Label("gpg signature"))
-    .parse_next(input)
-}
-
 #[cfg(test)]
 mod tests {
     use crate::{
         object::{ObjectType, commit::Identity},
         storage::object::loose::parser::{
-            file_name, gpg_signature, header, identity, mode, object_hash_str, object_type,
+            file_name, header, identity, mode, multiline_property, object_hash_str, object_type,
             timestamp, tree_entry,
         },
     };
@@ -379,13 +392,13 @@ mod tests {
     }
 
     #[test]
-    fn gpg_signature_parses_valid_signature() {
-        let input = b"-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v2\n\nsome_signature_data\n-----END PGP SIGNATURE-----";
+    fn multiline_property_parses_valid_signature() {
+        let input = b"gpgsig -----BEGIN PGP SIGNATURE-----\n \n wsFcBAABCAAQBQJqc1jACRC1aQ7uu5UhlAAAFfgQACyD2HIkYM5SeaWNsgzpZsVu\n -----END PGP SIGNATURE-----\n \n";
         assert_eq!(
-            gpg_signature.parse_peek(input),
+            multiline_property("gpgsig").parse_peek(input),
             Ok((
                 &b""[..],
-                "\nVersion: GnuPG v2\n\nsome_signature_data\n".to_string()
+                "-----BEGIN PGP SIGNATURE-----\n\nwsFcBAABCAAQBQJqc1jACRC1aQ7uu5UhlAAAFfgQACyD2HIkYM5SeaWNsgzpZsVu\n-----END PGP SIGNATURE-----\n".to_string()
             ))
         );
     }

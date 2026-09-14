@@ -81,3 +81,31 @@ fn test_read_loose_non_root_commit() {
     assert_eq!(commit.committer.0.email, "alex.podikoglou@gmail.com");
     assert_eq!(commit.description, "7133\n");
 }
+
+#[test]
+fn test_read_loose_merge_commit() {
+    let bytes = include_bytes!("fixtures/objects/commit-3");
+    let object = read_object(&bytes[..]).expect("should be able to read loose commit object");
+
+    let Object::Commit(commit) = &object else {
+        panic!("expected Object::Commit, got {object:?}");
+    };
+
+    assert_eq!(
+        commit.tree.to_string(),
+        "45bf6921d3d209c3ca2623277bc41868908c6831"
+    );
+    assert_eq!(
+        commit.parents,
+        vec![
+            "a3dbc49f01da99433914156f54c847c162256cc0".parse().unwrap(),
+            "3e66aa515edae750fc16edabea2291a458069db0".parse().unwrap(),
+        ]
+    );
+    assert_eq!(commit.author.0.name, "alex");
+    assert_eq!(commit.author.0.email, "alex.podikoglou@gmail.com");
+    assert_eq!(commit.committer.0.name, "alex");
+    assert_eq!(commit.committer.0.email, "alex.podikoglou@gmail.com");
+    assert_eq!(commit.description, "Merge branch 'feature'\n");
+}
+

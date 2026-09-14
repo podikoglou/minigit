@@ -150,8 +150,7 @@ pub fn identity(input: &mut &[u8]) -> ModalResult<Identity> {
 }
 
 pub fn timestamp(input: &mut &[u8]) -> ModalResult<DateTime<FixedOffset>> {
-    take_until(0.., "\n")
-        .map(str::from_utf8)
+    rest.map(str::from_utf8)
         .verify_map(Result::ok)
         .map(|f| DateTime::parse_from_str(f, "%s %z"))
         .verify_map(Result::ok)

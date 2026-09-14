@@ -179,9 +179,10 @@ mod tests {
             Object::{self},
             ObjectType,
             blob::Blob,
+            commit::Identity,
         },
         storage::object::loose::parser::{
-            file_name, header, mode, object, object_hash_str, object_type, tree_entry,
+            file_name, header, identity, mode, object, object_hash_str, object_type, tree_entry,
         },
     };
     use std::assert_matches;
@@ -276,6 +277,27 @@ mod tests {
                 .into()
             ))
         )
+    }
+
+    #[test]
+    #[ignore]
+    fn identity_parses_valid_identities() {
+        assert_eq!(
+            identity.parse_peek(b"John Doe <john@doe.com>"),
+            Ok((
+                &b""[..],
+                Identity::new("John Doe".to_string(), "john@doe.com".to_string())
+            ))
+        );
+    }
+
+    #[test]
+    fn identity_rejects_invalid_input() {
+        assert_matches!(identity.parse_peek(b"<john@doe.com>"), Err(_));
+        assert_matches!(identity.parse_peek(b"j<john@doe.com>"), Err(_));
+        assert_matches!(identity.parse_peek(b"<john@doe.com"), Err(_));
+        assert_matches!(identity.parse_peek(b"john@doe.com>"), Err(_));
+        assert_matches!(identity.parse_peek(b"john@doe.com"), Err(_));
     }
 
     #[test]

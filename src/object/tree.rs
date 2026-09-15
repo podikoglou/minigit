@@ -1,5 +1,7 @@
 use std::{collections::BTreeMap, io::Write};
 
+use sha1::digest::{array::Array, consts::U20};
+
 use crate::{object::hash::ObjectHash, storage::object::loose::WriteLoose};
 
 /// A tree: an object that associates file names to [tree entries](TreeEntry).
@@ -41,8 +43,13 @@ impl TreeEntry {
     }
 }
 
-impl WriteLoose for TreeEntry {
+impl WriteLoose for (&String, &TreeEntry) {
     fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
-        todo!()
+        write!(writer, "{:} {}\0", self.1.mode, self.0)?;
+
+        let hash_s = Into::<Array<u8, U20>>::into(self.1.object.clone());
+        writer.write_all(hash_s.as_slice())?;
+
+        Ok(())
     }
 }

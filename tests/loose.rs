@@ -211,11 +211,16 @@ mod fixtures {
 }
 
 mod roundtrip {
+    use std::collections::BTreeMap;
+
+    use hegel::Generator;
     use hegel::TestCase;
     use hegel::generators as gs;
     use minigit::error::ParserContext;
     use minigit::object::Object;
     use minigit::object::blob::Blob;
+    use minigit::object::tree::Tree;
+    use minigit::object::tree::TreeEntry;
     use minigit::storage::object::loose::WriteLoose;
     use minigit::storage::object::loose::read_object;
 
@@ -235,5 +240,39 @@ mod roundtrip {
         let read_blob = read_object(&buf[..], ParserContext::None).unwrap();
 
         assert_eq!(object, read_blob);
+    }
+
+    #[hegel::composite]
+    fn tree_entry(tc: &TestCase) -> TreeEntry {
+        let mode: u16 = tc.draw(gs::integers());
+        let hash: [u8; 20] = tc.draw(gs::arrays(gs::integers()));
+
+        TreeEntry {
+            mode,
+            object: hash.into(),
+        }
+    }
+
+    #[hegel::test]
+    fn roundtrip_tree(tc: TestCase) {
+        // construct tree
+        let entries = tc.draw({
+            let key = gs::text();
+            let value = tree_entry().print_as_debug();
+
+            gs::btree_maps(key, value)
+        });
+
+        let tree = Tree::new(entries);
+        let object: Object = tree.into();
+
+        // write to buffer
+        let mut buf: Vec<u8> = Vec::new();
+        object.write_loose(&mut buf).unwrap();
+
+        // read back
+        let read_tree = read_object(&buf[..], ParserContext::None).unwrap();
+
+        assert_eq!(object, read_tree);
     }
 }

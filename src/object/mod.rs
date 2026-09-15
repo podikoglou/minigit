@@ -91,6 +91,12 @@ impl From<Tree> for Object {
     }
 }
 
+impl From<Commit> for Object {
+    fn from(val: Commit) -> Self {
+        Self::Commit(val)
+    }
+}
+
 impl TryFrom<LazyObject> for Object {
     type Error = io::Error;
 

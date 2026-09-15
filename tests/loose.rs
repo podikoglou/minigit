@@ -211,18 +211,26 @@ mod fixtures {
 }
 
 mod roundtrip {
-    use std::collections::BTreeMap;
-
     use hegel::Generator;
     use hegel::TestCase;
     use hegel::generators as gs;
     use minigit::error::ParserContext;
     use minigit::object::Object;
     use minigit::object::blob::Blob;
+    use minigit::object::hash::ObjectHash;
     use minigit::object::tree::Tree;
     use minigit::object::tree::TreeEntry;
     use minigit::storage::object::loose::WriteLoose;
     use minigit::storage::object::loose::read_object;
+
+    #[hegel::composite]
+    fn hash(tc: &TestCase) -> ObjectHash {
+        tc.draw(
+            gs::arrays(gs::integers())
+                .map(|bytes: [u8; 20]| ObjectHash::from(bytes))
+                .print_as_debug(),
+        )
+    }
 
     #[hegel::test]
     fn roundtrip_blob(tc: TestCase) {
@@ -245,12 +253,9 @@ mod roundtrip {
     #[hegel::composite]
     fn tree_entry(tc: &TestCase) -> TreeEntry {
         let mode: u16 = tc.draw(gs::integers());
-        let hash: [u8; 20] = tc.draw(gs::arrays(gs::integers()));
+        let hash = tc.draw(hash().print_as_debug());
 
-        TreeEntry {
-            mode,
-            object: hash.into(),
-        }
+        TreeEntry { mode, object: hash }
     }
 
     #[hegel::test]

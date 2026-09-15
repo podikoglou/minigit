@@ -23,7 +23,12 @@ impl Tree {
 
 impl WriteLoose for Tree {
     fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
-        todo!()
+        for entry in &self.entries {
+            entry.write_loose(writer)?;
+            writeln!(writer)?;
+        }
+
+        Ok(())
     }
 }
 

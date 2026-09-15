@@ -59,7 +59,7 @@ impl WriteLoose for Object {
             }
         }
 
-        write!(writer, "{}", buf.len())?;
+        write!(writer, "{}\0", buf.len())?;
         writer.write_all(&buf)?;
 
         Ok(())

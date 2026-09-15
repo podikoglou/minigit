@@ -228,6 +228,7 @@ mod roundtrip {
         use hegel::generators as gs;
         use minigit::object::blob::Blob;
         use minigit::object::hash::ObjectHash;
+        use minigit::object::tree::Tree;
         use minigit::object::tree::TreeEntry;
 
         #[hegel::composite]
@@ -251,6 +252,14 @@ mod roundtrip {
 
             TreeEntry { mode, object: hash }
         }
+
+        #[hegel::composite]
+        pub fn tree(tc: &TestCase) -> Tree {
+            let key = gs::text();
+            let value = generators::tree_entry().print_as_debug();
+
+            tc.draw(gs::btree_maps(key, value).map(Tree::new).print_as_debug())
+        }
     }
 
     #[hegel::test]
@@ -269,16 +278,7 @@ mod roundtrip {
 
     #[hegel::test]
     fn roundtrip_tree(tc: TestCase) {
-        // construct tree
-        let entries = tc.draw({
-            let key = gs::text();
-            let value = generators::tree_entry().print_as_debug();
-
-            gs::btree_maps(key, value)
-        });
-
-        let tree = Tree::new(entries);
-        let object: Object = tree.into();
+        let object = tc.draw(generators::tree().map(Object::from).print_as_debug());
 
         // write to buffer
         let mut buf: Vec<u8> = Vec::new();

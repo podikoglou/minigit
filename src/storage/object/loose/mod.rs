@@ -10,7 +10,7 @@ use std::io::{BufRead, Read, Write};
 
 /// Behaviour for encoding the struct in Git's loose object format.
 pub trait WriteLoose {
-    fn write_loose(&self, w: impl Write) -> Result<(), MinigitError>;
+    fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), MinigitError>;
 }
 
 /// Reads, decompresses and parses an [Object] from a [`Read`].

@@ -60,7 +60,7 @@ impl Object {
 }
 
 impl WriteLoose for Object {
-    fn write_loose(&self, w: impl Write) -> Result<(), MinigitError> {
+    fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
         todo!()
     }
 }

@@ -20,7 +20,7 @@ impl Tree {
 }
 
 impl WriteLoose for Tree {
-    fn write_loose(&self, w: impl Write) -> Result<(), crate::MinigitError> {
+    fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
         todo!()
     }
 }
@@ -42,7 +42,7 @@ impl TreeEntry {
 }
 
 impl WriteLoose for TreeEntry {
-    fn write_loose(&self, w: impl Write) -> Result<(), crate::MinigitError> {
+    fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
         todo!()
     }
 }

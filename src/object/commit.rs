@@ -38,7 +38,7 @@ impl Commit {
 }
 
 impl WriteLoose for Commit {
-    fn write_loose(&self, w: impl Write) -> Result<(), crate::MinigitError> {
+    fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
         todo!()
     }
 }
@@ -57,7 +57,7 @@ impl Identity {
 }
 
 impl WriteLoose for Identity {
-    fn write_loose(&self, w: impl Write) -> Result<(), crate::MinigitError> {
+    fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
         todo!()
     }
 }

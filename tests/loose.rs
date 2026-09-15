@@ -208,4 +208,30 @@ mod fixtures {
     }
 }
 
-mod roundtrip {}
+mod roundtrip {
+    use hegel::TestCase;
+    use hegel::generators as gs;
+    use minigit::error::ParserContext;
+    use minigit::object::Object;
+    use minigit::object::blob::Blob;
+    use minigit::storage::object::loose::WriteLoose;
+    use minigit::storage::object::loose::read_object;
+
+    #[hegel::test]
+    fn roundtrip_blob(tc: TestCase) {
+        // construct blob
+        let data = tc.draw(gs::binary());
+
+        let blob = Blob(data);
+        let object: Object = blob.into();
+
+        // write to buffer
+        let mut buf: Vec<u8> = Vec::new();
+        object.write_loose(&mut buf).unwrap();
+
+        // read back
+        let read_blob = read_object(&buf[..], ParserContext::None).unwrap();
+
+        assert_eq!(object, read_blob);
+    }
+}

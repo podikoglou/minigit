@@ -8,16 +8,19 @@ to learn about how neat Git really is.
 This project is in the form of a library + a CLI with *some* of the original
 Git commands (and some that I came up with). Concretely:
 ```
-Usage: minigit COMMAND ...
+Usage: minigit <command> [<args>]
 
-Available options:
-    -h, --help    Prints help information
+The stupid implementation of the stupid content tracker.
 
-Available commands:
-    hash-object   Compute object ID and optionally create an object from a file
-    ls-buckets    List buckets in the repository
-    ls-objects    List objects in the repository
-    parse-object  Reads an object from a file or stdin and parses it
+Options:
+  --help, help      display usage information
+
+Commands:
+  hash-object       Compute object ID and optionally create an object from a
+                    file
+  ls-buckets        List buckets in the repository
+  ls-objects        List objects in the repository
+  parse-object      Reads an object from a file or stdin and parses it
 ```
 
 ## AI Disclaimer

@@ -39,9 +39,8 @@ impl Object {
 }
 
 impl WriteLoose for Object {
-    fn write_loose<W: Write>(&self, _writer: &mut W) -> Result<(), crate::MinigitError> {
-        let mut writer = ZlibEncoder::new(_writer, Compression::default());
-
+    /// Writes the uncompressed object to a write.
+    fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
         let mut buf: Vec<u8> = Vec::new();
 
         match self {
@@ -66,6 +65,17 @@ impl WriteLoose for Object {
         writer.write_all(&buf)?;
 
         Ok(())
+    }
+}
+
+impl Object {
+    pub fn write_loose_compressed<W: Write>(
+        &self,
+        writer: &mut W,
+    ) -> Result<(), crate::MinigitError> {
+        let mut zlib_writer = ZlibEncoder::new(writer, Compression::default());
+
+        self.write_loose(&mut zlib_writer)
     }
 }
 

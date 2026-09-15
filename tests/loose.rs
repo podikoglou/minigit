@@ -1,10 +1,12 @@
 mod fixtures {
-    use minigit::{error::ParserContext, object::Object, storage::object::loose::read_object};
+    use minigit::{
+        error::ParserContext, object::Object, storage::object::loose::read_object_compressed,
+    };
 
     #[test]
     fn test_read_loose_blob() {
         let bytes = include_bytes!("fixtures/objects/blob-1");
-        let object = read_object(&bytes[..], ParserContext::None)
+        let object = read_object_compressed(&bytes[..], ParserContext::None)
             .expect("should be able to read loose blob object");
 
         let Object::Blob(blob) = &object else {
@@ -21,7 +23,7 @@ mod fixtures {
     #[test]
     fn test_read_loose_tree() {
         let bytes = include_bytes!("fixtures/objects/tree-1");
-        let object = read_object(&bytes[..], ParserContext::None)
+        let object = read_object_compressed(&bytes[..], ParserContext::None)
             .expect("should be able to read loose tree object");
 
         let Object::Tree(tree) = &object else {
@@ -41,7 +43,7 @@ mod fixtures {
     #[test]
     fn test_read_loose_commit() {
         let bytes = include_bytes!("fixtures/objects/commit-1");
-        let object = read_object(&bytes[..], ParserContext::None)
+        let object = read_object_compressed(&bytes[..], ParserContext::None)
             .expect("should be able to read loose commit object");
 
         let Object::Commit(commit) = &object else {
@@ -62,7 +64,7 @@ mod fixtures {
     #[test]
     fn test_read_loose_non_root_commit() {
         let bytes = include_bytes!("fixtures/objects/commit-2");
-        let object = read_object(&bytes[..], ParserContext::None)
+        let object = read_object_compressed(&bytes[..], ParserContext::None)
             .expect("should be able to read loose commit object");
 
         let Object::Commit(commit) = &object else {
@@ -87,7 +89,7 @@ mod fixtures {
     #[test]
     fn test_read_loose_merge_commit() {
         let bytes = include_bytes!("fixtures/objects/commit-3");
-        let object = read_object(&bytes[..], ParserContext::None)
+        let object = read_object_compressed(&bytes[..], ParserContext::None)
             .expect("should be able to read loose commit object");
 
         let Object::Commit(commit) = &object else {
@@ -115,7 +117,7 @@ mod fixtures {
     #[test]
     fn test_read_loose_signed_commit() {
         let bytes = include_bytes!("fixtures/objects/commit-4");
-        let object = read_object(&bytes[..], ParserContext::None)
+        let object = read_object_compressed(&bytes[..], ParserContext::None)
             .expect("should be able to read loose commit object");
 
         let Object::Commit(commit) = &object else {
@@ -147,7 +149,7 @@ mod fixtures {
     #[test]
     fn test_read_loose_commit_with_extra_properties() {
         let bytes = include_bytes!("fixtures/objects/commit-5");
-        let object = read_object(&bytes[..], ParserContext::None)
+        let object = read_object_compressed(&bytes[..], ParserContext::None)
             .expect("should be able to read loose commit object");
 
         let Object::Commit(commit) = &object else {
@@ -182,7 +184,7 @@ mod fixtures {
     #[test]
     fn test_read_loose_commit_with_empty_email() {
         let bytes = include_bytes!("fixtures/objects/commit-6");
-        let object = read_object(&bytes[..], ParserContext::None)
+        let object = read_object_compressed(&bytes[..], ParserContext::None)
             .expect("should be able to read loose commit object");
 
         let Object::Commit(commit) = &object else {

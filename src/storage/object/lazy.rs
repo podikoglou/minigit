@@ -28,7 +28,7 @@ impl LazyObject {
                 let file = fs::File::open(path)?;
                 let reader = BufReader::new(file);
 
-                loose::read_object(reader, ParserContext::File(path.clone()))
+                loose::read_object_compressed(reader, ParserContext::File(path.clone()))
             }
         }
     }

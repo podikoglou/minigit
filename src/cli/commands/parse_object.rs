@@ -6,7 +6,7 @@ use std::{
 
 use argh::FromArgs;
 use minigit::error::ParserContext;
-use minigit::{MinigitError, storage::object::loose::read_object};
+use minigit::{MinigitError, storage::object::loose::read_object_compressed};
 
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "parse-object")]
@@ -49,7 +49,7 @@ impl ParseObjectCommand {
                     .map(|path| fs::read(&path).map(|bytes| (bytes, ParserContext::File(path)))),
             )
             .map(|contents| match contents {
-                Ok((bytes, context)) => read_object(bytes.as_slice(), context),
+                Ok((bytes, context)) => read_object_compressed(bytes.as_slice(), context),
                 Err(err) => Err(MinigitError::from(err)),
             });
 

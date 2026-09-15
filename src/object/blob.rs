@@ -16,6 +16,7 @@ impl Blob {
 
 impl WriteLoose for Blob {
     fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
-        todo!()
+        writer.write_all(&self.0)?;
+        Ok(())
     }
 }

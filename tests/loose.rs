@@ -232,13 +232,14 @@ mod roundtrip {
         )
     }
 
+    #[hegel::composite]
+    fn blob(tc: &TestCase) -> Blob {
+        tc.draw(gs::binary().map(Blob).print_as_debug())
+    }
+
     #[hegel::test]
     fn roundtrip_blob(tc: TestCase) {
-        // construct blob
-        let data = tc.draw(gs::binary());
-
-        let blob = Blob(data);
-        let object: Object = blob.into();
+        let object = tc.draw(blob().map(Object::from).print_as_debug());
 
         // write to buffer
         let mut buf: Vec<u8> = Vec::new();

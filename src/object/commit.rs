@@ -39,7 +39,34 @@ impl Commit {
 
 impl WriteLoose for Commit {
     fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
-        todo!()
+        writeln!(writer, "tree {}", self.tree)?;
+
+        writeln!(writer, "author ")?;
+        self.author.write_loose(writer)?;
+
+        writeln!(writer, "committer ")?;
+        self.committer.write_loose(writer)?;
+
+        // this is of course horrible on many levels
+        if let Some(signature) = &self.gpg_signature {
+            let mut lines = signature.lines();
+
+            writeln!(writer, "gpgsig {}", lines.next().unwrap())?;
+
+            for line in lines {
+                writeln!(writer, "  {}", line)?;
+            }
+        }
+
+        for property in &self.extra {
+            property.write_loose(writer)?;
+            writeln!(writer)?;
+        }
+
+        writeln!(writer)?;
+        write!(writer, "{}", self.description)?;
+
+        Ok(())
     }
 }
 
@@ -75,7 +102,7 @@ impl WriteLoose for (Identity, DateTime<FixedOffset>) {
 
 pub type CommitProperty = (String, String);
 
-impl WriteLoose for CommitProperty {
+impl WriteLoose for &CommitProperty {
     fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
         write!(writer, "{} {}", self.0, self.1)?;
 

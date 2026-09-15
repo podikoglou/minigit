@@ -1,29 +1,34 @@
-use bpaf::Bpaf;
+use argh::FromArgs;
 use minigit::MinigitError;
 
 use crate::cli::commands::{
-    hash_object::{HashObjectCommand, hash_object_command},
-    ls_buckets::{LsBucketsCommand, ls_buckets_command},
-    ls_objects::{LsObjectsCommand, ls_objects_command},
-    parse_object::{ParseObjectCommand, parse_object_command},
+    hash_object::HashObjectCommand, ls_buckets::LsBucketsCommand, ls_objects::LsObjectsCommand,
+    parse_object::ParseObjectCommand,
 };
 
-#[derive(Debug, Clone, Bpaf)]
-#[bpaf(options)]
-pub enum Options {
-    HashObject(#[bpaf(external(hash_object_command))] HashObjectCommand),
-    LsBuckets(#[bpaf(external(ls_buckets_command))] LsBucketsCommand),
-    LsObjects(#[bpaf(external(ls_objects_command))] LsObjectsCommand),
-    ParseObject(#[bpaf(external(parse_object_command))] ParseObjectCommand),
+/// The stupid implementation of the stupid content tracker.
+#[derive(FromArgs, PartialEq, Debug)]
+pub struct Args {
+    #[argh(subcommand)]
+    pub subcommand: Subcommand,
 }
 
-impl Options {
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand)]
+pub enum Subcommand {
+    HashObject(HashObjectCommand),
+    LsBuckets(LsBucketsCommand),
+    LsObjects(LsObjectsCommand),
+    ParseObject(ParseObjectCommand),
+}
+
+impl Args {
     pub fn run(self) -> Result<(), MinigitError> {
-        match self {
-            Self::HashObject(cmd) => cmd.run(),
-            Self::LsBuckets(cmd) => cmd.run(),
-            Self::LsObjects(cmd) => cmd.run(),
-            Self::ParseObject(cmd) => cmd.run(),
+        match self.subcommand {
+            Subcommand::HashObject(cmd) => cmd.run(),
+            Subcommand::LsBuckets(cmd) => cmd.run(),
+            Subcommand::LsObjects(cmd) => cmd.run(),
+            Subcommand::ParseObject(cmd) => cmd.run(),
         }
     }
 }

@@ -1,9 +1,11 @@
-use crate::cli::options;
+use crate::cli::Args;
 
 mod cli;
 
 fn main() {
-    if let Err(err) = options().run().run() {
+    let args: Args = argh::from_env();
+
+    if let Err(err) = args.run() {
         eprintln!("error: {err}");
         std::process::exit(1);
     }

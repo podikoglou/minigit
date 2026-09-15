@@ -4,19 +4,19 @@ use std::{
     path::PathBuf,
 };
 
-use bpaf::Bpaf;
+use argh::FromArgs;
 use minigit::error::ParserContext;
 use minigit::{MinigitError, storage::object::loose::read_object};
 
-#[derive(Debug, Clone, Bpaf)]
-#[bpaf(command("parse-object"))]
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand, name = "parse-object")]
 /// Reads an object from a file or stdin and parses it
 pub struct ParseObjectCommand {
-    /// Read the object from the standard input instead of from a file.
-    #[bpaf(flag(true, false))]
+    /// read the object from the standard input
+    #[argh(switch)]
     stdin: bool,
 
-    #[bpaf(positional("file"))]
+    #[argh(positional)]
     files: Vec<String>,
 }
 

@@ -3,30 +3,29 @@ use std::{
     io::{self, Read},
 };
 
-use bpaf::Bpaf;
+use argh::FromArgs;
 use minigit::{
     MinigitError,
     object::{Object, ObjectType, blob::Blob},
 };
 
-#[derive(Debug, Clone, Bpaf)]
-#[bpaf(command("hash-object"))]
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand, name = "hash-object")]
 /// Compute object ID and optionally create an object from a file
 pub struct HashObjectCommand {
-    /// Specify the type of the object to be created (default: "blob").
-    /// Possible values are blob, tree.
-    #[bpaf(long("type"), short('t'))]
+    /// specify the type of the object to be created (default: "blob").
+    #[argh(option, short = 't')]
     r#type: Option<ObjectType>,
 
-    /// Read the object from the standard input instead of from a file.
-    #[bpaf(flag(true, false))]
+    /// read the object from the standard input instead of from a file.
+    #[argh(switch)]
     stdin: bool,
 
-    /// Actually write the object into the object database.
-    #[bpaf(short('w'))]
+    /// actually write the object into the object database.
+    #[argh(switch, short = 'w')]
     write: bool,
 
-    #[bpaf(positional("file"))]
+    #[argh(positional)]
     files: Vec<String>,
 }
 

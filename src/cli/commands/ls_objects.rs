@@ -1,6 +1,6 @@
 use std::env;
 
-use bpaf::Bpaf;
+use argh::FromArgs;
 use minigit::{
     MinigitError, Repo,
     object::hash::HashPrefix,
@@ -8,12 +8,20 @@ use minigit::{
 };
 use strum::IntoDiscriminant;
 
-#[derive(Debug, Clone, Bpaf)]
-#[bpaf(command("ls-objects"))]
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand, name = "ls-objects")]
 /// List objects in the repository
 pub struct LsObjectsCommand {
+    /// the buckets to read objets from.
+    #[argh(positional)]
     buckets: Vec<HashPrefix>,
+
+    /// whether to make the output pretty and include more information
+    #[argh(switch)]
     pretty: bool,
+
+    /// whether to make the output pretty and include more information (second version)
+    #[argh(switch)]
     pretty_2: bool,
 }
 

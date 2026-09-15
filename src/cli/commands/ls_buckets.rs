@@ -1,10 +1,10 @@
 use std::env;
 
-use bpaf::Bpaf;
+use argh::FromArgs;
 use minigit::{MinigitError, Repo};
 
-#[derive(Debug, Clone, Bpaf)]
-#[bpaf(command("ls-buckets"))]
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand, name = "ls-buckets")]
 /// List buckets in the repository
 pub struct LsBucketsCommand {}
 

@@ -61,7 +61,30 @@ impl Object {
 
 impl WriteLoose for Object {
     fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
-        todo!()
+        let mut buf: Vec<u8> = Vec::new();
+
+        match self {
+            Object::Blob(blob) => {
+                write!(writer, "blob ")?;
+
+                blob.write_loose(&mut buf)?;
+            }
+            Object::Tree(tree) => {
+                write!(writer, "tree ")?;
+
+                tree.write_loose(&mut buf)?;
+            }
+            Object::Commit(commit) => {
+                write!(writer, "commit ")?;
+
+                commit.write_loose(&mut buf)?;
+            }
+        }
+
+        write!(writer, "{}", buf.len())?;
+        writer.write_all(&buf)?;
+
+        Ok(())
     }
 }
 

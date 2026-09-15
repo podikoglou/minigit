@@ -250,6 +250,7 @@ version = "0.45.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "08b21b5b73a6b2018a3e071db0e8291e5eabc857fea56d19b9533e5ffcf75100"
 dependencies = [
+ "chrono",
  "hegeltest-macros",
  "parking_lot",
 ]

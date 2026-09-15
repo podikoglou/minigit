@@ -223,10 +223,15 @@ mod roundtrip {
 
     mod generators {
         use crate::roundtrip::generators;
+        use chrono::FixedOffset;
         use hegel::Generator;
         use hegel::TestCase;
+        use hegel::extras::chrono::datetimes;
         use hegel::generators as gs;
         use minigit::object::blob::Blob;
+        use minigit::object::commit::Commit;
+        use minigit::object::commit::CommitProperty;
+        use minigit::object::commit::Identity;
         use minigit::object::hash::ObjectHash;
         use minigit::object::tree::Tree;
         use minigit::object::tree::TreeEntry;
@@ -260,6 +265,42 @@ mod roundtrip {
 
             tc.draw(gs::btree_maps(key, value).map(Tree::new).print_as_debug())
         }
+
+        #[hegel::composite]
+        pub fn identity(tc: &TestCase) -> Identity {
+            let name = tc.draw(gs::text());
+
+            // TODO: consider gs::text, since we don't do email validation, thus we accenpt anything
+            let email = tc.draw(gs::emails());
+
+            Identity::new(name, email)
+        }
+
+        #[hegel::composite]
+        pub fn property(tc: &TestCase) -> CommitProperty {
+            tc.draw(gs::tuples!(gs::text(), gs::text()))
+        }
+
+        #[hegel::composite]
+        pub fn commit(tc: &TestCase) -> Commit {
+            let tree = tc.draw(hash().print_as_debug());
+            let parents = tc.draw(gs::vecs(hash()).print_as_debug());
+            let author = tc.draw(gs::tuples!(identity(), datetimes()).print_as_debug());
+            let committer = tc.draw(gs::tuples!(identity(), datetimes()).print_as_debug());
+            let gpg_signature = tc.draw(gs::optional(gs::text()).print_as_debug());
+            let extra = tc.draw(gs::vecs(property()).print_as_debug());
+            let description = tc.draw(gs::text());
+
+            Commit::new(
+                tree,
+                parents,
+                author,
+                committer,
+                gpg_signature,
+                extra,
+                description,
+            )
+        }
     }
 
     #[hegel::test]
@@ -279,6 +320,20 @@ mod roundtrip {
     #[hegel::test]
     fn roundtrip_tree(tc: TestCase) {
         let object = tc.draw(generators::tree().map(Object::from).print_as_debug());
+
+        // write to buffer
+        let mut buf: Vec<u8> = Vec::new();
+        object.write_loose(&mut buf).unwrap();
+
+        // read back
+        let read_tree = read_object(&buf[..], ParserContext::None).unwrap();
+
+        assert_eq!(object, read_tree);
+    }
+
+    #[hegel::test]
+    fn roundtrip_commit(tc: TestCase) {
+        let object = tc.draw(generators::commit().map(Object::from).print_as_debug());
 
         // write to buffer
         let mut buf: Vec<u8> = Vec::new();

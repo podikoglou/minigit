@@ -1,4 +1,4 @@
-use crate::object::hash::ObjectHash;
+use crate::{object::hash::ObjectHash, storage::object::loose::WriteLoose};
 use chrono::{DateTime, FixedOffset};
 use std::io::Write;
 
@@ -37,10 +37,9 @@ impl Commit {
     }
 }
 
-impl Commit {
-    /// Writes the commit into a writer.
-    pub fn write<W: Write>(&self, mut writer: W) -> Result<(), std::io::Error> {
-        todo!("write commit")
+impl WriteLoose for Commit {
+    fn write_loose(&self, w: impl Write) -> Result<(), crate::MinigitError> {
+        todo!()
     }
 }
 
@@ -57,10 +56,9 @@ impl Identity {
     }
 }
 
-impl Identity {
-    /// Writes the identity into a writer.
-    pub fn write<W: Write>(&self, mut writer: W) -> Result<(), std::io::Error> {
-        todo!("write identity")
+impl WriteLoose for Identity {
+    fn write_loose(&self, w: impl Write) -> Result<(), crate::MinigitError> {
+        todo!()
     }
 }
 

@@ -6,7 +6,12 @@ pub mod parser;
 use crate::{MinigitError, error::ParserContext, object::Object};
 use flate2::read::ZlibDecoder;
 pub use parser::parse_object;
-use std::io::{BufRead, Read};
+use std::io::{BufRead, Read, Write};
+
+/// Behaviour for encoding the struct in Git's loose object format.
+pub trait WriteLoose {
+    fn write_loose(&self, w: impl Write) -> Result<(), MinigitError>;
+}
 
 /// Reads, decompresses and parses an [Object] from a [`Read`].
 ///

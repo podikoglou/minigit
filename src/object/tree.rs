@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, io::Write};
 
-use crate::object::hash::ObjectHash;
+use crate::{object::hash::ObjectHash, storage::object::loose::WriteLoose};
 
 /// A tree: an object that associates file names to [tree entries](TreeEntry).
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -17,12 +17,11 @@ impl Tree {
     pub fn new(entries: BTreeMap<String, TreeEntry>) -> Self {
         Self { entries }
     }
+}
 
-    /// Writes the tree into a writer.
-    ///
-    /// This simply writes the raw bytes.
-    pub fn write<W: Write>(&self, mut _writer: W) -> Result<(), std::io::Error> {
-        todo!("write tree")
+impl WriteLoose for Tree {
+    fn write_loose(&self, w: impl Write) -> Result<(), crate::MinigitError> {
+        todo!()
     }
 }
 
@@ -39,5 +38,11 @@ pub struct TreeEntry {
 impl TreeEntry {
     pub fn new(mode: u16, object: ObjectHash) -> Self {
         Self { mode, object }
+    }
+}
+
+impl WriteLoose for TreeEntry {
+    fn write_loose(&self, w: impl Write) -> Result<(), crate::MinigitError> {
+        todo!()
     }
 }

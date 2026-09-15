@@ -14,7 +14,7 @@ use tree::Tree;
 use crate::{
     MinigitError,
     object::{commit::Commit, hash::ObjectHash},
-    storage::object::LazyObject,
+    storage::object::{LazyObject, loose::WriteLoose},
 };
 
 #[derive(Debug, PartialEq, Eq, Clone, EnumDiscriminants)]
@@ -28,34 +28,40 @@ pub enum Object {
 }
 
 impl Object {
-    /// Writes the header of the object, to a [`Write`].
-    pub fn write_header<W: Write>(&self, mut writer: W) -> Result<(), std::io::Error> {
-        let (tag, size) = match self {
-            Object::Blob(blob) => ("blob", blob.0.len()),
-            Object::Tree(_) => todo!("write tree header"),
-            Object::Commit(_) => todo!("write commit header"),
-        };
-
-        write!(writer, "{} {}\0", tag, size)
-    }
-
-    /// Writes the uncompressed object, including its header, to a [`Write`].
-    pub fn write<W: Write>(&self, mut writer: W) -> Result<(), std::io::Error> {
-        self.write_header(&mut writer)?;
-
-        match self {
-            Object::Blob(blob) => blob.write(writer),
-            Object::Tree(tree) => tree.write(writer),
-            Object::Commit(commit) => commit.write(writer),
-        }
-    }
+    // /// Writes the header of the object, to a [`Write`].
+    // pub fn write_header<W: Write>(&self, mut writer: W) -> Result<(), std::io::Error> {
+    //     let (tag, size) = match self {
+    //         Object::Blob(blob) => ("blob", blob.0.len()),
+    //         Object::Tree(_) => todo!("write tree header"),
+    //         Object::Commit(_) => todo!("write commit header"),
+    //     };
+    //
+    //     write!(writer, "{} {}\0", tag, size)
+    // }
+    //
+    // /// Writes the uncompressed object, including its header, to a [`Write`].
+    // pub fn write<W: Write>(&self, mut writer: W) -> Result<(), std::io::Error> {
+    //     self.write_header(&mut writer)?;
+    //
+    //     match self {
+    //         Object::Blob(blob) => blob.write(writer),
+    //         Object::Tree(tree) => tree.write(writer),
+    //         Object::Commit(commit) => commit.write(writer),
+    //     }
+    // }
 
     /// Creates a SHA1 hash of the object.
     pub fn hash(&self) -> Result<ObjectHash, MinigitError> {
         let mut buf = Vec::new();
-        self.write(&mut buf)?;
+        self.write_loose(&mut buf)?;
 
         Ok(Sha1::digest(buf).into())
+    }
+}
+
+impl WriteLoose for Object {
+    fn write_loose(&self, w: impl Write) -> Result<(), MinigitError> {
+        todo!()
     }
 }
 

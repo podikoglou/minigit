@@ -65,3 +65,11 @@ impl WriteLoose for Identity {
 }
 
 pub type CommitProperty = (String, String);
+
+impl WriteLoose for CommitProperty {
+    fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
+        write!(writer, "{} {}", self.0, self.1)?;
+
+        Ok(())
+    }
+}

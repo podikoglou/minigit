@@ -216,30 +216,46 @@ mod roundtrip {
     use hegel::generators as gs;
     use minigit::error::ParserContext;
     use minigit::object::Object;
-    use minigit::object::blob::Blob;
-    use minigit::object::hash::ObjectHash;
     use minigit::object::tree::Tree;
     use minigit::object::tree::TreeEntry;
     use minigit::storage::object::loose::WriteLoose;
     use minigit::storage::object::loose::read_object;
 
-    #[hegel::composite]
-    fn hash(tc: &TestCase) -> ObjectHash {
-        tc.draw(
-            gs::arrays(gs::integers())
-                .map(|bytes: [u8; 20]| ObjectHash::from(bytes))
-                .print_as_debug(),
-        )
-    }
+    mod generators {
+        use crate::roundtrip::generators;
+        use hegel::Generator;
+        use hegel::TestCase;
+        use hegel::generators as gs;
+        use minigit::object::blob::Blob;
+        use minigit::object::hash::ObjectHash;
+        use minigit::object::tree::TreeEntry;
 
-    #[hegel::composite]
-    fn blob(tc: &TestCase) -> Blob {
-        tc.draw(gs::binary().map(Blob).print_as_debug())
+        #[hegel::composite]
+        pub fn hash(tc: &TestCase) -> ObjectHash {
+            tc.draw(
+                gs::arrays(gs::integers())
+                    .map(|bytes: [u8; 20]| ObjectHash::from(bytes))
+                    .print_as_debug(),
+            )
+        }
+
+        #[hegel::composite]
+        pub fn blob(tc: &TestCase) -> Blob {
+            tc.draw(gs::binary().map(Blob).print_as_debug())
+        }
+
+        #[hegel::composite]
+        pub fn tree_entry(tc: &TestCase) -> TreeEntry {
+            let mode: u16 = tc.draw(gs::integers());
+            let hash = tc.draw(generators::hash().print_as_debug());
+
+            TreeEntry { mode, object: hash }
+        }
     }
 
     #[hegel::test]
     fn roundtrip_blob(tc: TestCase) {
-        let object = tc.draw(blob().map(Object::from).print_as_debug());
+        let object = tc.draw(generators::blob().map(Object::from).print_as_debug());
 
         // write to buffer
         let mut buf: Vec<u8> = Vec::new();
@@ -251,20 +267,12 @@ mod roundtrip {
         assert_eq!(object, read_blob);
     }
 
-    #[hegel::composite]
-    fn tree_entry(tc: &TestCase) -> TreeEntry {
-        let mode: u16 = tc.draw(gs::integers());
-        let hash = tc.draw(hash().print_as_debug());
-
-        TreeEntry { mode, object: hash }
-    }
-
     #[hegel::test]
     fn roundtrip_tree(tc: TestCase) {
         // construct tree
         let entries = tc.draw({
             let key = gs::text();
-            let value = tree_entry().print_as_debug();
+            let value = generators::tree_entry().print_as_debug();
 
             gs::btree_maps(key, value)
         });

@@ -7,6 +7,7 @@ pub mod hash;
 use std::io::{self, Write};
 
 use blob::Blob;
+use flate2::{Compression, write::ZlibEncoder};
 use sha1::{Digest, Sha1};
 use strum::{EnumDiscriminants, EnumString};
 use tree::Tree;
@@ -38,7 +39,9 @@ impl Object {
 }
 
 impl WriteLoose for Object {
-    fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
+    fn write_loose<W: Write>(&self, _writer: &mut W) -> Result<(), crate::MinigitError> {
+        let mut writer = ZlibEncoder::new(_writer, Compression::default());
+
         let mut buf: Vec<u8> = Vec::new();
 
         match self {

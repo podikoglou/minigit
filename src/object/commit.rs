@@ -58,7 +58,9 @@ impl Identity {
 
 impl WriteLoose for Identity {
     fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
-        todo!()
+        write!(writer, "{} <{}>", self.name, self.email)?;
+
+        Ok(())
     }
 }
 

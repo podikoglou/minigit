@@ -75,6 +75,12 @@ impl Display for ObjectHash {
     }
 }
 
+impl Into<Array<u8, U20>> for ObjectHash {
+    fn into(self) -> Array<u8, U20> {
+        self.0
+    }
+}
+
 /// Prefix of an [ObjectHash]. This is the first byte of the hash.
 ///
 /// This is used in the object store for indexing objects by the first byte of their hash.

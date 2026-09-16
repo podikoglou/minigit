@@ -1,6 +1,8 @@
 mod fixtures {
     use minigit::{
-        error::ParserContext, object::Object, storage::object::loose::read_object_compressed,
+        error::ParserContext,
+        object::{Object, tree::TreeEntry},
+        storage::object::loose::read_object_compressed,
     };
 
     #[test]
@@ -31,13 +33,16 @@ mod fixtures {
         };
 
         assert_eq!(tree.entries.len(), 1);
-        // assert_eq!(
-        //     tree.entries.first_key_value(),
-        //     Some((
-        //         &String::from("README.md"),
-        //         TreeEntry::new(0o100644 /* TODO */,)
-        //     ))
-        // );
+        assert_eq!(
+            tree.entries.first_key_value(),
+            Some((
+                &String::from("README.md"),
+                &TreeEntry::new(
+                    0o100644,
+                    "be27a74ddcc0445b1710e25dd8df96fad679a10d".parse().unwrap()
+                )
+            ))
+        );
     }
 
     #[test]

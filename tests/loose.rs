@@ -1,7 +1,7 @@
 mod fixtures {
     use minigit::{
         error::ParserContext,
-        object::{Object, tree::TreeEntry},
+        object::{Object, ObjectType, commit::Identity, tree::TreeEntry},
         storage::object::loose::read_object_compressed,
     };
 
@@ -211,6 +211,29 @@ mod fixtures {
         assert_eq!(
             commit.description,
             "duckdb_interrupt & duckdb_query_progress\n"
+        );
+    }
+
+    #[test]
+    fn test_read_loose_tag() {
+        let bytes = include_bytes!("fixtures/objects/tag-1");
+        let object = read_object_compressed(&bytes[..], ParserContext::None)
+            .expect("should be able to read loose tag object");
+
+        let Object::Tag(tag) = &object else {
+            panic!("expected Object::Tag, got {object:?}");
+        };
+
+        assert_eq!(
+            tag.target.0.to_string(),
+            "ab2b0330d1eb193e5e339c94197998e9baaa8846"
+        );
+        assert_eq!(tag.target.1, ObjectType::Commit);
+        assert_eq!(tag.name, "v0.0.1");
+        assert_eq!(tag.description, "0.0.1! :D");
+        assert_eq!(
+            tag.tagger.0,
+            Identity::new("alex".to_string(), "alex.podikoglou@gmail.com".to_string())
         );
     }
 }

@@ -238,10 +238,13 @@ mod fixtures {
         assert_eq!(commit.committer.0.email, "marc.jakobi@tiko.energy");
         assert_eq!(
             commit.extra,
-            vec![(
-                "change-id".to_string(),
-                "ltllyyqoltutvomyxlpvwuoqyrulnqsk".to_string()
-            )]
+            vec![
+                (
+                    "change-id".to_string(),
+                    "ltllyyqoltutvomyxlpvwuoqyrulnqsk".to_string()
+                ),
+                ("gpgsig".to_string(), "-----BEGIN PGP SIGNATURE-----\n\niHUEABYKAB0WIQSqZBv8LWPkpwq7yJ6mJwKyJtsKIgUCaKNXbQAKCRCmJwKyJtsK\nIkh/AP0QtdF+4X9AF8VRHGRApDJDLvGVeUrvnvcpGH3NCjVz7AD/b2yDvWxPLlut\nwFxNfprJxFErMEH4G//z59GgDU8kMgs=\n=oj+d\n-----END PGP SIGNATURE-----".to_string()),
+            ]
         );
         assert!(commit.gpg_signature().is_some());
         assert_eq!(commit.description, "feat: lazy-load indexing\n");

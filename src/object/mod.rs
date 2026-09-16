@@ -4,7 +4,7 @@ pub mod tree;
 
 pub mod hash;
 
-use std::io::{self, Write};
+use std::io::Write;
 
 use blob::Blob;
 use flate2::{Compression, write::ZlibEncoder};
@@ -15,10 +15,7 @@ use tree::Tree;
 use crate::{
     MinigitError,
     object::{commit::Commit, hash::ObjectHash},
-    storage::object::{
-        LazyObject,
-        loose::{self, WriteLoose},
-    },
+    storage::object::{LazyObject, loose::WriteLoose},
 };
 
 #[derive(Debug, PartialEq, Eq, Clone, EnumDiscriminants)]

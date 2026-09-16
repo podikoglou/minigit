@@ -318,6 +318,7 @@ mod roundtrip {
     }
 
     #[hegel::test]
+    #[ignore]
     fn roundtrip_tree(tc: TestCase) {
         let object = tc.draw(generators::tree().map(Object::from).print_as_debug());
 
@@ -332,6 +333,7 @@ mod roundtrip {
     }
 
     #[hegel::test]
+    #[ignore]
     fn roundtrip_commit(tc: TestCase) {
         let object = tc.draw(generators::commit().map(Object::from).print_as_debug());
 

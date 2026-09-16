@@ -23,6 +23,7 @@ use crate::{
 #[strum_discriminants(name(ObjectType))]
 #[strum_discriminants(derive(EnumString, IntoStaticStr, VariantArray))]
 #[strum_discriminants(strum(ascii_case_insensitive))]
+#[strum_discriminants(strum(serialize_all = "lowercase"))]
 pub enum Object {
     Blob(Blob),
     Tree(Tree),

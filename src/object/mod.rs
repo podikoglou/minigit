@@ -10,7 +10,7 @@ use std::io::Write;
 use blob::Blob;
 use flate2::{Compression, write::ZlibEncoder};
 use sha1::{Digest, Sha1};
-use strum::{EnumDiscriminants, EnumString};
+use strum::{EnumDiscriminants, EnumString, IntoStaticStr};
 use tree::Tree;
 
 use crate::{
@@ -21,7 +21,7 @@ use crate::{
 
 #[derive(Debug, PartialEq, Eq, Clone, EnumDiscriminants)]
 #[strum_discriminants(name(ObjectType))]
-#[strum_discriminants(derive(EnumString))]
+#[strum_discriminants(derive(EnumString, IntoStaticStr))]
 #[strum_discriminants(strum(ascii_case_insensitive))]
 pub enum Object {
     Blob(Blob),

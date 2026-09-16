@@ -178,7 +178,7 @@ pub fn tag<'a>(input: &mut Stream<'a>) -> ModalResult<Tag> {
         property("type", object_type),
     ),
     name: property("tag", till_line_ending.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned)),
-    tagger: property("author", seq!(identity, _: " ", timestamp)),
+    tagger: property("tagger", seq!(identity, _: " ", timestamp)),
     _: "\n",
     description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
     }}.context(StrContext::Label("tag object"))

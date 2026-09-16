@@ -3,7 +3,7 @@ use minigit::Repo;
 mod common;
 
 #[test]
-fn test_objects_iter() {
+fn objects_iter() {
     let (repo, _dir) = include_repo!("fixtures/repo-1.tar");
 
     let objects = repo

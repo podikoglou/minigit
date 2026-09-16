@@ -3,7 +3,7 @@ use minigit::Repo;
 mod common;
 
 #[test]
-fn test_bucket_contains_expected_objects() {
+fn bucket_contains_expected_objects() {
     let (repo, _dir) = include_repo!("fixtures/repo-1.tar");
 
     let buckets = repo

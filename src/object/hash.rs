@@ -120,7 +120,7 @@ mod test {
     use crate::object::hash::{HashPrefix, ObjectHash};
 
     #[test]
-    fn test_parse_objecthash_try_from_path() {
+    fn parse_objecthash_try_from_path() {
         let path = "/home/alex/minigit/.git/objects/9d/5476d96d3262b69f03f2af27750a495cca43b6"
             .parse::<PathBuf>()
             .unwrap();
@@ -138,14 +138,14 @@ mod test {
     }
 
     #[test]
-    fn test_hash_prefix_display() {
+    fn hash_prefix_display() {
         assert_eq!(format!("{}", HashPrefix(0x00)), "00".to_string());
         assert_eq!(format!("{}", HashPrefix(0x2f)), "2f".to_string());
         assert_eq!(format!("{}", HashPrefix(0x10)), "10".to_string());
     }
 
     #[test]
-    fn test_hash_display() {
+    fn hash_display() {
         assert_eq!(
             format!(
                 "{}",

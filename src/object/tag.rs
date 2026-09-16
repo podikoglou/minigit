@@ -44,6 +44,13 @@ pub type TagTarget = (ObjectHash, ObjectType);
 
 impl WriteLoose for Tag {
     fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
+        writeln!(writer, "object {}", self.target.0)?;
+        writeln!(writer, "type {}", Into::<&'static str>::into(self.target.1))?;
+        self.creator.write_loose(writer)?;
+        writeln!(writer)?;
+
+        writeln!(writer, "{}", self.description)?;
+
         Ok(())
     }
 }

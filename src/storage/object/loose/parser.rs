@@ -10,7 +10,7 @@ use chrono::{DateTime, FixedOffset};
 use sha1::digest::array::Array;
 use winnow::{
     ModalResult, Parser,
-    ascii::{dec_uint, digit1, oct_digit1},
+    ascii::{dec_uint, digit1, newline, oct_digit1, till_line_ending},
     combinator::{alt, opt, repeat, seq, terminated},
     error::{ContextError, ErrMode, StrContext, StrContextValue},
     token::{literal, rest, take, take_till, take_until},
@@ -24,6 +24,7 @@ use crate::{
         blob::Blob,
         commit::{Commit, CommitProperty, Identity},
         hash::ObjectHash,
+        tag::Tag,
         tree::{Tree, TreeEntry},
     },
 };
@@ -48,6 +49,7 @@ pub fn object<'a>(input: &mut Stream<'a>) -> ModalResult<Object> {
         ObjectType::Blob => blob.map(Object::Blob).parse_next(&mut bytes),
         ObjectType::Tree => tree.map(Object::Tree).parse_next(&mut bytes),
         ObjectType::Commit => commit.map(Object::from).parse_next(&mut bytes),
+        ObjectType::Tag => tag.map(Object::from).parse_next(&mut bytes),
     }
 }
 
@@ -166,6 +168,35 @@ pub fn commit<'a>(input: &mut Stream<'a>) -> ModalResult<Commit> {
     }}
     .context(StrContext::Label("commit object"))
     .parse_next(input)
+}
+/// Parses a tag object from some bytes.
+pub fn tag<'a>(input: &mut Stream<'a>) -> ModalResult<Tag> {
+    let object_hash = property("object", object_hash_str).parse_next(input)?;
+    let object_type = property("type", object_type).parse_next(input)?;
+    let tag = property("tag", till_line_ending)
+        .map(str::from_utf8)
+        .verify_map(Result::ok)
+        .map(str::to_owned)
+        .parse_next(input)?;
+
+    newline.parse_next(input)?;
+
+    let tagger = property("tagger", seq!(identity, _: " ", timestamp)).parse_next(input)?;
+
+    newline.parse_next(input)?;
+
+    let description = rest
+        .map(str::from_utf8)
+        .verify_map(Result::ok)
+        .map(str::to_owned)
+        .parse_next(input)?;
+
+    Ok(Tag::new(
+        (object_hash, object_type),
+        tag,
+        tagger,
+        description,
+    ))
 }
 
 /// Parses a tree object's entry into a tuple `(mode, name, hash)` from some bytes.

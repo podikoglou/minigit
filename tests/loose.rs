@@ -360,7 +360,7 @@ mod roundtrip {
         // read back
         let read_blob = read_object(&buf[..], ParserContext::None).unwrap();
 
-        assert_eq!(object, read_blob);
+        assert_eq!(read_blob, object);
     }
 
     #[hegel::test]
@@ -375,7 +375,7 @@ mod roundtrip {
         // read back
         let read_tree = read_object(&buf[..], ParserContext::None).unwrap();
 
-        assert_eq!(object, read_tree);
+        assert_eq!(read_tree, object);
     }
 
     #[hegel::test]
@@ -390,7 +390,7 @@ mod roundtrip {
         // read back
         let read_tree = read_object(&buf[..], ParserContext::None).unwrap();
 
-        assert_eq!(object, read_tree);
+        assert_eq!(read_tree, object);
     }
 
     #[hegel::test]
@@ -405,6 +405,6 @@ mod roundtrip {
         // read back
         let read_tag = read_object(&buf[..], ParserContext::None).unwrap();
 
-        assert_eq!(object, read_tag);
+        assert_eq!(read_tag, object);
     }
 }

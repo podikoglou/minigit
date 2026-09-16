@@ -35,9 +35,46 @@ impl WriteLoose for Identity {
 )]
 pub struct Name(String);
 
+impl PartialEq<&str> for Name {
+    fn eq(&self, other: &&str) -> bool {
+        self.as_ref() == *other
+    }
+}
+
+impl PartialEq<str> for Name {
+    fn eq(&self, other: &str) -> bool {
+        self.as_ref() == other
+    }
+}
+
+impl PartialEq<Name> for &str {
+    fn eq(&self, other: &Name) -> bool {
+        *self == other.as_ref()
+    }
+}
+
 #[nutype(
     sanitize(trim),
     validate(not_empty),
     derive(Debug, PartialEq, Eq, Clone, Display, AsRef, Deref)
 )]
 pub struct Email(String);
+
+impl PartialEq<&str> for Email {
+    fn eq(&self, other: &&str) -> bool {
+        self.as_ref() == *other
+    }
+}
+
+impl PartialEq<str> for Email {
+    fn eq(&self, other: &str) -> bool {
+        self.as_ref() == other
+    }
+}
+
+impl PartialEq<Email> for &str {
+    fn eq(&self, other: &Email) -> bool {
+        *self == other.as_ref()
+    }
+}
+

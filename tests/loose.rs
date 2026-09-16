@@ -1,6 +1,7 @@
 mod fixtures {
     use minigit::{
         error::ParserContext,
+        identity::{Email, Identity, Name},
         object::{Object, ObjectType, tree::TreeEntry},
         storage::object::loose::read_object_compressed,
     };
@@ -269,7 +270,10 @@ mod fixtures {
         assert_eq!(tag.description, "0.0.1! :D\n");
         assert_eq!(
             tag.tagger.0,
-            Identity::new("alex".to_string(), "alex.podikoglou@gmail.com".to_string())
+            Identity::new(
+                Name::try_new("alex").unwrap(),
+                Email::try_new("alex.podikoglou@gmail.com").unwrap(),
+            )
         );
     }
 }

@@ -294,7 +294,8 @@ pub fn timestamp<'a>(input: &mut Stream<'a>) -> ModalResult<DateTime<FixedOffset
 #[cfg(test)]
 mod tests {
     use crate::{
-        object::{ObjectType, commit::Identity},
+        identity::{Email, Identity, Name},
+        object::ObjectType,
         storage::object::loose::parser::{
             extra_property, header, identity, mode, multiline_property, object_hash_str,
             object_type, timestamp, tree_entry,
@@ -379,7 +380,10 @@ mod tests {
             identity.parse_peek(b"John Doe <john@doe.com>"),
             Ok((
                 &b""[..],
-                Identity::new("John Doe".to_string(), "john@doe.com".to_string())
+                Identity::new(
+                    Name::try_new("John Doe").unwrap(),
+                    Email::try_new("john@doe.com").unwrap()
+                )
             ))
         );
     }

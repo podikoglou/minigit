@@ -47,7 +47,7 @@ pub fn object<'a>(input: &mut Stream<'a>) -> ModalResult<Object> {
     match typee {
         ObjectType::Blob => blob.map(Object::Blob).parse_next(&mut bytes),
         ObjectType::Tree => tree.map(Object::Tree).parse_next(&mut bytes),
-        ObjectType::Commit => commit.map(Object::Commit).parse_next(&mut bytes),
+        ObjectType::Commit => commit.map(Object::from).parse_next(&mut bytes),
     }
 }
 

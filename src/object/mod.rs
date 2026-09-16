@@ -25,7 +25,7 @@ use crate::{
 pub enum Object {
     Blob(Blob),
     Tree(Tree),
-    Commit(Commit),
+    Commit(Box<Commit>),
 }
 
 impl Object {
@@ -93,7 +93,7 @@ impl From<Tree> for Object {
 
 impl From<Commit> for Object {
     fn from(val: Commit) -> Self {
-        Self::Commit(val)
+        Self::Commit(Box::new(val))
     }
 }
 

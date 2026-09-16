@@ -6,6 +6,7 @@ pub mod storage;
 
 pub mod fs;
 pub mod identity;
+pub mod time;
 
 mod repo;
 pub use repo::Repo;

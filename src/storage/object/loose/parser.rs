@@ -29,6 +29,7 @@ use crate::{
         tag::Tag,
         tree::{Tree, TreeEntry},
     },
+    time::Timestamp,
 };
 
 type Stream<'a> = &'a [u8];
@@ -270,8 +271,8 @@ pub fn identity<'a>(input: &mut Stream<'a>) -> ModalResult<Identity> {
     .parse_next(input)
 }
 
-/// Parses a [DateTime<FixedOffset>] from some bytes.
-pub fn timestamp<'a>(input: &mut Stream<'a>) -> ModalResult<DateTime<FixedOffset>> {
+/// Parses a [Timestamp] from some bytes.
+pub fn timestamp<'a>(input: &mut Stream<'a>) -> ModalResult<Timestamp> {
     seq!(
         digit1.parse_to::<i64>(),
         _: " ",
@@ -284,6 +285,8 @@ pub fn timestamp<'a>(input: &mut Stream<'a>) -> ModalResult<DateTime<FixedOffset
 
         DateTime::from_timestamp(secs, 0).map(|dt| dt.with_timezone(&offset))
     })
+    .map(Timestamp::try_new)
+    .verify_map(Result::ok)
     .context(StrContext::Label("timestamp"))
     .context(StrContext::Expected(StrContextValue::Description(
         "<unix time> <offset>",
@@ -300,6 +303,7 @@ mod tests {
             extra_property, header, identity, mode, multiline_property, object_hash_str,
             object_type, timestamp, tree_entry,
         },
+        time::Timestamp,
     };
     use chrono::{DateTime, FixedOffset, NaiveDateTime};
     use std::assert_matches;
@@ -407,11 +411,12 @@ mod tests {
             timestamp.parse_peek(b"1789057194 +0300"),
             Ok((
                 &b""[..],
-                DateTime::<FixedOffset>::from_naive_utc_and_offset(
+                Timestamp::try_new(DateTime::<FixedOffset>::from_naive_utc_and_offset(
                     #[allow(deprecated)]
                     NaiveDateTime::from_timestamp(1789057194, 0),
                     FixedOffset::east_opt(3 * 3600).unwrap(),
-                )
+                ))
+                .unwrap()
             ))
         );
     }

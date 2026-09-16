@@ -230,7 +230,7 @@ mod fixtures {
         );
         assert_eq!(tag.target.1, ObjectType::Commit);
         assert_eq!(tag.name, "v0.0.1");
-        assert_eq!(tag.description, "0.0.1! :D");
+        assert_eq!(tag.description, "0.0.1! :D\n");
         assert_eq!(
             tag.tagger.0,
             Identity::new("alex".to_string(), "alex.podikoglou@gmail.com".to_string())

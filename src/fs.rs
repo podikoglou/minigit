@@ -1,12 +1,8 @@
 //! This module contains items that deal with file names.
 
-use std::{
-    fmt::{Display, Write},
-    path::PathBuf,
-    str::FromStr,
-};
-
-use crate::{MinigitError, storage::object::loose::WriteLoose};
+use crate::{MinigitError, error::ParserContext, storage::object::loose::WriteLoose};
+use std::{fmt::Display, path::PathBuf, str::FromStr};
+use winnow::{ModalResult, Parser, combinator::terminated, token::take_until};
 
 /// A file name.
 ///
@@ -21,7 +17,7 @@ use crate::{MinigitError, storage::object::loose::WriteLoose};
 ///
 /// assert_eq!(name.as_str(), "foo.rs");
 /// ```
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Clone)]
 pub struct FileName(String);
 
 impl FileName {
@@ -34,8 +30,9 @@ impl FromStr for FileName {
     type Err = MinigitError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        // TODO: actually do validation
-        Ok(FileName(s.to_owned()))
+        parse_file_name
+            .parse(s.as_bytes())
+            .map_err(|err| MinigitError::ParserError(err.to_string(), ParserContext::None))
     }
 }
 
@@ -56,5 +53,58 @@ impl WriteLoose for FileName {
         write!(writer, "{}", self.0)?;
 
         Ok(())
+    }
+}
+
+/// Parses a file name from some UTF-8 encoded bytes.
+pub fn parse_file_name(input: &mut &[u8]) -> ModalResult<FileName> {
+    terminated(take_until(1.., "\x00"), "\x00")
+        .map(str::from_utf8)
+        .verify_map(Result::ok)
+        .map(str::to_owned)
+        .map(FileName)
+        .parse_next(input)
+}
+
+#[cfg(test)]
+mod test {
+
+    use std::assert_matches;
+
+    use winnow::{Parser, error::ErrMode};
+
+    use crate::fs::parse_file_name;
+
+    #[test]
+    fn file_name_parses_valid_inputs() {
+        assert_eq!(
+            parse_file_name
+                .parse_peek(b"foo.bar\0")
+                .unwrap()
+                .1
+                .to_string(),
+            "foo.bar"
+        );
+
+        assert_eq!(
+            parse_file_name
+                .parse_peek(b"even this!!!\0")
+                .unwrap()
+                .1
+                .to_string(),
+            "even this!!!"
+        );
+    }
+
+    #[test]
+    fn file_name_rejects_invalid_inputs() {
+        assert_matches!(
+            parse_file_name.parse_peek(b"foo.bar"),
+            Err(ErrMode::Backtrack(_))
+        );
+        assert_matches!(
+            parse_file_name.parse_peek(b"foo.bar\n"),
+            Err(ErrMode::Backtrack(_))
+        );
     }
 }

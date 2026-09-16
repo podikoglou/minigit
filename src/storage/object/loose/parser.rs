@@ -19,6 +19,7 @@ use winnow::{
 use crate::{
     MinigitError,
     error::ParserContext,
+    fs::{FileName, parse_file_name},
     object::{
         Object, ObjectType,
         blob::Blob,
@@ -93,11 +94,11 @@ pub fn tree<'a>(input: &mut Stream<'a>) -> ModalResult<Tree> {
     // NOTE: not sure if this should be `0..` or `1..`
     // should we be able to parse empty trees?
     repeat(0.., tree_entry)
-        .map(|entries: Vec<(u16, &str, ObjectHash)>| {
+        .map(|entries: Vec<(u16, FileName, ObjectHash)>| {
             entries
                 .into_iter()
-                .map(|(mode, name, hash)| (name.to_string(), TreeEntry::new(mode, hash)))
-                .collect::<BTreeMap<String, TreeEntry>>()
+                .map(|(mode, name, hash)| (name, TreeEntry::new(mode, hash)))
+                .collect::<BTreeMap<FileName, TreeEntry>>()
         })
         .context(StrContext::Label("tree object"))
         .map(Tree::new)
@@ -186,8 +187,8 @@ pub fn tag<'a>(input: &mut Stream<'a>) -> ModalResult<Tag> {
 }
 
 /// Parses a tree object's entry into a tuple `(mode, name, hash)` from some bytes.
-pub fn tree_entry<'a>(input: &mut Stream<'a>) -> ModalResult<(u16, &'a str, ObjectHash)> {
-    seq!((mode, _: " ", file_name, object_hash))
+pub fn tree_entry<'a>(input: &mut Stream<'a>) -> ModalResult<(u16, FileName, ObjectHash)> {
+    seq!((mode, _: " ", parse_file_name, object_hash))
         .context(StrContext::Label("tree entry"))
         .parse_next(input)
 }
@@ -234,18 +235,6 @@ pub fn object_hash_str<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectHash> {
         .parse_next(input)
 }
 
-/// Parses a null-terminated UTF-8 encoded file name in a tree entry.
-pub fn file_name<'a>(input: &mut Stream<'a>) -> ModalResult<&'a str> {
-    terminated(
-        take_until(1.., 0x00)
-            .map(str::from_utf8)
-            .verify_map(Result::ok),
-        0x00,
-    )
-    .context(StrContext::Label("file name"))
-    .parse_next(input)
-}
-
 /// Parses an identity in the form of `John Doe <john@doe.com>` from some bytes.
 pub fn identity<'a>(input: &mut Stream<'a>) -> ModalResult<Identity> {
     seq! {Identity{
@@ -287,7 +276,7 @@ mod tests {
     use crate::{
         object::{ObjectType, commit::Identity},
         storage::object::loose::parser::{
-            extra_property, file_name, header, identity, mode, multiline_property, object_hash_str,
+            extra_property, header, identity, mode, multiline_property, object_hash_str,
             object_type, timestamp, tree_entry,
         },
     };
@@ -342,32 +331,10 @@ mod tests {
     }
 
     #[test]
-    fn file_name_parses_valid_inputs() {
-        assert_eq!(
-            file_name.parse_peek(b"foo.bar\0"),
-            Ok((&b""[..], "foo.bar"))
-        );
-
-        assert_eq!(
-            file_name.parse_peek(b"even this!!\0"),
-            Ok((&b""[..], "even this!!"))
-        );
-    }
-
-    #[test]
-    fn file_name_rejects_invalid_inputs() {
-        assert_matches!(file_name.parse_peek(b"foo.bar"), Err(ErrMode::Backtrack(_)));
-        assert_matches!(
-            file_name.parse_peek(b"foo.bar\n"),
-            Err(ErrMode::Backtrack(_))
-        );
-    }
-
-    #[test]
     fn tree_entry_parses_valid_entries() {
         assert_eq!(
             tree_entry.parse_peek(b"100644 cli.rs\0\x29\xf3\x23\xb3\x1a\xd1\x29\x96\x4f\xfb\x4f\x97\xf2\x03\xbe\x9c\x2f\x35\x10\x7d"),
-            Ok((&b""[..], (0o100644, "cli.rs", [0x29, 0xf3, 0x23, 0xb3, 0x1a, 0xd1, 0x29, 0x96, 0x4f, 0xfb, 0x4f, 0x97, 0xf2, 0x03, 0xbe, 0x9c, 0x2f, 0x35, 0x10, 0x7d].into() )))
+            Ok((&b""[..], (0o100644, "cli.rs".parse().unwrap(), [0x29, 0xf3, 0x23, 0xb3, 0x1a, 0xd1, 0x29, 0x96, 0x4f, 0xfb, 0x4f, 0x97, 0xf2, 0x03, 0xbe, 0x9c, 0x2f, 0x35, 0x10, 0x7d].into() )))
         );
     }
 

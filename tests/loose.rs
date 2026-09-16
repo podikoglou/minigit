@@ -36,7 +36,7 @@ mod fixtures {
         assert_eq!(
             tree.entries.first_key_value(),
             Some((
-                &String::from("README.md"),
+                &"README.md".parse().unwrap(),
                 &TreeEntry::new(
                     0o100644,
                     "be27a74ddcc0445b1710e25dd8df96fad679a10d".parse().unwrap()
@@ -241,21 +241,21 @@ mod fixtures {
 mod roundtrip {
     use hegel::Generator;
     use hegel::TestCase;
-    
+
     use minigit::error::ParserContext;
     use minigit::object::Object;
-    
-    
+
     use minigit::storage::object::loose::WriteLoose;
     use minigit::storage::object::loose::read_object;
 
     mod generators {
         use crate::roundtrip::generators;
-        
+
         use hegel::Generator;
         use hegel::TestCase;
         use hegel::extras::chrono::datetimes;
         use hegel::generators as gs;
+        use minigit::fs::FileName;
         use minigit::object::ObjectType;
         use minigit::object::blob::Blob;
         use minigit::object::commit::Commit;
@@ -291,7 +291,12 @@ mod roundtrip {
 
         #[hegel::composite]
         pub fn tree(tc: &TestCase) -> Tree {
-            let key = gs::text();
+            let key = gs::text()
+                .map(|str| str.parse::<FileName>())
+                .filter(|e| e.is_ok())
+                .map(Result::unwrap)
+                .print_as_debug();
+
             let value = generators::tree_entry().print_as_debug();
 
             tc.draw(gs::btree_maps(key, value).map(Tree::new).print_as_debug())

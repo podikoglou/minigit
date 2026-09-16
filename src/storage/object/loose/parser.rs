@@ -183,7 +183,6 @@ pub fn commit<'a>(input: &mut Stream<'a>) -> ModalResult<Commit> {
         parents: repeat(0.., property("parent", object_hash_str)),
         author: property("author", seq!(identity, _: " ", timestamp)),
         committer: property("committer", seq!(identity, _: " ", timestamp)),
-        gpg_signature: opt(multiline_property("gpgsig")),
         extra: repeat(0.., extra_property),
         _: "\n",
         description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),

@@ -144,7 +144,7 @@ mod fixtures {
         assert_eq!(commit.author.0.email, "laurens@ducklabs.com");
         assert_eq!(commit.committer.0.name, "GitHub");
         assert_eq!(commit.committer.0.email, "noreply@github.com");
-        assert!(commit.gpg_signature.is_some());
+        assert!(commit.gpg_signature().is_some());
         assert_eq!(
             commit.description,
             "`COPY` with `ORDER_BY` without `PARTITION_BY` (#24525)\n\nI didn't get around to doing this, but it was surprisingly a very small\nchange.\n\nCC @Tmonster\n"
@@ -243,7 +243,7 @@ mod fixtures {
                 "ltllyyqoltutvomyxlpvwuoqyrulnqsk".to_string()
             )]
         );
-        assert!(commit.gpg_signature.is_some());
+        assert!(commit.gpg_signature().is_some());
         assert_eq!(commit.description, "feat: lazy-load indexing\n");
     }
 
@@ -361,19 +361,10 @@ mod roundtrip {
             let parents = tc.draw(gs::vecs(hash()).print_as_debug());
             let author = tc.draw(gs::tuples!(identity(), datetimes()).print_as_debug());
             let committer = tc.draw(gs::tuples!(identity(), datetimes()).print_as_debug());
-            let gpg_signature = tc.draw(gs::optional(gs::text()).print_as_debug());
             let extra = tc.draw(gs::vecs(property()).print_as_debug());
             let description = tc.draw(gs::text());
 
-            Commit::new(
-                tree,
-                parents,
-                author,
-                committer,
-                gpg_signature,
-                extra,
-                description,
-            )
+            Commit::new(tree, parents, author, committer, extra, description)
         }
 
         #[hegel::composite]

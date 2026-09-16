@@ -373,10 +373,9 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn identity_parses_valid_identities() {
         assert_eq!(
-            identity.parse_peek(b"author John Doe <john@doe.com>"),
+            identity.parse_peek(b"John Doe <john@doe.com>"),
             Ok((
                 &b""[..],
                 Identity::new("John Doe".to_string(), "john@doe.com".to_string())

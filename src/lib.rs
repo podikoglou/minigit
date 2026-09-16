@@ -4,5 +4,7 @@ pub use error::MinigitError;
 pub mod object;
 pub mod storage;
 
+pub mod fs;
+
 mod repo;
 pub use repo::Repo;

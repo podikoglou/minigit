@@ -7,6 +7,7 @@ pub mod hash;
 use std::io::{self, Write};
 
 use blob::Blob;
+use flate2::{Compression, write::ZlibEncoder};
 use sha1::{Digest, Sha1};
 use strum::{EnumDiscriminants, EnumString};
 use tree::Tree;
@@ -14,7 +15,7 @@ use tree::Tree;
 use crate::{
     MinigitError,
     object::{commit::Commit, hash::ObjectHash},
-    storage::object::LazyObject,
+    storage::object::{LazyObject, loose::WriteLoose},
 };
 
 #[derive(Debug, PartialEq, Eq, Clone, EnumDiscriminants)]
@@ -28,34 +29,53 @@ pub enum Object {
 }
 
 impl Object {
-    /// Writes the header of the object, to a [`Write`].
-    pub fn write_header<W: Write>(&self, mut writer: W) -> Result<(), std::io::Error> {
-        let (tag, size) = match self {
-            Object::Blob(blob) => ("blob", blob.0.len()),
-            Object::Tree(_) => todo!("write tree header"),
-            Object::Commit(_) => todo!("write commit header"),
-        };
-
-        write!(writer, "{} {}\0", tag, size)
-    }
-
-    /// Writes the uncompressed object, including its header, to a [`Write`].
-    pub fn write<W: Write>(&self, mut writer: W) -> Result<(), std::io::Error> {
-        self.write_header(&mut writer)?;
-
-        match self {
-            Object::Blob(blob) => blob.write(writer),
-            Object::Tree(tree) => tree.write(writer),
-            Object::Commit(commit) => commit.write(writer),
-        }
-    }
-
     /// Creates a SHA1 hash of the object.
     pub fn hash(&self) -> Result<ObjectHash, MinigitError> {
         let mut buf = Vec::new();
-        self.write(&mut buf)?;
+        self.write_loose(&mut buf)?;
 
         Ok(Sha1::digest(buf).into())
+    }
+}
+
+impl WriteLoose for Object {
+    /// Writes the uncompressed object to a write.
+    fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
+        let mut buf: Vec<u8> = Vec::new();
+
+        match self {
+            Object::Blob(blob) => {
+                write!(writer, "blob ")?;
+
+                blob.write_loose(&mut buf)?;
+            }
+            Object::Tree(tree) => {
+                write!(writer, "tree ")?;
+
+                tree.write_loose(&mut buf)?;
+            }
+            Object::Commit(commit) => {
+                write!(writer, "commit ")?;
+
+                commit.write_loose(&mut buf)?;
+            }
+        }
+
+        write!(writer, "{}\0", buf.len())?;
+        writer.write_all(&buf)?;
+
+        Ok(())
+    }
+}
+
+impl Object {
+    pub fn write_loose_compressed<W: Write>(
+        &self,
+        writer: &mut W,
+    ) -> Result<(), crate::MinigitError> {
+        let mut zlib_writer = ZlibEncoder::new(writer, Compression::default());
+
+        self.write_loose(&mut zlib_writer)
     }
 }
 

@@ -1,6 +1,8 @@
 use std::{collections::BTreeMap, io::Write};
 
-use crate::object::hash::ObjectHash;
+use sha1::digest::{array::Array, consts::U20};
+
+use crate::{object::hash::ObjectHash, storage::object::loose::WriteLoose};
 
 /// A tree: an object that associates file names to [tree entries](TreeEntry).
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -17,12 +19,16 @@ impl Tree {
     pub fn new(entries: BTreeMap<String, TreeEntry>) -> Self {
         Self { entries }
     }
+}
 
-    /// Writes the tree into a writer.
-    ///
-    /// This simply writes the raw bytes.
-    pub fn write<W: Write>(&self, mut _writer: W) -> Result<(), std::io::Error> {
-        todo!("write tree")
+impl WriteLoose for Tree {
+    fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
+        for entry in &self.entries {
+            entry.write_loose(writer)?;
+            writeln!(writer)?;
+        }
+
+        Ok(())
     }
 }
 
@@ -39,5 +45,16 @@ pub struct TreeEntry {
 impl TreeEntry {
     pub fn new(mode: u16, object: ObjectHash) -> Self {
         Self { mode, object }
+    }
+}
+
+impl WriteLoose for (&String, &TreeEntry) {
+    fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
+        write!(writer, "{:} {}\0", self.1.mode, self.0)?;
+
+        let hash_s = Into::<Array<u8, U20>>::into(self.1.object.clone());
+        writer.write_all(hash_s.as_slice())?;
+
+        Ok(())
     }
 }

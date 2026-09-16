@@ -1,4 +1,4 @@
-use crate::object::hash::ObjectHash;
+use crate::{object::hash::ObjectHash, storage::object::loose::WriteLoose};
 use chrono::{DateTime, FixedOffset};
 use std::io::Write;
 
@@ -37,10 +37,36 @@ impl Commit {
     }
 }
 
-impl Commit {
-    /// Writes the commit into a writer.
-    pub fn write<W: Write>(&self, mut writer: W) -> Result<(), std::io::Error> {
-        todo!("write commit")
+impl WriteLoose for Commit {
+    fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
+        writeln!(writer, "tree {}", self.tree)?;
+
+        writeln!(writer, "author ")?;
+        self.author.write_loose(writer)?;
+
+        writeln!(writer, "committer ")?;
+        self.committer.write_loose(writer)?;
+
+        // this is of course horrible on many levels
+        if let Some(signature) = &self.gpg_signature {
+            let mut lines = signature.lines();
+
+            writeln!(writer, "gpgsig {}", lines.next().unwrap())?;
+
+            for line in lines {
+                writeln!(writer, "  {}", line)?;
+            }
+        }
+
+        for property in &self.extra {
+            property.write_loose(writer)?;
+            writeln!(writer)?;
+        }
+
+        writeln!(writer)?;
+        write!(writer, "{}", self.description)?;
+
+        Ok(())
     }
 }
 
@@ -57,11 +83,29 @@ impl Identity {
     }
 }
 
-impl Identity {
-    /// Writes the identity into a writer.
-    pub fn write<W: Write>(&self, mut writer: W) -> Result<(), std::io::Error> {
-        todo!("write identity")
+impl WriteLoose for Identity {
+    fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
+        write!(writer, "{} <{}>", self.name, self.email)?;
+
+        Ok(())
+    }
+}
+
+impl WriteLoose for (Identity, DateTime<FixedOffset>) {
+    fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
+        self.0.write_loose(writer)?;
+        write!(writer, " {}", self.1.format("%s %z"))?;
+
+        Ok(())
     }
 }
 
 pub type CommitProperty = (String, String);
+
+impl WriteLoose for &CommitProperty {
+    fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
+        write!(writer, "{} {}", self.0, self.1)?;
+
+        Ok(())
+    }
+}

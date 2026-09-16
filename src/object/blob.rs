@@ -1,5 +1,7 @@
 use std::io::Write;
 
+use crate::storage::object::loose::WriteLoose;
+
 /// An blob: an object that simply contains some bytes.
 ///
 /// [trees](`super::Tree`) refer to blobs, usually.
@@ -12,11 +14,9 @@ impl Blob {
     }
 }
 
-impl Blob {
-    /// Writes the blob into a writer.
-    ///
-    /// This simply writes the raw bytes.
-    pub fn write<W: Write>(&self, mut writer: W) -> Result<(), std::io::Error> {
-        writer.write_all(&self.0)
+impl WriteLoose for Blob {
+    fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
+        writer.write_all(&self.0)?;
+        Ok(())
     }
 }

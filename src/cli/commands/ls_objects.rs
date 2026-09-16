@@ -83,6 +83,9 @@ impl LsObjectsCommand {
                                 commit.description.lines().next().unwrap_or_default()
                             )
                         }
+                        minigit::object::Object::Tag(tag) => {
+                            println!("{}  tag  {}", hash, tag.name)
+                        }
                     }
                 }
             }

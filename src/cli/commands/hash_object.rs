@@ -83,6 +83,9 @@ impl HashObjectCommand {
             ObjectType::Commit => {
                 todo!("hash commits")
             }
+            ObjectType::Tag => {
+                todo!("hash tag")
+            }
         }
 
         Ok(())

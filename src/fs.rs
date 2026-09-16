@@ -6,7 +6,7 @@ use std::{
     str::FromStr,
 };
 
-use crate::MinigitError;
+use crate::{MinigitError, storage::object::loose::WriteLoose};
 
 /// A file name.
 ///
@@ -48,5 +48,13 @@ impl Display for FileName {
 impl From<FileName> for PathBuf {
     fn from(val: FileName) -> Self {
         PathBuf::from(val.0)
+    }
+}
+
+impl WriteLoose for FileName {
+    fn write_loose<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+        write!(writer, "{}", self.0)?;
+
+        Ok(())
     }
 }

@@ -97,7 +97,28 @@ pub type CommitProperty = (String, String);
 
 impl WriteLoose for &CommitProperty {
     fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
-        write!(writer, "{} {}", self.0, self.1)?;
+        // TODO: validation. neither should be empty
+        // the below code assumes they aren't
+
+        // write key
+        write!(writer, "{} ", self.0)?;
+
+        let mut lines = self.1.lines();
+
+        let Some(first_line) = lines.next() else {
+            return Ok(()); // is this a failure?
+        };
+
+        // write first line of value
+        write!(writer, "{}", first_line)?;
+
+        // write each subsequent line, indented by one space, indented by one space.
+        //
+        // (the reason we prefix with a newline rather than putting it at the end is
+        // because we don't want to finish with one.)
+        for line in lines {
+            write!(writer, "\n {}", line)?;
+        }
 
         Ok(())
     }

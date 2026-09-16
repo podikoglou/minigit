@@ -4,7 +4,7 @@
 
 use nutype::nutype;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Identity {
     pub name: Name,
     pub email: Email,
@@ -16,8 +16,16 @@ impl Identity {
     }
 }
 
-#[nutype(sanitize(trim), validate(not_empty), derive(Debug, PartialEq))]
+#[nutype(
+    sanitize(trim),
+    validate(not_empty),
+    derive(Debug, PartialEq, Eq, Clone)
+)]
 pub struct Name(String);
 
-#[nutype(sanitize(trim), validate(not_empty), derive(Debug, PartialEq))]
+#[nutype(
+    sanitize(trim),
+    validate(not_empty),
+    derive(Debug, PartialEq, Eq, Clone)
+)]
 pub struct Email(String);

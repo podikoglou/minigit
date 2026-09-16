@@ -1,10 +1,10 @@
 # `minigit` Test Fixtures
 
 ## Fixtures
-- `repo-1`: Contains a basic repository with a single commit, of a single file. Contains three objects: one blob, one tree, one commit.
-- `repo-2`: Contains a repository with 414 commits of one text file (containing three numbers) each
-- `repo-3`: Contains a repository with 4 commits of one text file each, ending with a merge commit that has two parents
-- `repo-4`: Contains a repository with 4 commits, and a tag
+- `repo-1`: Repo with 1 commit, of a single file. Contains three objects: one blob, one tree, one commit.
+- `repo-2`: Repo with 414 commits of one text file (containing three numbers) each
+- `repo-3`: Repo with 4 commits of one text file each, ending with a merge commit that has two parents
+- `repo-4`: Repo with 4 commits, and a tag
 
 ## Creating a repository fixture
 - Create a repository somewhere, initialize it as you like

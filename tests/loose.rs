@@ -36,7 +36,7 @@ mod fixtures {
         assert_eq!(
             tree.entries.first_key_value(),
             Some((
-                &"README.md".parse().unwrap(),
+                &"README.md\0".parse().unwrap(),
                 &TreeEntry::new(
                     0o100644,
                     "be27a74ddcc0445b1710e25dd8df96fad679a10d".parse().unwrap()

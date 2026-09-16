@@ -13,7 +13,7 @@ use winnow::{ModalResult, Parser, combinator::terminated, token::take_until};
 /// ```
 /// use minigit::fs::FileName;
 ///
-/// let name: FileName = "foo.rs".parse().unwrap();
+/// let name: FileName = "foo.rs\0".parse().unwrap();
 ///
 /// assert_eq!(name.as_str(), "foo.rs");
 /// ```

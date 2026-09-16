@@ -15,7 +15,10 @@ use tree::Tree;
 use crate::{
     MinigitError,
     object::{commit::Commit, hash::ObjectHash},
-    storage::object::{LazyObject, loose::WriteLoose},
+    storage::object::{
+        LazyObject,
+        loose::{self, WriteLoose},
+    },
 };
 
 #[derive(Debug, PartialEq, Eq, Clone, EnumDiscriminants)]
@@ -98,9 +101,9 @@ impl From<Commit> for Object {
 }
 
 impl TryFrom<LazyObject> for Object {
-    type Error = io::Error;
+    type Error = MinigitError;
 
-    fn try_from(value: LazyObject) -> Result<Self, io::Error> {
-        Ok(todo!("from lazyobject for object"))
+    fn try_from(value: LazyObject) -> Result<Self, Self::Error> {
+        value.into_object()
     }
 }

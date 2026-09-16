@@ -1,7 +1,7 @@
 mod fixtures {
     use minigit::{
         error::ParserContext,
-        object::{Object, ObjectType, commit::Identity, tree::TreeEntry},
+        object::{Object, ObjectType, tree::TreeEntry},
         storage::object::loose::read_object_compressed,
     };
 
@@ -292,11 +292,13 @@ mod roundtrip {
         use hegel::extras::chrono::datetimes;
         use hegel::generators as gs;
         use minigit::fs::FileName;
+        use minigit::identity::Email;
+        use minigit::identity::Identity;
+        use minigit::identity::Name;
         use minigit::object::ObjectType;
         use minigit::object::blob::Blob;
         use minigit::object::commit::Commit;
         use minigit::object::commit::CommitProperty;
-        use minigit::object::commit::Identity;
         use minigit::object::hash::ObjectHash;
         use minigit::object::tag::Tag;
         use minigit::object::tree::Tree;
@@ -339,11 +341,31 @@ mod roundtrip {
         }
 
         #[hegel::composite]
-        pub fn identity(tc: &TestCase) -> Identity {
-            let name = tc.draw(gs::text());
+        pub fn name(tc: &TestCase) -> Name {
+            tc.draw(
+                gs::text()
+                    .map(Name::try_new)
+                    .filter(Result::is_ok)
+                    .map(Result::unwrap)
+                    .print_as_debug(),
+            )
+        }
 
-            // TODO: consider gs::text, since we don't do email validation, thus we accenpt anything
-            let email = tc.draw(gs::emails());
+        #[hegel::composite]
+        pub fn email(tc: &TestCase) -> Email {
+            tc.draw(
+                gs::emails()
+                    .map(Email::try_new)
+                    .filter(Result::is_ok)
+                    .map(Result::unwrap)
+                    .print_as_debug(),
+            )
+        }
+
+        #[hegel::composite]
+        pub fn identity(tc: &TestCase) -> Identity {
+            let name = tc.draw(name().print_as_debug());
+            let email = tc.draw(email().print_as_debug());
 
             Identity::new(name, email)
         }

@@ -256,13 +256,16 @@ mod roundtrip {
         use hegel::TestCase;
         use hegel::extras::chrono::datetimes;
         use hegel::generators as gs;
+        use minigit::object::ObjectType;
         use minigit::object::blob::Blob;
         use minigit::object::commit::Commit;
         use minigit::object::commit::CommitProperty;
         use minigit::object::commit::Identity;
         use minigit::object::hash::ObjectHash;
+        use minigit::object::tag::Tag;
         use minigit::object::tree::Tree;
         use minigit::object::tree::TreeEntry;
+        use strum::VariantArray;
 
         #[hegel::composite]
         pub fn hash(tc: &TestCase) -> ObjectHash {
@@ -310,6 +313,11 @@ mod roundtrip {
         }
 
         #[hegel::composite]
+        pub fn object_type(tc: &TestCase) -> ObjectType {
+            tc.draw(gs::sampled_from(ObjectType::VARIANTS).print_as_debug())
+        }
+
+        #[hegel::composite]
         pub fn commit(tc: &TestCase) -> Commit {
             let tree = tc.draw(hash().print_as_debug());
             let parents = tc.draw(gs::vecs(hash()).print_as_debug());
@@ -328,6 +336,16 @@ mod roundtrip {
                 extra,
                 description,
             )
+        }
+
+        #[hegel::composite]
+        pub fn tag(tc: &TestCase) -> Tag {
+            let target = tc.draw(gs::tuples!(hash(), object_type()).print_as_debug());
+            let name = tc.draw(gs::text());
+            let tagger = tc.draw(gs::tuples!(identity(), datetimes()).print_as_debug());
+            let description = tc.draw(gs::text());
+
+            Tag::new(target, name, tagger, description)
         }
     }
 
@@ -373,5 +391,20 @@ mod roundtrip {
         let read_tree = read_object(&buf[..], ParserContext::None).unwrap();
 
         assert_eq!(object, read_tree);
+    }
+
+    #[hegel::test]
+    #[ignore]
+    fn roundtrip_tag(tc: TestCase) {
+        let object = tc.draw(generators::tag().map(Object::from).print_as_debug());
+
+        // write to buffer
+        let mut buf: Vec<u8> = Vec::new();
+        object.write_loose(&mut buf).unwrap();
+
+        // read back
+        let read_tag = read_object(&buf[..], ParserContext::None).unwrap();
+
+        assert_eq!(object, read_tag);
     }
 }

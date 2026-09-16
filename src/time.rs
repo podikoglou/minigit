@@ -7,6 +7,6 @@ use nutype::nutype;
 
 #[nutype(
     derive(Debug, PartialEq, Eq, Clone, Display, AsRef, Deref),
-    validate(predicate = |datetime| datetime.offset().local_minus_utc() % 60 == 0 ),
+    validate(predicate = |datetime| datetime.offset().local_minus_utc() % 60 == 0 && datetime.timestamp_subsec_nanos() == 0 ),
 )]
 pub struct Timestamp(DateTime<FixedOffset>);

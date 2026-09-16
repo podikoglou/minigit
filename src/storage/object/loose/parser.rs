@@ -172,32 +172,17 @@ pub fn commit<'a>(input: &mut Stream<'a>) -> ModalResult<Commit> {
 }
 /// Parses a tag object from some bytes.
 pub fn tag<'a>(input: &mut Stream<'a>) -> ModalResult<Tag> {
-    let object_hash = property("object", object_hash_str).parse_next(input)?;
-    let object_type = property("type", object_type).parse_next(input)?;
-    let tag = property("tag", till_line_ending)
-        .map(str::from_utf8)
-        .verify_map(Result::ok)
-        .map(str::to_owned)
-        .parse_next(input)?;
-
-    newline.parse_next(input)?;
-
-    let tagger = property("tagger", seq!(identity, _: " ", timestamp)).parse_next(input)?;
-
-    newline.parse_next(input)?;
-
-    let description = rest
-        .map(str::from_utf8)
-        .verify_map(Result::ok)
-        .map(str::to_owned)
-        .parse_next(input)?;
-
-    Ok(Tag::new(
-        (object_hash, object_type),
-        tag,
-        tagger,
-        description,
-    ))
+    seq! {Tag{
+    target: seq!(
+        property("object", object_hash_str),
+        property("type", object_type),
+    ),
+    name: property("tag", till_line_ending.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned)),
+    tagger: property("author", seq!(identity, _: " ", timestamp)),
+    _: "\n",
+    description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
+    }}.context(StrContext::Label("tag object"))
+    .parse_next(input)
 }
 
 /// Parses a tree object's entry into a tuple `(mode, name, hash)` from some bytes.

@@ -75,9 +75,9 @@ impl Display for ObjectHash {
     }
 }
 
-impl Into<Array<u8, U20>> for ObjectHash {
-    fn into(self) -> Array<u8, U20> {
-        self.0
+impl From<ObjectHash> for Array<u8, U20> {
+    fn from(val: ObjectHash) -> Self {
+        val.0
     }
 }
 

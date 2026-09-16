@@ -20,10 +20,11 @@ use crate::{
     MinigitError,
     error::ParserContext,
     fs::{FileName, parse_file_name},
+    identity::{Email, Identity, Name},
     object::{
         Object, ObjectType,
         blob::Blob,
-        commit::{Commit, CommitProperty, Identity},
+        commit::{Commit, CommitProperty},
         hash::ObjectHash,
         tag::Tag,
         tree::{Tree, TreeEntry},
@@ -256,12 +257,12 @@ pub fn object_hash_str<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectHash> {
 
 /// Parses an identity in the form of `John Doe <john@doe.com>` from some bytes.
 pub fn identity<'a>(input: &mut Stream<'a>) -> ModalResult<Identity> {
-    seq! {Identity{
-        name: take_until(1.., " <").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned).context(StrContext::Label("name")),
+    seq!(take_until(1.., " <").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned).map(Name::try_new).verify_map(Result::ok).context(StrContext::Label("name")),
         _: " <",
-        email: take_until(0.., ">").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned).context(StrContext::Label("email")),
-        _: ">",
-    }}
+        take_until(0.., ">").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned).map(Email::try_new).verify_map(Result::ok).context(StrContext::Label("email")),
+        _: ">"
+    )
+    .map(|(name, email)| Identity::new(name, email))
     .context(StrContext::Label("identity"))
     .context(StrContext::Expected(StrContextValue::Description(
         "<name> <<email>>",

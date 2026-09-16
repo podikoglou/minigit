@@ -272,7 +272,7 @@ mod fixtures {
             tag.tagger.0,
             Identity::new(
                 Name::try_new("alex").unwrap(),
-                Email::try_new("alex.podikoglou@gmail.com").unwrap(),
+                Email::new("alex.podikoglou@gmail.com")
             )
         );
     }
@@ -357,13 +357,7 @@ mod roundtrip {
 
         #[hegel::composite]
         pub fn email(tc: &TestCase) -> Email {
-            tc.draw(
-                gs::emails()
-                    .map(Email::try_new)
-                    .filter(Result::is_ok)
-                    .map(Result::unwrap)
-                    .print_as_debug(),
-            )
+            tc.draw(gs::emails().map(Email::new).print_as_debug())
         }
 
         #[hegel::composite]

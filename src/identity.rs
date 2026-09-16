@@ -55,7 +55,6 @@ impl PartialEq<Name> for &str {
 
 #[nutype(
     sanitize(trim),
-    validate(not_empty),
     derive(Debug, PartialEq, Eq, Clone, Display, AsRef, Deref)
 )]
 pub struct Email(String);
@@ -77,4 +76,3 @@ impl PartialEq<Email> for &str {
         *self == other.as_ref()
     }
 }
-

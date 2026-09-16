@@ -259,7 +259,7 @@ pub fn object_hash_str<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectHash> {
 pub fn identity<'a>(input: &mut Stream<'a>) -> ModalResult<Identity> {
     seq!(take_until(1.., " <").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned).map(Name::try_new).verify_map(Result::ok).context(StrContext::Label("name")),
         _: " <",
-        take_until(0.., ">").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned).map(Email::try_new).verify_map(Result::ok).context(StrContext::Label("email")),
+        take_until(0.., ">").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned).map(Email::new).context(StrContext::Label("email")),
         _: ">"
     )
     .map(|(name, email)| Identity::new(name, email))
@@ -382,7 +382,7 @@ mod tests {
                 &b""[..],
                 Identity::new(
                     Name::try_new("John Doe").unwrap(),
-                    Email::try_new("john@doe.com").unwrap()
+                    Email::new("john@doe.com")
                 )
             ))
         );

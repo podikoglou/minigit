@@ -5,6 +5,7 @@ pub mod object;
 pub mod storage;
 
 pub mod fs;
+pub mod identity;
 
 mod repo;
 pub use repo::Repo;

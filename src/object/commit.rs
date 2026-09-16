@@ -1,4 +1,4 @@
-use crate::{object::hash::ObjectHash, storage::object::loose::WriteLoose};
+use crate::{identity::Identity, object::hash::ObjectHash, storage::object::loose::WriteLoose};
 use chrono::{DateTime, FixedOffset};
 use std::io::Write;
 
@@ -58,27 +58,6 @@ impl WriteLoose for Commit {
 
         writeln!(writer)?;
         write!(writer, "{}", self.description)?;
-
-        Ok(())
-    }
-}
-
-/// Contains information about a person in Git (like an author or committer)
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub struct Identity {
-    pub name: String,
-    pub email: String,
-}
-
-impl Identity {
-    pub fn new(name: String, email: String) -> Self {
-        Self { name, email }
-    }
-}
-
-impl WriteLoose for Identity {
-    fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
-        write!(writer, "{} <{}>", self.name, self.email)?;
 
         Ok(())
     }

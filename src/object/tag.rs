@@ -3,7 +3,8 @@ use std::io::Write;
 use chrono::{DateTime, FixedOffset};
 
 use crate::{
-    object::{ObjectType, commit::Identity, hash::ObjectHash},
+    identity::Identity,
+    object::{ObjectType, hash::ObjectHash},
     storage::object::loose::WriteLoose,
 };
 

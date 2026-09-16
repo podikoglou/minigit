@@ -46,10 +46,13 @@ impl WriteLoose for Tag {
     fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
         writeln!(writer, "object {}", self.target.0)?;
         writeln!(writer, "type {}", Into::<&'static str>::into(self.target.1))?;
+        writeln!(writer, "tag {}", self.name)?;
+        write!(writer, "tagger ")?;
         self.tagger.write_loose(writer)?;
         writeln!(writer)?;
 
-        writeln!(writer, "{}", self.description)?;
+        writeln!(writer)?;
+        write!(writer, "{}", self.description)?;
 
         Ok(())
     }

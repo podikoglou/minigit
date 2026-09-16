@@ -307,6 +307,7 @@ mod roundtrip {
         use minigit::object::tag::Tag;
         use minigit::object::tree::Tree;
         use minigit::object::tree::TreeEntry;
+        use minigit::time::Timestamp;
         use strum::VariantArray;
 
         #[hegel::composite]
@@ -379,11 +380,22 @@ mod roundtrip {
         }
 
         #[hegel::composite]
+        pub fn timestamp(tc: &TestCase) -> Timestamp {
+            tc.draw(
+                datetimes()
+                    .map(Timestamp::try_new)
+                    .filter(Result::is_ok)
+                    .map(Result::unwrap)
+                    .print_as_debug(),
+            )
+        }
+
+        #[hegel::composite]
         pub fn commit(tc: &TestCase) -> Commit {
             let tree = tc.draw(hash().print_as_debug());
             let parents = tc.draw(gs::vecs(hash()).print_as_debug());
-            let author = tc.draw(gs::tuples!(identity(), datetimes()).print_as_debug());
-            let committer = tc.draw(gs::tuples!(identity(), datetimes()).print_as_debug());
+            let author = tc.draw(gs::tuples!(identity(), timestamp()).print_as_debug());
+            let committer = tc.draw(gs::tuples!(identity(), timestamp()).print_as_debug());
             let extra = tc.draw(gs::vecs(property()).print_as_debug());
             let description = tc.draw(gs::text());
 
@@ -394,7 +406,7 @@ mod roundtrip {
         pub fn tag(tc: &TestCase) -> Tag {
             let target = tc.draw(gs::tuples!(hash(), object_type()).print_as_debug());
             let name = tc.draw(gs::text());
-            let tagger = tc.draw(gs::tuples!(identity(), datetimes()).print_as_debug());
+            let tagger = tc.draw(gs::tuples!(identity(), timestamp()).print_as_debug());
             let description = tc.draw(gs::text());
 
             Tag::new(target, name, tagger, description)

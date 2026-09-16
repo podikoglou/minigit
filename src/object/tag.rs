@@ -1,4 +1,9 @@
-use crate::object::{ObjectType, commit::Identity, hash::ObjectHash};
+use std::io::Write;
+
+use crate::{
+    object::{ObjectType, commit::Identity, hash::ObjectHash},
+    storage::object::loose::WriteLoose,
+};
 
 /// A tag: an object that points to an [crate::object::Object].
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -29,3 +34,9 @@ impl Tag {
 
 /// The hash and type of an object a tag is pointing to.
 pub type TagTarget = (ObjectHash, ObjectType);
+
+impl WriteLoose for Tag {
+    fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
+        Ok(())
+    }
+}

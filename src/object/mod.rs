@@ -61,6 +61,11 @@ impl WriteLoose for Object {
 
                 commit.write_loose(&mut buf)?;
             }
+            Object::Tag(tag) => {
+                write!(writer, "tag ")?;
+
+                tag.write_loose(&mut buf)?;
+            }
         }
 
         write!(writer, "{}\0", buf.len())?;

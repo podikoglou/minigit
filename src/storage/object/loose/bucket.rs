@@ -24,7 +24,7 @@ use crate::{MinigitError, object::hash::HashPrefix, storage::object::lazy::LazyO
 
 /// A directory containing objects which start with a certain prefix, placed under `.git/objects/`.
 pub struct ObjectsBucket {
-    path: PathBuf,
+    pub path: PathBuf,
     pub prefix: HashPrefix,
 }
 

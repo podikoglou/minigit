@@ -15,7 +15,7 @@ pub mod object;
 
 #[derive(Debug)]
 pub struct Store {
-    path: PathBuf,
+    pub path: PathBuf,
 }
 
 impl Store {

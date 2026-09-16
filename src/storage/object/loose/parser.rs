@@ -11,7 +11,7 @@ use sha1::digest::array::Array;
 use winnow::{
     ModalResult, Parser,
     ascii::{dec_uint, digit1, oct_digit1, till_line_ending},
-    combinator::{alt, opt, repeat, seq, terminated},
+    combinator::{alt, repeat, seq, terminated},
     error::{ContextError, ErrMode, StrContext, StrContextValue},
     token::{literal, rest, take, take_till, take_until},
 };
@@ -144,15 +144,35 @@ pub fn multiline_property<'a>(
 /// Parses an arbitrary commit property including its name and value.
 pub fn extra_property<'a>(input: &mut Stream<'a>) -> ModalResult<CommitProperty> {
     seq!(
+        // name
         take_till(1.., (b' ', b'\n'))
             .map(str::from_utf8)
             .verify_map(Result::ok),
+
+        // separator
         _: " ",
-        terminated(take_until(0.., "\n"), "\n")
-            .map(str::from_utf8)
-            .verify_map(Result::ok),
+
+        // value
+        seq!(
+            terminated(take_until(0.., "\n"), "\n")
+                .map(str::from_utf8)
+                .verify_map(Result::ok),
+            repeat(
+                0..,
+                seq!(_: " ", terminated(take_until(0.., "\n"), "\n"))
+                    .map(|(line,)| line)
+                    .map(str::from_utf8)
+                    .verify_map(Result::ok),
+            )
+        )
+        .map(|(first_line, continuation_lines): (&str, Vec<&str>)| {
+            let mut lines = Vec::with_capacity(1 + continuation_lines.len());
+            lines.push(first_line);
+            lines.extend(continuation_lines);
+            lines.join("\n")
+        })
     )
-    .map(|(key, value)| (key.to_owned(), value.to_owned()))
+    .map(|(key, value)| (key.to_owned(), value))
     .parse_next(input)
 }
 
@@ -163,7 +183,6 @@ pub fn commit<'a>(input: &mut Stream<'a>) -> ModalResult<Commit> {
         parents: repeat(0.., property("parent", object_hash_str)),
         author: property("author", seq!(identity, _: " ", timestamp)),
         committer: property("committer", seq!(identity, _: " ", timestamp)),
-        gpg_signature: opt(multiline_property("gpgsig")),
         extra: repeat(0.., extra_property),
         _: "\n",
         description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
@@ -413,6 +432,21 @@ mod tests {
                 (
                     "change-id".to_string(),
                     "xnxouqnvmpzvuvkotwynowookslovtno".to_string()
+                )
+            ))
+        );
+    }
+
+    #[test]
+    fn extra_property_parses_multi_line_property() {
+        let input = b"gpgsig -----BEGIN PGP SIGNATURE-----\n \n wsFcBAABCAAQBQJqc1jACRC1aQ7uu5UhlAAAFfgQACyD2HIkYM5SeaWNsgzpZsVu\n -----END PGP SIGNATURE-----\n \n";
+        assert_eq!(
+            extra_property.parse_peek(input),
+            Ok((
+                &b""[..],
+                (
+                    "gpgsig".to_string(), 
+                    "-----BEGIN PGP SIGNATURE-----\n\nwsFcBAABCAAQBQJqc1jACRC1aQ7uu5UhlAAAFfgQACyD2HIkYM5SeaWNsgzpZsVu\n-----END PGP SIGNATURE-----\n".to_string()
                 )
             ))
         );

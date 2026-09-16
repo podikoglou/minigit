@@ -9,7 +9,6 @@ pub struct Commit {
     pub parents: Vec<ObjectHash>,
     pub author: (Identity, DateTime<FixedOffset>),
     pub committer: (Identity, DateTime<FixedOffset>),
-    pub gpg_signature: Option<String>, // TODO: this belongs in `extra`
     pub extra: Vec<CommitProperty>,
 
     pub description: String,
@@ -21,7 +20,6 @@ impl Commit {
         parents: Vec<ObjectHash>,
         author: (Identity, DateTime<FixedOffset>),
         committer: (Identity, DateTime<FixedOffset>),
-        gpg_signature: Option<String>,
         extra: Vec<CommitProperty>,
         description: String,
     ) -> Self {
@@ -30,10 +28,16 @@ impl Commit {
             parents,
             author,
             committer,
-            gpg_signature,
             extra,
             description,
         }
+    }
+
+    /// Attempts to get the GPG Signature (including the armor) used to sign this commit.
+    pub fn gpg_signature(&self) -> Option<&String> {
+        self.extra
+            .iter()
+            .find_map(|(key, value)| if key == "gpgsig" { Some(value) } else { None })
     }
 }
 
@@ -46,17 +50,6 @@ impl WriteLoose for Commit {
 
         writeln!(writer, "committer ")?;
         self.committer.write_loose(writer)?;
-
-        // this is of course horrible on many levels
-        if let Some(signature) = &self.gpg_signature {
-            let mut lines = signature.lines();
-
-            writeln!(writer, "gpgsig {}", lines.next().unwrap())?;
-
-            for line in lines {
-                writeln!(writer, "  {}", line)?;
-            }
-        }
 
         for property in &self.extra {
             property.write_loose(writer)?;
@@ -104,7 +97,28 @@ pub type CommitProperty = (String, String);
 
 impl WriteLoose for &CommitProperty {
     fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
-        write!(writer, "{} {}", self.0, self.1)?;
+        // TODO: validation. neither should be empty
+        // the below code assumes they aren't
+
+        // write key
+        write!(writer, "{} ", self.0)?;
+
+        let mut lines = self.1.lines();
+
+        let Some(first_line) = lines.next() else {
+            return Ok(()); // is this a failure?
+        };
+
+        // write first line of value
+        write!(writer, "{}", first_line)?;
+
+        // write each subsequent line, indented by one space, indented by one space.
+        //
+        // (the reason we prefix with a newline rather than putting it at the end is
+        // because we don't want to finish with one.)
+        for line in lines {
+            write!(writer, "\n {}", line)?;
+        }
 
         Ok(())
     }

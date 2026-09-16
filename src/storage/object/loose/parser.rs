@@ -385,6 +385,8 @@ mod tests {
 
     #[test]
     fn identity_rejects_invalid_input() {
+        assert_matches!(identity.parse_peek(b"  <john@doe.com>"), Err(_));
+        assert_matches!(identity.parse_peek(b" <john@doe.com>"), Err(_));
         assert_matches!(identity.parse_peek(b"<john@doe.com>"), Err(_));
         assert_matches!(identity.parse_peek(b"j<john@doe.com>"), Err(_));
         assert_matches!(identity.parse_peek(b"<john@doe.com"), Err(_));

@@ -31,13 +31,13 @@ impl WriteLoose for Identity {
 #[nutype(
     sanitize(trim),
     validate(not_empty),
-    derive(Debug, PartialEq, Eq, Clone, Display)
+    derive(Debug, PartialEq, Eq, Clone, Display, AsRef, Deref)
 )]
 pub struct Name(String);
 
 #[nutype(
     sanitize(trim),
     validate(not_empty),
-    derive(Debug, PartialEq, Eq, Clone, Display)
+    derive(Debug, PartialEq, Eq, Clone, Display, AsRef, Deref)
 )]
 pub struct Email(String);

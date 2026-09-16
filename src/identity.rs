@@ -4,7 +4,17 @@
 
 use nutype::nutype;
 
-pub type Identity = (Name, Email);
+#[derive(Debug, PartialEq)]
+pub struct Identity {
+    pub name: Name,
+    pub email: Email,
+}
+
+impl Identity {
+    pub fn new(name: Name, email: Email) -> Self {
+        Self { name, email }
+    }
+}
 
 #[nutype(sanitize(trim), validate(not_empty), derive(Debug, PartialEq))]
 pub struct Name(String);

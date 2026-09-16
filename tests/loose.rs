@@ -215,6 +215,39 @@ mod fixtures {
     }
 
     #[test]
+    fn read_loose_signed_commit_with_extra_properties() {
+        let bytes = include_bytes!("fixtures/objects/commit-7");
+        let object = read_object_compressed(&bytes[..], ParserContext::None)
+            .expect("should be able to read loose commit object");
+
+        let Object::Commit(commit) = &object else {
+            panic!("expected Object::Commit, got {object:?}");
+        };
+
+        assert_eq!(
+            commit.tree.to_string(),
+            "ea00c1817f48a071f0ce201cd12eee8713b73e08"
+        );
+        assert_eq!(
+            commit.parents,
+            vec!["e6e58f91d29e4660bcdf09a2bb901a5abe261573".parse().unwrap()]
+        );
+        assert_eq!(commit.author.0.name, "Marc Jakobi");
+        assert_eq!(commit.author.0.email, "marc.jakobi@tiko.energy");
+        assert_eq!(commit.committer.0.name, "Marc Jakobi");
+        assert_eq!(commit.committer.0.email, "marc.jakobi@tiko.energy");
+        assert_eq!(
+            commit.extra,
+            vec![(
+                "change-id".to_string(),
+                "ltllyyqoltutvomyxlpvwuoqyrulnqsk".to_string()
+            )]
+        );
+        assert!(commit.gpg_signature.is_some());
+        assert_eq!(commit.description, "feat: lazy-load indexing\n");
+    }
+
+    #[test]
     fn read_loose_tag() {
         let bytes = include_bytes!("fixtures/objects/tag-1");
         let object = read_object_compressed(&bytes[..], ParserContext::None)

@@ -49,7 +49,7 @@ impl TreeEntry {
 
 impl WriteLoose for (&FileName, &TreeEntry) {
     fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
-        write!(writer, "{:} {}\0", self.1.mode, self.0)?;
+        write!(writer, "{:o} {}\0", self.1.mode, self.0)?;
 
         let hash_s = Into::<Array<u8, U20>>::into(self.1.object.clone());
         writer.write_all(hash_s.as_slice())?;

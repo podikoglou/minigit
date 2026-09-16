@@ -1,11 +1,10 @@
 use std::io::Write;
 
-use chrono::{DateTime, FixedOffset};
-
 use crate::{
     identity::Identity,
     object::{ObjectType, hash::ObjectHash},
     storage::object::loose::WriteLoose,
+    time::Timestamp,
 };
 
 /// A tag: an object that points to an [crate::object::Object].
@@ -18,7 +17,7 @@ pub struct Tag {
     pub name: String,
 
     /// The tagger and time of creation of the tag.
-    pub tagger: (Identity, DateTime<FixedOffset>),
+    pub tagger: (Identity, Timestamp),
 
     /// The description of the tag.
     pub description: String,
@@ -28,7 +27,7 @@ impl Tag {
     pub fn new(
         target: TagTarget,
         name: String,
-        tagger: (Identity, DateTime<FixedOffset>),
+        tagger: (Identity, Timestamp),
         description: String,
     ) -> Self {
         Self {

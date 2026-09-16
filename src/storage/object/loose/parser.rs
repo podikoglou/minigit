@@ -72,10 +72,11 @@ pub fn object_type<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectType> {
         literal("blob").value(ObjectType::Blob),
         literal("tree").value(ObjectType::Tree),
         literal("commit").value(ObjectType::Commit),
+        literal("tag").value(ObjectType::Tag),
     ))
     .context(StrContext::Label("type"))
     .context(StrContext::Expected(StrContextValue::Description(
-        "blob | tree | commit",
+        "blob | tree | commit | tag",
     )))
     .parse_next(input)
 }

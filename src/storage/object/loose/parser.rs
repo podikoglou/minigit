@@ -285,6 +285,8 @@ pub fn timestamp<'a>(input: &mut Stream<'a>) -> ModalResult<Timestamp> {
 
         DateTime::from_timestamp(secs, 0).map(|dt| dt.with_timezone(&offset))
     })
+    .map(Timestamp::try_new)
+    .verify_map(Result::ok)
     .context(StrContext::Label("timestamp"))
     .context(StrContext::Expected(StrContextValue::Description(
         "<unix time> <offset>",

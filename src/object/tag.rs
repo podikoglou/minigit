@@ -1,5 +1,7 @@
 use std::io::Write;
 
+use chrono::{DateTime, FixedOffset};
+
 use crate::{
     object::{ObjectType, commit::Identity, hash::ObjectHash},
     storage::object::loose::WriteLoose,
@@ -14,15 +16,20 @@ pub struct Tag {
     /// The name of the tag.
     pub name: String,
 
-    /// The creator of the tag.
-    pub creator: Identity,
+    /// The creator and time of creation of the tag.
+    pub creator: (Identity, DateTime<FixedOffset>),
 
     /// The description of the tag.
     pub description: String,
 }
 
 impl Tag {
-    pub fn new(target: TagTarget, name: String, creator: Identity, description: String) -> Self {
+    pub fn new(
+        target: TagTarget,
+        name: String,
+        creator: (Identity, DateTime<FixedOffset>),
+        description: String,
+    ) -> Self {
         Self {
             target,
             name,

@@ -1,5 +1,6 @@
 pub mod blob;
 pub mod commit;
+pub mod tag;
 pub mod tree;
 
 pub mod hash;
@@ -14,7 +15,7 @@ use tree::Tree;
 
 use crate::{
     MinigitError,
-    object::{commit::Commit, hash::ObjectHash},
+    object::{commit::Commit, hash::ObjectHash, tag::Tag},
     storage::object::{LazyObject, loose::WriteLoose},
 };
 
@@ -26,6 +27,7 @@ pub enum Object {
     Blob(Blob),
     Tree(Tree),
     Commit(Box<Commit>),
+    Tag(Tag),
 }
 
 impl Object {
@@ -94,6 +96,11 @@ impl From<Tree> for Object {
 impl From<Commit> for Object {
     fn from(val: Commit) -> Self {
         Self::Commit(Box::new(val))
+    }
+}
+impl From<Tag> for Object {
+    fn from(val: Tag) -> Self {
+        Self::Tag(val)
     }
 }
 

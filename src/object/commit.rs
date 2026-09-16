@@ -1,5 +1,7 @@
-use crate::{object::hash::ObjectHash, storage::object::loose::WriteLoose};
-use chrono::{DateTime, FixedOffset};
+use crate::{
+    identity::Identity, object::hash::ObjectHash, storage::object::loose::WriteLoose,
+    time::Timestamp,
+};
 use std::io::Write;
 
 /// A commit an object that contains information about a commit.
@@ -7,8 +9,8 @@ use std::io::Write;
 pub struct Commit {
     pub tree: ObjectHash,
     pub parents: Vec<ObjectHash>,
-    pub author: (Identity, DateTime<FixedOffset>),
-    pub committer: (Identity, DateTime<FixedOffset>),
+    pub author: (Identity, Timestamp),
+    pub committer: (Identity, Timestamp),
     pub extra: Vec<CommitProperty>,
 
     pub description: String,
@@ -18,8 +20,8 @@ impl Commit {
     pub fn new(
         tree: ObjectHash,
         parents: Vec<ObjectHash>,
-        author: (Identity, DateTime<FixedOffset>),
-        committer: (Identity, DateTime<FixedOffset>),
+        author: (Identity, Timestamp),
+        committer: (Identity, Timestamp),
         extra: Vec<CommitProperty>,
         description: String,
     ) -> Self {
@@ -63,28 +65,7 @@ impl WriteLoose for Commit {
     }
 }
 
-/// Contains information about a person in Git (like an author or committer)
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub struct Identity {
-    pub name: String,
-    pub email: String,
-}
-
-impl Identity {
-    pub fn new(name: String, email: String) -> Self {
-        Self { name, email }
-    }
-}
-
-impl WriteLoose for Identity {
-    fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
-        write!(writer, "{} <{}>", self.name, self.email)?;
-
-        Ok(())
-    }
-}
-
-impl WriteLoose for (Identity, DateTime<FixedOffset>) {
+impl WriteLoose for (Identity, Timestamp) {
     fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
         self.0.write_loose(writer)?;
         write!(writer, " {}", self.1.format("%s %z"))?;

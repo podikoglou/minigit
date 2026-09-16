@@ -1,7 +1,8 @@
 mod fixtures {
     use minigit::{
         error::ParserContext,
-        object::{Object, ObjectType, commit::Identity, tree::TreeEntry},
+        identity::{Email, Identity, Name},
+        object::{Object, ObjectType, tree::TreeEntry},
         storage::object::loose::read_object_compressed,
     };
 
@@ -269,7 +270,10 @@ mod fixtures {
         assert_eq!(tag.description, "0.0.1! :D\n");
         assert_eq!(
             tag.tagger.0,
-            Identity::new("alex".to_string(), "alex.podikoglou@gmail.com".to_string())
+            Identity::new(
+                Name::try_new("alex").unwrap(),
+                Email::new("alex.podikoglou@gmail.com")
+            )
         );
     }
 }
@@ -292,15 +296,18 @@ mod roundtrip {
         use hegel::extras::chrono::datetimes;
         use hegel::generators as gs;
         use minigit::fs::FileName;
+        use minigit::identity::Email;
+        use minigit::identity::Identity;
+        use minigit::identity::Name;
         use minigit::object::ObjectType;
         use minigit::object::blob::Blob;
         use minigit::object::commit::Commit;
         use minigit::object::commit::CommitProperty;
-        use minigit::object::commit::Identity;
         use minigit::object::hash::ObjectHash;
         use minigit::object::tag::Tag;
         use minigit::object::tree::Tree;
         use minigit::object::tree::TreeEntry;
+        use minigit::time::Timestamp;
         use strum::VariantArray;
 
         #[hegel::composite]
@@ -339,11 +346,25 @@ mod roundtrip {
         }
 
         #[hegel::composite]
-        pub fn identity(tc: &TestCase) -> Identity {
-            let name = tc.draw(gs::text());
+        pub fn name(tc: &TestCase) -> Name {
+            tc.draw(
+                gs::text()
+                    .map(Name::try_new)
+                    .filter(Result::is_ok)
+                    .map(Result::unwrap)
+                    .print_as_debug(),
+            )
+        }
 
-            // TODO: consider gs::text, since we don't do email validation, thus we accenpt anything
-            let email = tc.draw(gs::emails());
+        #[hegel::composite]
+        pub fn email(tc: &TestCase) -> Email {
+            tc.draw(gs::emails().map(Email::new).print_as_debug())
+        }
+
+        #[hegel::composite]
+        pub fn identity(tc: &TestCase) -> Identity {
+            let name = tc.draw(name().print_as_debug());
+            let email = tc.draw(email().print_as_debug());
 
             Identity::new(name, email)
         }
@@ -359,11 +380,22 @@ mod roundtrip {
         }
 
         #[hegel::composite]
+        pub fn timestamp(tc: &TestCase) -> Timestamp {
+            tc.draw(
+                datetimes()
+                    .map(Timestamp::try_new)
+                    .filter(Result::is_ok)
+                    .map(Result::unwrap)
+                    .print_as_debug(),
+            )
+        }
+
+        #[hegel::composite]
         pub fn commit(tc: &TestCase) -> Commit {
             let tree = tc.draw(hash().print_as_debug());
             let parents = tc.draw(gs::vecs(hash()).print_as_debug());
-            let author = tc.draw(gs::tuples!(identity(), datetimes()).print_as_debug());
-            let committer = tc.draw(gs::tuples!(identity(), datetimes()).print_as_debug());
+            let author = tc.draw(gs::tuples!(identity(), timestamp()).print_as_debug());
+            let committer = tc.draw(gs::tuples!(identity(), timestamp()).print_as_debug());
             let extra = tc.draw(gs::vecs(property()).print_as_debug());
             let description = tc.draw(gs::text());
 
@@ -374,7 +406,7 @@ mod roundtrip {
         pub fn tag(tc: &TestCase) -> Tag {
             let target = tc.draw(gs::tuples!(hash(), object_type()).print_as_debug());
             let name = tc.draw(gs::text());
-            let tagger = tc.draw(gs::tuples!(identity(), datetimes()).print_as_debug());
+            let tagger = tc.draw(gs::tuples!(identity(), timestamp()).print_as_debug());
             let description = tc.draw(gs::text());
 
             Tag::new(target, name, tagger, description)
@@ -425,7 +457,6 @@ mod roundtrip {
     }
 
     #[hegel::test]
-    #[ignore]
     fn roundtrip_tag(tc: TestCase) {
         let object = tc.draw(generators::tag().map(Object::from).print_as_debug());
 

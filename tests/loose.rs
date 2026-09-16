@@ -241,17 +241,17 @@ mod fixtures {
 mod roundtrip {
     use hegel::Generator;
     use hegel::TestCase;
-    use hegel::generators as gs;
+    
     use minigit::error::ParserContext;
     use minigit::object::Object;
-    use minigit::object::tree::Tree;
-    use minigit::object::tree::TreeEntry;
+    
+    
     use minigit::storage::object::loose::WriteLoose;
     use minigit::storage::object::loose::read_object;
 
     mod generators {
         use crate::roundtrip::generators;
-        use chrono::FixedOffset;
+        
         use hegel::Generator;
         use hegel::TestCase;
         use hegel::extras::chrono::datetimes;

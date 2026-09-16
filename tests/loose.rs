@@ -425,7 +425,6 @@ mod roundtrip {
     }
 
     #[hegel::test]
-    #[ignore]
     fn roundtrip_tag(tc: TestCase) {
         let object = tc.draw(generators::tag().map(Object::from).print_as_debug());
 

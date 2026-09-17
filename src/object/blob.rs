@@ -1,6 +1,8 @@
 use std::io::Write;
 
-use crate::storage::object::loose::WriteLoose;
+use winnow::{ModalResult, Parser, error::StrContext, token::rest};
+
+use crate::storage::object::loose::{WriteLoose, parser::Stream};
 
 /// An blob: an object that simply contains some bytes.
 ///
@@ -19,4 +21,11 @@ impl WriteLoose for Blob {
         writer.write_all(&self.0)?;
         Ok(())
     }
+}
+
+/// Parses a blob object's content from some bytes.
+pub fn parse_blob<'a>(input: &mut Stream<'a>) -> ModalResult<Blob> {
+    rest.map(|e: Stream| Blob(e.into()))
+        .context(StrContext::Label("blob object"))
+        .parse_next(input)
 }

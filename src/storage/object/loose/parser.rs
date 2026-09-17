@@ -23,7 +23,7 @@ use crate::{
     identity::parse_identity,
     object::{
         Object, ObjectType,
-        blob::Blob,
+        blob::parse_blob,
         commit::{Commit, CommitProperty},
         hash::ObjectHash,
         tag::Tag,
@@ -49,7 +49,7 @@ pub fn object<'a>(input: &mut Stream<'a>) -> ModalResult<Object> {
     let mut bytes: Stream<'a> = take(size).parse_next(input)?;
 
     match typee {
-        ObjectType::Blob => blob.map(Object::Blob).parse_next(&mut bytes),
+        ObjectType::Blob => parse_blob.map(Object::Blob).parse_next(&mut bytes),
         ObjectType::Tree => tree.map(Object::Tree).parse_next(&mut bytes),
         ObjectType::Commit => commit.map(Object::from).parse_next(&mut bytes),
         ObjectType::Tag => tag.map(Object::from).parse_next(&mut bytes),
@@ -82,13 +82,6 @@ pub fn object_type<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectType> {
         "blob | tree | commit | tag",
     )))
     .parse_next(input)
-}
-
-/// Parses a blob object's content from some bytes.
-pub fn blob<'a>(input: &mut Stream<'a>) -> ModalResult<Blob> {
-    rest.map(|e: Stream| Blob(e.into()))
-        .context(StrContext::Label("blob object"))
-        .parse_next(input)
 }
 
 /// Parses a tree object from some bytes.

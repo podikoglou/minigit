@@ -41,6 +41,17 @@ impl WriteLoose for Identity {
 )]
 pub struct Name(String);
 
+pub fn parse_name<'a>(input: &mut Stream<'a>) -> ModalResult<Name> {
+    take_until(1.., " <")
+        .map(str::from_utf8)
+        .verify_map(Result::ok)
+        .map(str::to_owned)
+        .map(Name::try_new)
+        .verify_map(Result::ok)
+        .context(StrContext::Label("name"))
+        .parse_next(input)
+}
+
 impl PartialEq<&str> for Name {
     fn eq(&self, other: &&str) -> bool {
         self.as_ref() == *other
@@ -85,7 +96,7 @@ impl PartialEq<Email> for &str {
 
 /// Parses an identity in the form of `John Doe <john@doe.com>` from some bytes.
 pub fn parse_identity<'a>(input: &mut Stream<'a>) -> ModalResult<Identity> {
-    seq!(take_until(1.., " <").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned).map(Name::try_new).verify_map(Result::ok).context(StrContext::Label("name")),
+    seq!(parse_name,
         _: " <",
         take_until(0.., ">").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned).map(Email::new).context(StrContext::Label("email")),
         _: ">"
@@ -102,8 +113,16 @@ pub fn parse_identity<'a>(input: &mut Stream<'a>) -> ModalResult<Identity> {
 mod tests {
     use winnow::Parser;
 
-    use crate::identity::{Email, Identity, Name, parse_identity};
+    use crate::identity::{Email, Identity, Name, parse_identity, parse_name};
     use std::assert_matches;
+
+    #[test]
+    fn parse_name_parses_valid_names() {
+        assert_eq!(
+            parse_name.parse_peek(b"john"),
+            Ok(Name::try_new("john").unwrap())
+        );
+    }
 
     #[test]
     fn identity_parses_valid_identities() {

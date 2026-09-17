@@ -14,8 +14,9 @@ use strum::{EnumDiscriminants, EnumString, IntoStaticStr, VariantArray};
 use tree::Tree;
 use winnow::{
     ModalResult, Parser,
-    combinator::alt,
-    error::{StrContext, StrContextValue},
+    ascii::dec_uint,
+    combinator::{alt, seq},
+    error::{ContextError, ErrMode, StrContext, StrContextValue},
     token::literal,
 };
 
@@ -125,6 +126,19 @@ impl TryFrom<LazyObject> for Object {
     fn try_from(value: LazyObject) -> Result<Self, Self::Error> {
         value.into_object()
     }
+}
+
+/// Parse a header (object type and size) from some bytes.
+pub fn parse_header<'a>(input: &mut Stream<'a>) -> ModalResult<(ObjectType, usize)> {
+    let mut size = dec_uint::<_, usize, ErrMode<ContextError>>
+        .context(StrContext::Label("payload size"))
+        .context(StrContext::Expected(StrContextValue::Description(
+            "bytes amount",
+        )));
+
+    seq!(parse_object_type, _: " ", size, _: "\0")
+        .context(StrContext::Label("header"))
+        .parse_next(input)
 }
 
 /// Parses an object type string from some bytes.

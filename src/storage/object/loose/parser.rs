@@ -22,7 +22,7 @@ use crate::{
         blob::parse_blob,
         commit::{CommitProperty, parse_commit},
         hash::ObjectHash,
-        parse_object_type,
+        parse_header,
         tag::parse_tag,
         tree::parse_tree,
     },
@@ -42,7 +42,7 @@ pub fn parse_object(input: &[u8], context: ParserContext) -> Result<Object, Mini
 
 /// Parses an [Object] from some input.
 pub fn object<'a>(input: &mut Stream<'a>) -> ModalResult<Object> {
-    let (typee, size) = header.parse_next(input)?;
+    let (typee, size) = parse_header.parse_next(input)?;
     let mut bytes: Stream<'a> = take(size).parse_next(input)?;
 
     match typee {
@@ -51,19 +51,6 @@ pub fn object<'a>(input: &mut Stream<'a>) -> ModalResult<Object> {
         ObjectType::Commit => parse_commit.map(Object::from).parse_next(&mut bytes),
         ObjectType::Tag => parse_tag.map(Object::from).parse_next(&mut bytes),
     }
-}
-
-/// Parse a header (object type and size) from some bytes.
-pub fn header<'a>(input: &mut Stream<'a>) -> ModalResult<(ObjectType, usize)> {
-    let mut size = dec_uint::<_, usize, ErrMode<ContextError>>
-        .context(StrContext::Label("payload size"))
-        .context(StrContext::Expected(StrContextValue::Description(
-            "bytes amount",
-        )));
-
-    seq!(parse_object_type, _: " ", size, _: "\0")
-        .context(StrContext::Label("header"))
-        .parse_next(input)
 }
 
 /// Helper for creating parsers that parse a key value pair found in a commit object, such as

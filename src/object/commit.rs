@@ -10,9 +10,9 @@ use crate::{
     object::hash::ObjectHash,
     storage::object::loose::{
         WriteLoose,
-        parser::{Stream, extra_property, object_hash_str, property, timestamp},
+        parser::{Stream, extra_property, object_hash_str, property},
     },
-    time::Timestamp,
+    time::{Timestamp, parse_timestamp},
 };
 use std::io::Write;
 
@@ -82,8 +82,8 @@ pub fn parse_commit<'a>(input: &mut Stream<'a>) -> ModalResult<Commit> {
     seq! {Commit{
         tree: property("tree", object_hash_str),
         parents: repeat(0.., property("parent", object_hash_str)),
-        author: property("author", seq!(parse_identity, _: " ", timestamp)),
-        committer: property("committer", seq!(parse_identity, _: " ", timestamp)),
+        author: property("author", seq!(parse_identity, _: " ", parse_timestamp)),
+        committer: property("committer", seq!(parse_identity, _: " ", parse_timestamp)),
         extra: repeat(0.., extra_property),
         _: "\n",
         description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),

@@ -12,9 +12,9 @@ use crate::{
     object::{ObjectType, hash::ObjectHash, parse_object_type},
     storage::object::loose::{
         WriteLoose,
-        parser::{Stream, object_hash_str, property, timestamp},
+        parser::{Stream, object_hash_str, property},
     },
-    time::Timestamp,
+    time::{Timestamp, parse_timestamp},
 };
 
 /// A tag: an object that points to an [crate::object::Object].
@@ -76,7 +76,7 @@ pub fn parse_tag<'a>(input: &mut Stream<'a>) -> ModalResult<Tag> {
         property("type", parse_object_type),
     ),
     name: property("tag", take_until(1.., "\n").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned)),
-    tagger: property("tagger", seq!(parse_identity, _: " ", timestamp)),
+    tagger: property("tagger", seq!(parse_identity, _: " ", parse_timestamp)),
     _: "\n",
     description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
     }}.context(StrContext::Label("tag object"))

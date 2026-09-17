@@ -17,12 +17,19 @@ use winnow::{
     ascii::dec_uint,
     combinator::{alt, seq},
     error::{ContextError, ErrMode, StrContext, StrContextValue},
-    token::literal,
+    token::{literal, take},
 };
 
 use crate::{
     MinigitError,
-    object::{commit::Commit, hash::ObjectHash, tag::Tag},
+    error::ParserContext,
+    object::{
+        blob::parse_blob,
+        commit::{Commit, parse_commit},
+        hash::ObjectHash,
+        tag::{Tag, parse_tag},
+        tree::parse_tree,
+    },
     storage::object::{
         LazyObject,
         loose::{WriteLoose, parser::Stream},
@@ -125,6 +132,28 @@ impl TryFrom<LazyObject> for Object {
 
     fn try_from(value: LazyObject) -> Result<Self, Self::Error> {
         value.into_object()
+    }
+}
+
+/// Parses an [Object] from some bytes.
+///
+/// Unless you're building your own parsers this is the function you're looking for.
+pub fn parse_object(input: &[u8], context: ParserContext) -> Result<Object, MinigitError> {
+    object
+        .parse(input)
+        .map_err(|err| MinigitError::ParserError(err.to_string(), context))
+}
+
+/// Parses an [Object] from some input.
+pub fn object<'a>(input: &mut Stream<'a>) -> ModalResult<Object> {
+    let (typee, size) = parse_header.parse_next(input)?;
+    let mut bytes: Stream<'a> = take(size).parse_next(input)?;
+
+    match typee {
+        ObjectType::Blob => parse_blob.map(Object::Blob).parse_next(&mut bytes),
+        ObjectType::Tree => parse_tree.map(Object::Tree).parse_next(&mut bytes),
+        ObjectType::Commit => parse_commit.map(Object::from).parse_next(&mut bytes),
+        ObjectType::Tag => parse_tag.map(Object::from).parse_next(&mut bytes),
     }
 }
 

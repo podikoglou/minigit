@@ -8,50 +8,18 @@ use chrono::{DateTime, FixedOffset};
 use sha1::digest::array::Array;
 use winnow::{
     ModalResult, Parser,
-    ascii::{dec_uint, digit1, oct_digit1},
+    ascii::{digit1, oct_digit1},
     combinator::{alt, repeat, seq, terminated},
     error::{ContextError, ErrMode, StrContext, StrContextValue},
     token::{take, take_till, take_until},
 };
 
 use crate::{
-    MinigitError,
-    error::ParserContext,
-    object::{
-        Object, ObjectType,
-        blob::parse_blob,
-        commit::{CommitProperty, parse_commit},
-        hash::ObjectHash,
-        parse_header,
-        tag::parse_tag,
-        tree::parse_tree,
-    },
+    object::{commit::CommitProperty, hash::ObjectHash},
     time::Timestamp,
 };
 
 pub type Stream<'a> = &'a [u8];
-
-/// Parses an [Object] from some bytes.
-///
-/// Unless you're building your own parsers this is the function you're looking for.
-pub fn parse_object(input: &[u8], context: ParserContext) -> Result<Object, MinigitError> {
-    object
-        .parse(input)
-        .map_err(|err| MinigitError::ParserError(err.to_string(), context))
-}
-
-/// Parses an [Object] from some input.
-pub fn object<'a>(input: &mut Stream<'a>) -> ModalResult<Object> {
-    let (typee, size) = parse_header.parse_next(input)?;
-    let mut bytes: Stream<'a> = take(size).parse_next(input)?;
-
-    match typee {
-        ObjectType::Blob => parse_blob.map(Object::Blob).parse_next(&mut bytes),
-        ObjectType::Tree => parse_tree.map(Object::Tree).parse_next(&mut bytes),
-        ObjectType::Commit => parse_commit.map(Object::from).parse_next(&mut bytes),
-        ObjectType::Tag => parse_tag.map(Object::from).parse_next(&mut bytes),
-    }
-}
 
 /// Helper for creating parsers that parse a key value pair found in a commit object, such as
 /// `author <author>`

@@ -3,9 +3,12 @@
 pub mod bucket;
 pub mod parser;
 
-use crate::{MinigitError, error::ParserContext, object::Object};
+use crate::{
+    MinigitError,
+    error::ParserContext,
+    object::{Object, parse_object},
+};
 use flate2::read::ZlibDecoder;
-pub use parser::parse_object;
 use std::io::{BufRead, Read, Write};
 
 /// Behaviour for encoding the struct in Git's loose object format.

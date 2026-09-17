@@ -1,9 +1,19 @@
 use std::io::Write;
 
+use winnow::{
+    ModalResult, Parser,
+    combinator::seq,
+    error::StrContext,
+    token::{rest, take_until},
+};
+
 use crate::{
-    identity::Identity,
-    object::{ObjectType, hash::ObjectHash},
-    storage::object::loose::WriteLoose,
+    identity::{Identity, parse_identity},
+    object::{ObjectType, hash::ObjectHash, parse_object_type},
+    storage::object::loose::{
+        WriteLoose,
+        parser::{Stream, object_hash_str, property, timestamp},
+    },
     time::Timestamp,
 };
 
@@ -56,4 +66,19 @@ impl WriteLoose for Tag {
 
         Ok(())
     }
+}
+
+/// Parses a tag object from some bytes.
+pub fn parse_tag<'a>(input: &mut Stream<'a>) -> ModalResult<Tag> {
+    seq! {Tag{
+    target: seq!(
+        property("object", object_hash_str),
+        property("type", parse_object_type),
+    ),
+    name: property("tag", take_until(1.., "\n").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned)),
+    tagger: property("tagger", seq!(parse_identity, _: " ", timestamp)),
+    _: "\n",
+    description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
+    }}.context(StrContext::Label("tag object"))
+    .parse_next(input)
 }

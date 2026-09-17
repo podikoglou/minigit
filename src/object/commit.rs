@@ -1,5 +1,17 @@
+use winnow::{
+    ModalResult, Parser,
+    combinator::{repeat, seq},
+    error::StrContext,
+    token::rest,
+};
+
 use crate::{
-    identity::Identity, object::hash::ObjectHash, storage::object::loose::WriteLoose,
+    identity::{Identity, parse_identity},
+    object::hash::ObjectHash,
+    storage::object::loose::{
+        WriteLoose,
+        parser::{Stream, extra_property, object_hash_str, property, timestamp},
+    },
     time::Timestamp,
 };
 use std::io::Write;
@@ -63,6 +75,21 @@ impl WriteLoose for Commit {
 
         Ok(())
     }
+}
+
+/// Parses a commit object from some bytes.
+pub fn parse_commit<'a>(input: &mut Stream<'a>) -> ModalResult<Commit> {
+    seq! {Commit{
+        tree: property("tree", object_hash_str),
+        parents: repeat(0.., property("parent", object_hash_str)),
+        author: property("author", seq!(parse_identity, _: " ", timestamp)),
+        committer: property("committer", seq!(parse_identity, _: " ", timestamp)),
+        extra: repeat(0.., extra_property),
+        _: "\n",
+        description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
+    }}
+    .context(StrContext::Label("commit object"))
+    .parse_next(input)
 }
 
 impl WriteLoose for (Identity, Timestamp) {

@@ -4,112 +4,26 @@
 //! crate. It should be stressed that they will not fail if they have excess input, as they are
 //! incremental and built to be combined.
 
-use std::collections::BTreeMap;
-
 use chrono::{DateTime, FixedOffset};
 use sha1::digest::array::Array;
 use winnow::{
     ModalResult, Parser,
-    ascii::{dec_uint, digit1, oct_digit1},
+    ascii::{digit1, oct_digit1},
     combinator::{alt, repeat, seq, terminated},
     error::{ContextError, ErrMode, StrContext, StrContextValue},
-    token::{literal, rest, take, take_till, take_until},
+    token::{take, take_till, take_until},
 };
 
 use crate::{
-    MinigitError,
-    error::ParserContext,
-    fs::{FileName, parse_file_name},
-    identity::parse_identity,
-    object::{
-        Object, ObjectType,
-        blob::Blob,
-        commit::{Commit, CommitProperty},
-        hash::ObjectHash,
-        tag::Tag,
-        tree::{Tree, TreeEntry},
-    },
+    object::{commit::CommitProperty, hash::ObjectHash},
     time::Timestamp,
 };
 
 pub type Stream<'a> = &'a [u8];
 
-/// Parses an [Object] from some bytes.
-///
-/// Unless you're building your own parsers this is the function you're looking for.
-pub fn parse_object(input: &[u8], context: ParserContext) -> Result<Object, MinigitError> {
-    object
-        .parse(input)
-        .map_err(|err| MinigitError::ParserError(err.to_string(), context))
-}
-
-/// Parses an [Object] from some input.
-pub fn object<'a>(input: &mut Stream<'a>) -> ModalResult<Object> {
-    let (typee, size) = header.parse_next(input)?;
-    let mut bytes: Stream<'a> = take(size).parse_next(input)?;
-
-    match typee {
-        ObjectType::Blob => blob.map(Object::Blob).parse_next(&mut bytes),
-        ObjectType::Tree => tree.map(Object::Tree).parse_next(&mut bytes),
-        ObjectType::Commit => commit.map(Object::from).parse_next(&mut bytes),
-        ObjectType::Tag => tag.map(Object::from).parse_next(&mut bytes),
-    }
-}
-
-/// Parse a header (object type and size) from some bytes.
-pub fn header<'a>(input: &mut Stream<'a>) -> ModalResult<(ObjectType, usize)> {
-    let mut size = dec_uint::<_, usize, ErrMode<ContextError>>
-        .context(StrContext::Label("payload size"))
-        .context(StrContext::Expected(StrContextValue::Description(
-            "bytes amount",
-        )));
-
-    seq!(object_type, _: " ", size, _: "\0")
-        .context(StrContext::Label("header"))
-        .parse_next(input)
-}
-
-/// Parses an object type string from some bytes.
-pub fn object_type<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectType> {
-    alt((
-        literal("blob").value(ObjectType::Blob),
-        literal("tree").value(ObjectType::Tree),
-        literal("commit").value(ObjectType::Commit),
-        literal("tag").value(ObjectType::Tag),
-    ))
-    .context(StrContext::Label("type"))
-    .context(StrContext::Expected(StrContextValue::Description(
-        "blob | tree | commit | tag",
-    )))
-    .parse_next(input)
-}
-
-/// Parses a blob object's content from some bytes.
-pub fn blob<'a>(input: &mut Stream<'a>) -> ModalResult<Blob> {
-    rest.map(|e: Stream| Blob(e.into()))
-        .context(StrContext::Label("blob object"))
-        .parse_next(input)
-}
-
-/// Parses a tree object from some bytes.
-pub fn tree<'a>(input: &mut Stream<'a>) -> ModalResult<Tree> {
-    // NOTE: not sure if this should be `0..` or `1..`
-    // should we be able to parse empty trees?
-    repeat(0.., tree_entry)
-        .map(|entries: Vec<(u16, FileName, ObjectHash)>| {
-            entries
-                .into_iter()
-                .map(|(mode, name, hash)| (name, TreeEntry::new(mode, hash)))
-                .collect::<BTreeMap<FileName, TreeEntry>>()
-        })
-        .context(StrContext::Label("tree object"))
-        .map(Tree::new)
-        .parse_next(input)
-}
-
 /// Helper for creating parsers that parse a key value pair found in a commit object, such as
 /// `author <author>`
-fn property<'a, O>(
+pub fn property<'a, O>(
     mut key: impl Parser<Stream<'a>, &'a [u8], ErrMode<ContextError>>,
     mut value: impl Parser<Stream<'a>, O, ErrMode<ContextError>>,
 ) -> impl Parser<Stream<'a>, O, ErrMode<ContextError>> {
@@ -176,42 +90,6 @@ pub fn extra_property<'a>(input: &mut Stream<'a>) -> ModalResult<CommitProperty>
     )
     .map(|(key, value)| (key.to_owned(), value))
     .parse_next(input)
-}
-
-/// Parses a commit object from some bytes.
-pub fn commit<'a>(input: &mut Stream<'a>) -> ModalResult<Commit> {
-    seq! {Commit{
-        tree: property("tree", object_hash_str),
-        parents: repeat(0.., property("parent", object_hash_str)),
-        author: property("author", seq!(parse_identity, _: " ", timestamp)),
-        committer: property("committer", seq!(parse_identity, _: " ", timestamp)),
-        extra: repeat(0.., extra_property),
-        _: "\n",
-        description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
-    }}
-    .context(StrContext::Label("commit object"))
-    .parse_next(input)
-}
-/// Parses a tag object from some bytes.
-pub fn tag<'a>(input: &mut Stream<'a>) -> ModalResult<Tag> {
-    seq! {Tag{
-    target: seq!(
-        property("object", object_hash_str),
-        property("type", object_type),
-    ),
-    name: property("tag", take_until(1.., "\n").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned)),
-    tagger: property("tagger", seq!(parse_identity, _: " ", timestamp)),
-    _: "\n",
-    description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
-    }}.context(StrContext::Label("tag object"))
-    .parse_next(input)
-}
-
-/// Parses a tree object's entry into a tuple `(mode, name, hash)` from some bytes.
-pub fn tree_entry<'a>(input: &mut Stream<'a>) -> ModalResult<(u16, FileName, ObjectHash)> {
-    seq!((mode, _: " ", parse_file_name, object_hash))
-        .context(StrContext::Label("tree entry"))
-        .parse_next(input)
 }
 
 /// Parses a UTF-8 encoded file mode such as 100644 from some bytes.
@@ -282,10 +160,8 @@ pub fn timestamp<'a>(input: &mut Stream<'a>) -> ModalResult<Timestamp> {
 #[cfg(test)]
 mod tests {
     use crate::{
-        object::ObjectType,
         storage::object::loose::parser::{
-            extra_property, header, mode, multiline_property, object_hash_str, object_type,
-            timestamp, tree_entry,
+            extra_property, mode, multiline_property, object_hash_str, timestamp,
         },
         time::Timestamp,
     };
@@ -294,57 +170,9 @@ mod tests {
     use winnow::{Parser, error::ErrMode};
 
     #[test]
-    fn object_type_parses_expected_object_types() {
-        assert_eq!(
-            object_type.parse_peek(b"blob"),
-            Ok((&b""[..], ObjectType::Blob))
-        );
-        assert_eq!(
-            object_type.parse_peek(b"tree"),
-            Ok((&b""[..], ObjectType::Tree))
-        );
-    }
-
-    #[test]
-    fn object_type_rejects_invalid_input() {
-        assert_matches!(object_type.parse_peek(b""), Err(ErrMode::Backtrack(_)));
-        assert_matches!(object_type.parse_peek(b"blo"), Err(ErrMode::Backtrack(_)));
-    }
-
-    #[test]
-    fn header_parses_basic_headers() {
-        assert_eq!(
-            header.parse_peek(b"blob 3\0"),
-            Ok((&b""[..], (ObjectType::Blob, 3)))
-        );
-        assert_eq!(
-            header.parse_peek(b"tree 333\0"),
-            Ok((&b""[..], (ObjectType::Tree, 333)))
-        );
-    }
-
-    #[test]
-    fn header_rejets_invalid_input() {
-        assert_matches!(header.parse_peek(b"tre 3"), Err(ErrMode::Backtrack(_)));
-        assert_matches!(header.parse_peek(b"tree "), Err(ErrMode::Backtrack(_)));
-        assert_matches!(header.parse_peek(b"tree \0"), Err(ErrMode::Backtrack(_)));
-        assert_matches!(header.parse_peek(b"tree\0"), Err(ErrMode::Backtrack(_)));
-        assert_matches!(header.parse_peek(b"3"), Err(ErrMode::Backtrack(_)));
-        assert_matches!(header.parse_peek(b"3\0"), Err(ErrMode::Backtrack(_)));
-    }
-
-    #[test]
     fn mode_parses_valid_modes() {
         assert_eq!(mode.parse_peek(b"000000"), Ok((&b""[..], 0)));
         assert_eq!(mode.parse_peek(b"100644"), Ok((&b""[..], 0o100644)));
-    }
-
-    #[test]
-    fn tree_entry_parses_valid_entries() {
-        assert_eq!(
-            tree_entry.parse_peek(b"100644 cli.rs\0\x29\xf3\x23\xb3\x1a\xd1\x29\x96\x4f\xfb\x4f\x97\xf2\x03\xbe\x9c\x2f\x35\x10\x7d"),
-            Ok((&b""[..], (0o100644, "cli.rs\0".parse().unwrap(), [0x29, 0xf3, 0x23, 0xb3, 0x1a, 0xd1, 0x29, 0x96, 0x4f, 0xfb, 0x4f, 0x97, 0xf2, 0x03, 0xbe, 0x9c, 0x2f, 0x35, 0x10, 0x7d].into() )))
-        );
     }
 
     #[test]

@@ -12,11 +12,28 @@ use flate2::{Compression, write::ZlibEncoder};
 use sha1::{Digest, Sha1};
 use strum::{EnumDiscriminants, EnumString, IntoStaticStr, VariantArray};
 use tree::Tree;
+use winnow::{
+    ModalResult, Parser,
+    ascii::dec_uint,
+    combinator::{alt, seq},
+    error::{ContextError, ErrMode, StrContext, StrContextValue},
+    token::{literal, take},
+};
 
 use crate::{
     MinigitError,
-    object::{commit::Commit, hash::ObjectHash, tag::Tag},
-    storage::object::{LazyObject, loose::WriteLoose},
+    error::ParserContext,
+    object::{
+        blob::parse_blob,
+        commit::{Commit, parse_commit},
+        hash::ObjectHash,
+        tag::{Tag, parse_tag},
+        tree::parse_tree,
+    },
+    storage::object::{
+        LazyObject,
+        loose::{WriteLoose, parser::Stream},
+    },
 };
 
 #[derive(Debug, PartialEq, Eq, Clone, EnumDiscriminants)]
@@ -115,5 +132,122 @@ impl TryFrom<LazyObject> for Object {
 
     fn try_from(value: LazyObject) -> Result<Self, Self::Error> {
         value.into_object()
+    }
+}
+
+/// Parses an [Object] from some bytes.
+///
+/// Unless you're building your own parsers this is the function you're looking for.
+pub fn parse_object(input: &[u8], context: ParserContext) -> Result<Object, MinigitError> {
+    object
+        .parse(input)
+        .map_err(|err| MinigitError::ParserError(err.to_string(), context))
+}
+
+/// Parses an [Object] from some input.
+pub fn object<'a>(input: &mut Stream<'a>) -> ModalResult<Object> {
+    let (typee, size) = parse_header.parse_next(input)?;
+    let mut bytes: Stream<'a> = take(size).parse_next(input)?;
+
+    match typee {
+        ObjectType::Blob => parse_blob.map(Object::Blob).parse_next(&mut bytes),
+        ObjectType::Tree => parse_tree.map(Object::Tree).parse_next(&mut bytes),
+        ObjectType::Commit => parse_commit.map(Object::from).parse_next(&mut bytes),
+        ObjectType::Tag => parse_tag.map(Object::from).parse_next(&mut bytes),
+    }
+}
+
+/// Parse a header (object type and size) from some bytes.
+pub fn parse_header<'a>(input: &mut Stream<'a>) -> ModalResult<(ObjectType, usize)> {
+    let mut size = dec_uint::<_, usize, ErrMode<ContextError>>
+        .context(StrContext::Label("payload size"))
+        .context(StrContext::Expected(StrContextValue::Description(
+            "bytes amount",
+        )));
+
+    seq!(parse_object_type, _: " ", size, _: "\0")
+        .context(StrContext::Label("header"))
+        .parse_next(input)
+}
+
+/// Parses an object type string from some bytes.
+pub fn parse_object_type<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectType> {
+    alt((
+        literal("blob").value(ObjectType::Blob),
+        literal("tree").value(ObjectType::Tree),
+        literal("commit").value(ObjectType::Commit),
+        literal("tag").value(ObjectType::Tag),
+    ))
+    .context(StrContext::Label("type"))
+    .context(StrContext::Expected(StrContextValue::Description(
+        "blob | tree | commit | tag",
+    )))
+    .parse_next(input)
+}
+
+#[cfg(test)]
+mod test {
+    use std::assert_matches;
+
+    use winnow::{Parser, error::ErrMode};
+
+    use crate::object::{ObjectType, parse_header, parse_object_type};
+
+    #[test]
+    fn object_type_parses_expected_object_types() {
+        assert_eq!(
+            parse_object_type.parse_peek(b"blob"),
+            Ok((&b""[..], ObjectType::Blob))
+        );
+        assert_eq!(
+            parse_object_type.parse_peek(b"tree"),
+            Ok((&b""[..], ObjectType::Tree))
+        );
+    }
+
+    #[test]
+    fn object_type_rejects_invalid_input() {
+        assert_matches!(
+            parse_object_type.parse_peek(b""),
+            Err(ErrMode::Backtrack(_))
+        );
+        assert_matches!(
+            parse_object_type.parse_peek(b"blo"),
+            Err(ErrMode::Backtrack(_))
+        );
+    }
+
+    #[test]
+    fn header_parses_basic_headers() {
+        assert_eq!(
+            parse_header.parse_peek(b"blob 3\0"),
+            Ok((&b""[..], (ObjectType::Blob, 3)))
+        );
+        assert_eq!(
+            parse_header.parse_peek(b"tree 333\0"),
+            Ok((&b""[..], (ObjectType::Tree, 333)))
+        );
+    }
+
+    #[test]
+    fn header_rejets_invalid_input() {
+        assert_matches!(
+            parse_header.parse_peek(b"tre 3"),
+            Err(ErrMode::Backtrack(_))
+        );
+        assert_matches!(
+            parse_header.parse_peek(b"tree "),
+            Err(ErrMode::Backtrack(_))
+        );
+        assert_matches!(
+            parse_header.parse_peek(b"tree \0"),
+            Err(ErrMode::Backtrack(_))
+        );
+        assert_matches!(
+            parse_header.parse_peek(b"tree\0"),
+            Err(ErrMode::Backtrack(_))
+        );
+        assert_matches!(parse_header.parse_peek(b"3"), Err(ErrMode::Backtrack(_)));
+        assert_matches!(parse_header.parse_peek(b"3\0"), Err(ErrMode::Backtrack(_)));
     }
 }

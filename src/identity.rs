@@ -12,7 +12,7 @@ use winnow::{
     token::take_until,
 };
 
-use crate::storage::object::loose::{WriteLoose, parser::Stream};
+use crate::{parsing::Stream, storage::object::loose::WriteLoose};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Identity {

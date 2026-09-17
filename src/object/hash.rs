@@ -8,7 +8,7 @@ use winnow::{
     token::take,
 };
 
-use crate::{MinigitError, error::ParserContext, storage::object::loose::parser::Stream};
+use crate::{MinigitError, error::ParserContext, parsing::Stream};
 
 /// A hash that identifies an [`super::Object`]. It is a SHA1 hash of the header and
 /// contents of the object.

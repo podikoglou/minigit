@@ -100,7 +100,7 @@ pub fn mode<'a>(input: &mut Stream<'a>) -> ModalResult<u16> {
 
 #[cfg(test)]
 mod tests {
-    use crate::storage::object::loose::parser::{extra_property, mode, multiline_property};
+    use super::{extra_property, mode, multiline_property};
     use std::assert_matches;
     use winnow::{Parser, error::ErrMode};
 

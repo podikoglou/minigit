@@ -30,9 +30,10 @@ use crate::{
         tag::{Tag, parse_tag},
         tree::parse_tree,
     },
+    parsing::Stream,
     storage::object::{
         LazyObject,
-        loose::{WriteLoose, parser::Stream},
+        loose::WriteLoose,
     },
 };
 

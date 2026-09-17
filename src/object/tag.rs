@@ -14,10 +14,8 @@ use crate::{
         hash::{ObjectHash, parse_object_hash_str},
         parse_object_type,
     },
-    storage::object::loose::{
-        WriteLoose,
-        parser::{Stream, property},
-    },
+    parsing::{Stream, property},
+    storage::object::loose::WriteLoose,
     time::{Timestamp, parse_timestamp},
 };
 

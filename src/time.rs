@@ -12,7 +12,7 @@ use winnow::{
     token::take,
 };
 
-use crate::storage::object::loose::parser::Stream;
+use crate::parsing::Stream;
 
 #[nutype(
     derive(Debug, PartialEq, Eq, Clone, Display, AsRef, Deref),

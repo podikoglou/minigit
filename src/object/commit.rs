@@ -8,10 +8,8 @@ use winnow::{
 use crate::{
     identity::{Identity, parse_identity},
     object::hash::{ObjectHash, parse_object_hash_str},
-    storage::object::loose::{
-        WriteLoose,
-        parser::{Stream, extra_property, property},
-    },
+    parsing::{Stream, extra_property, property},
+    storage::object::loose::WriteLoose,
     time::{Timestamp, parse_timestamp},
 };
 use std::io::Write;

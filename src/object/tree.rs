@@ -10,10 +10,8 @@ use winnow::{
 use crate::{
     fs::{FileName, parse_file_name},
     object::hash::{ObjectHash, parse_object_hash},
-    storage::object::loose::{
-        WriteLoose,
-        parser::{Stream, mode},
-    },
+    parsing::{Stream, mode},
+    storage::object::loose::WriteLoose,
 };
 
 /// A tree: an object that associates file names to [tree entries](TreeEntry).

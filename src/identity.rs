@@ -36,7 +36,7 @@ impl WriteLoose for Identity {
 
 #[nutype(
     sanitize(trim),
-    validate(not_empty),
+    validate(len_char_min = 0),
     derive(Debug, PartialEq, Eq, Clone, Display, AsRef, Deref)
 )]
 pub struct Name(String);
@@ -85,7 +85,7 @@ impl PartialEq<Email> for &str {
 
 /// Parses an identity in the form of `John Doe <john@doe.com>` from some bytes.
 pub fn parse_identity<'a>(input: &mut Stream<'a>) -> ModalResult<Identity> {
-    seq!(take_until(1.., " <").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned).map(Name::try_new).verify_map(Result::ok).context(StrContext::Label("name")),
+    seq!(take_until(0.., " <").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned).map(Name::try_new).verify_map(Result::ok).context(StrContext::Label("name")),
         _: " <",
         take_until(0.., ">").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned).map(Email::new).context(StrContext::Label("email")),
         _: ">"
@@ -121,8 +121,6 @@ mod tests {
 
     #[test]
     fn identity_rejects_invalid_input() {
-        assert_matches!(parse_identity.parse_peek(b"  <john@doe.com>"), Err(_));
-        assert_matches!(parse_identity.parse_peek(b" <john@doe.com>"), Err(_));
         assert_matches!(parse_identity.parse_peek(b"<john@doe.com>"), Err(_));
         assert_matches!(parse_identity.parse_peek(b"j<john@doe.com>"), Err(_));
         assert_matches!(parse_identity.parse_peek(b"<john@doe.com"), Err(_));

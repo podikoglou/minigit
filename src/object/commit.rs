@@ -84,7 +84,7 @@ pub fn parse_commit<'a>(input: &mut Stream<'a>) -> ModalResult<Commit> {
         committer: property("committer", seq!(parse_identity, _: " ", parse_timestamp)),
         extra: repeat(0.., extra_property),
         _: "\n",
-        description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
+        description: rest.map(String::from_utf8_lossy).map(|str| str.to_string()),
     }}
     .context(StrContext::Label("commit object"))
     .parse_next(input)

@@ -155,3 +155,70 @@ pub fn parse_object_type<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectType> 
     )))
     .parse_next(input)
 }
+
+#[cfg(test)]
+mod test {
+    use std::assert_matches;
+
+    use winnow::{Parser, error::ErrMode};
+
+    use crate::object::{ObjectType, parse_header, parse_object_type};
+
+    #[test]
+    fn object_type_parses_expected_object_types() {
+        assert_eq!(
+            parse_object_type.parse_peek(b"blob"),
+            Ok((&b""[..], ObjectType::Blob))
+        );
+        assert_eq!(
+            parse_object_type.parse_peek(b"tree"),
+            Ok((&b""[..], ObjectType::Tree))
+        );
+    }
+
+    #[test]
+    fn object_type_rejects_invalid_input() {
+        assert_matches!(
+            parse_object_type.parse_peek(b""),
+            Err(ErrMode::Backtrack(_))
+        );
+        assert_matches!(
+            parse_object_type.parse_peek(b"blo"),
+            Err(ErrMode::Backtrack(_))
+        );
+    }
+
+    #[test]
+    fn header_parses_basic_headers() {
+        assert_eq!(
+            parse_header.parse_peek(b"blob 3\0"),
+            Ok((&b""[..], (ObjectType::Blob, 3)))
+        );
+        assert_eq!(
+            parse_header.parse_peek(b"tree 333\0"),
+            Ok((&b""[..], (ObjectType::Tree, 333)))
+        );
+    }
+
+    #[test]
+    fn header_rejets_invalid_input() {
+        assert_matches!(
+            parse_header.parse_peek(b"tre 3"),
+            Err(ErrMode::Backtrack(_))
+        );
+        assert_matches!(
+            parse_header.parse_peek(b"tree "),
+            Err(ErrMode::Backtrack(_))
+        );
+        assert_matches!(
+            parse_header.parse_peek(b"tree \0"),
+            Err(ErrMode::Backtrack(_))
+        );
+        assert_matches!(
+            parse_header.parse_peek(b"tree\0"),
+            Err(ErrMode::Backtrack(_))
+        );
+        assert_matches!(parse_header.parse_peek(b"3"), Err(ErrMode::Backtrack(_)));
+        assert_matches!(parse_header.parse_peek(b"3\0"), Err(ErrMode::Backtrack(_)));
+    }
+}

@@ -305,6 +305,28 @@ mod fixtures {
     }
 
     #[test]
+    fn read_loose_commit_with_non_utf8_description() {
+        let bytes = include_bytes!("fixtures/objects/commit-10");
+        let object = read_object_compressed(&bytes[..], ParserContext::None)
+            .expect("should be able to read loose commit object");
+
+        let Object::Commit(commit) = &object else {
+            panic!("expected Object::Commit, got {object:?}");
+        };
+
+        assert_eq!(
+            commit.tree.to_string(),
+            "921f686860e918a01c3d3fb6cd106ba82bf4ace6"
+        );
+        assert_eq!(
+            commit.parents,
+            vec!["264166e604a7e14c278e31cadd1afb06a7d51a11".parse().unwrap()]
+        );
+        assert_eq!(commit.committer.0.name, "Dave Jones");
+        assert_eq!(commit.committer.0.email, "davej@redhat.com");
+    }
+
+    #[test]
     fn read_loose_tag() {
         let bytes = include_bytes!("fixtures/objects/tag-1");
         let object = read_object_compressed(&bytes[..], ParserContext::None)

@@ -21,7 +21,7 @@ use crate::{
     object::{
         Object, ObjectType,
         blob::parse_blob,
-        commit::{Commit, CommitProperty},
+        commit::{CommitProperty, parse_commit},
         hash::ObjectHash,
         tag::Tag,
         tree::parse_tree,
@@ -48,7 +48,7 @@ pub fn object<'a>(input: &mut Stream<'a>) -> ModalResult<Object> {
     match typee {
         ObjectType::Blob => parse_blob.map(Object::Blob).parse_next(&mut bytes),
         ObjectType::Tree => parse_tree.map(Object::Tree).parse_next(&mut bytes),
-        ObjectType::Commit => commit.map(Object::from).parse_next(&mut bytes),
+        ObjectType::Commit => parse_commit.map(Object::from).parse_next(&mut bytes),
         ObjectType::Tag => tag.map(Object::from).parse_next(&mut bytes),
     }
 }
@@ -83,7 +83,7 @@ pub fn object_type<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectType> {
 
 /// Helper for creating parsers that parse a key value pair found in a commit object, such as
 /// `author <author>`
-fn property<'a, O>(
+pub fn property<'a, O>(
     mut key: impl Parser<Stream<'a>, &'a [u8], ErrMode<ContextError>>,
     mut value: impl Parser<Stream<'a>, O, ErrMode<ContextError>>,
 ) -> impl Parser<Stream<'a>, O, ErrMode<ContextError>> {
@@ -152,20 +152,6 @@ pub fn extra_property<'a>(input: &mut Stream<'a>) -> ModalResult<CommitProperty>
     .parse_next(input)
 }
 
-/// Parses a commit object from some bytes.
-pub fn commit<'a>(input: &mut Stream<'a>) -> ModalResult<Commit> {
-    seq! {Commit{
-        tree: property("tree", object_hash_str),
-        parents: repeat(0.., property("parent", object_hash_str)),
-        author: property("author", seq!(parse_identity, _: " ", timestamp)),
-        committer: property("committer", seq!(parse_identity, _: " ", timestamp)),
-        extra: repeat(0.., extra_property),
-        _: "\n",
-        description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
-    }}
-    .context(StrContext::Label("commit object"))
-    .parse_next(input)
-}
 /// Parses a tag object from some bytes.
 pub fn tag<'a>(input: &mut Stream<'a>) -> ModalResult<Tag> {
     seq! {Tag{

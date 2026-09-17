@@ -97,3 +97,38 @@ pub fn parse_identity<'a>(input: &mut Stream<'a>) -> ModalResult<Identity> {
     )))
     .parse_next(input)
 }
+
+#[cfg(test)]
+mod tests {
+    use winnow::Parser;
+
+    use crate::identity::{Email, Identity, Name, parse_identity};
+    use std::assert_matches;
+
+    #[test]
+    fn identity_parses_valid_identities() {
+        assert_eq!(
+            parse_identity.parse_peek(b"John Doe <john@doe.com>"),
+            Ok((
+                &b""[..],
+                Identity::new(
+                    Name::try_new("John Doe").unwrap(),
+                    Email::new("john@doe.com")
+                )
+            ))
+        );
+    }
+
+    #[test]
+    fn identity_rejects_invalid_input() {
+        assert_matches!(parse_identity.parse_peek(b"  <john@doe.com>"), Err(_));
+        assert_matches!(parse_identity.parse_peek(b" <john@doe.com>"), Err(_));
+        assert_matches!(parse_identity.parse_peek(b"<john@doe.com>"), Err(_));
+        assert_matches!(parse_identity.parse_peek(b"j<john@doe.com>"), Err(_));
+        assert_matches!(parse_identity.parse_peek(b"<john@doe.com"), Err(_));
+        assert_matches!(parse_identity.parse_peek(b"john@doe.com>"), Err(_));
+        assert_matches!(parse_identity.parse_peek(b"john@doe.com"), Err(_));
+        // TODO: should this validate emails?
+        assert_matches!(parse_identity.parse_peek(b"johndoe.com"), Err(_));
+    }
+}

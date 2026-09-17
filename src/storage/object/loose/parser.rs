@@ -282,7 +282,6 @@ pub fn timestamp<'a>(input: &mut Stream<'a>) -> ModalResult<Timestamp> {
 #[cfg(test)]
 mod tests {
     use crate::{
-        identity::{Email, Identity, Name, parse_identity},
         object::ObjectType,
         storage::object::loose::parser::{
             extra_property, header, mode, multiline_property, object_hash_str, object_type,
@@ -361,33 +360,6 @@ mod tests {
                 .into()
             ))
         )
-    }
-
-    #[test]
-    fn identity_parses_valid_identities() {
-        assert_eq!(
-            parse_identity.parse_peek(b"John Doe <john@doe.com>"),
-            Ok((
-                &b""[..],
-                Identity::new(
-                    Name::try_new("John Doe").unwrap(),
-                    Email::new("john@doe.com")
-                )
-            ))
-        );
-    }
-
-    #[test]
-    fn identity_rejects_invalid_input() {
-        assert_matches!(parse_identity.parse_peek(b"  <john@doe.com>"), Err(_));
-        assert_matches!(parse_identity.parse_peek(b" <john@doe.com>"), Err(_));
-        assert_matches!(parse_identity.parse_peek(b"<john@doe.com>"), Err(_));
-        assert_matches!(parse_identity.parse_peek(b"j<john@doe.com>"), Err(_));
-        assert_matches!(parse_identity.parse_peek(b"<john@doe.com"), Err(_));
-        assert_matches!(parse_identity.parse_peek(b"john@doe.com>"), Err(_));
-        assert_matches!(parse_identity.parse_peek(b"john@doe.com"), Err(_));
-        // TODO: should this validate emails?
-        assert_matches!(parse_identity.parse_peek(b"johndoe.com"), Err(_));
     }
 
     #[test]

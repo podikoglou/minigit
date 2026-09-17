@@ -276,6 +276,32 @@ mod fixtures {
             )
         );
     }
+
+    #[test]
+    fn read_loose_tag_with_carriage_return_in_name() {
+        let bytes = include_bytes!("fixtures/objects/tag-2");
+        let object = read_object_compressed(&bytes[..], ParserContext::None)
+            .expect("should be able to read loose tag object");
+
+        let Object::Tag(tag) = &object else {
+            panic!("expected Object::Tag, got {object:?}");
+        };
+
+        assert_eq!(
+            tag.target.0.to_string(),
+            "ab2b0330d1eb193e5e339c94197998e9baaa8846"
+        );
+        assert_eq!(tag.target.1, ObjectType::Commit);
+        assert_eq!(tag.name, "\r");
+        assert_eq!(tag.description, "0.0.1! :D\n");
+        assert_eq!(
+            tag.tagger.0,
+            Identity::new(
+                Name::try_new("alex").unwrap(),
+                Email::new("alex.podikoglou@gmail.com")
+            )
+        );
+    }
 }
 
 mod roundtrip {

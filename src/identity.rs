@@ -36,7 +36,7 @@ impl WriteLoose for Identity {
 
 #[nutype(
     sanitize(trim),
-    validate(not_empty),
+    validate(len_char_min = 0),
     derive(Debug, PartialEq, Eq, Clone, Display, AsRef, Deref)
 )]
 pub struct Name(String);

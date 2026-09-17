@@ -1,8 +1,4 @@
-//! This module deals with parsing loose object files. The most important function is [`parse_object`].
-//!
-//! This module contains several incremental parsers built using the `winnow` parser combinator
-//! crate. It should be stressed that they will not fail if they have excess input, as they are
-//! incremental and built to be combined.
+//! This module contains various utilities for parsing object files using the `winnow` crate.
 
 use winnow::{
     ModalResult, Parser,

@@ -20,7 +20,7 @@ use crate::{
     MinigitError,
     error::ParserContext,
     fs::{FileName, parse_file_name},
-    identity::{Email, Identity, Name},
+    identity::parse_identity,
     object::{
         Object, ObjectType,
         blob::Blob,
@@ -32,7 +32,7 @@ use crate::{
     time::Timestamp,
 };
 
-type Stream<'a> = &'a [u8];
+pub type Stream<'a> = &'a [u8];
 
 /// Parses an [Object] from some bytes.
 ///
@@ -183,8 +183,8 @@ pub fn commit<'a>(input: &mut Stream<'a>) -> ModalResult<Commit> {
     seq! {Commit{
         tree: property("tree", object_hash_str),
         parents: repeat(0.., property("parent", object_hash_str)),
-        author: property("author", seq!(identity, _: " ", timestamp)),
-        committer: property("committer", seq!(identity, _: " ", timestamp)),
+        author: property("author", seq!(parse_identity, _: " ", timestamp)),
+        committer: property("committer", seq!(parse_identity, _: " ", timestamp)),
         extra: repeat(0.., extra_property),
         _: "\n",
         description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
@@ -200,7 +200,7 @@ pub fn tag<'a>(input: &mut Stream<'a>) -> ModalResult<Tag> {
         property("type", object_type),
     ),
     name: property("tag", take_until(1.., "\n").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned)),
-    tagger: property("tagger", seq!(identity, _: " ", timestamp)),
+    tagger: property("tagger", seq!(parse_identity, _: " ", timestamp)),
     _: "\n",
     description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
     }}.context(StrContext::Label("tag object"))
@@ -256,21 +256,6 @@ pub fn object_hash_str<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectHash> {
         .parse_next(input)
 }
 
-/// Parses an identity in the form of `John Doe <john@doe.com>` from some bytes.
-pub fn identity<'a>(input: &mut Stream<'a>) -> ModalResult<Identity> {
-    seq!(take_until(1.., " <").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned).map(Name::try_new).verify_map(Result::ok).context(StrContext::Label("name")),
-        _: " <",
-        take_until(0.., ">").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned).map(Email::new).context(StrContext::Label("email")),
-        _: ">"
-    )
-    .map(|(name, email)| Identity::new(name, email))
-    .context(StrContext::Label("identity"))
-    .context(StrContext::Expected(StrContextValue::Description(
-        "<name> <<email>>",
-    )))
-    .parse_next(input)
-}
-
 /// Parses a [Timestamp] from some bytes.
 pub fn timestamp<'a>(input: &mut Stream<'a>) -> ModalResult<Timestamp> {
     seq!(
@@ -297,11 +282,10 @@ pub fn timestamp<'a>(input: &mut Stream<'a>) -> ModalResult<Timestamp> {
 #[cfg(test)]
 mod tests {
     use crate::{
-        identity::{Email, Identity, Name},
         object::ObjectType,
         storage::object::loose::parser::{
-            extra_property, header, identity, mode, multiline_property, object_hash_str,
-            object_type, timestamp, tree_entry,
+            extra_property, header, mode, multiline_property, object_hash_str, object_type,
+            timestamp, tree_entry,
         },
         time::Timestamp,
     };
@@ -376,33 +360,6 @@ mod tests {
                 .into()
             ))
         )
-    }
-
-    #[test]
-    fn identity_parses_valid_identities() {
-        assert_eq!(
-            identity.parse_peek(b"John Doe <john@doe.com>"),
-            Ok((
-                &b""[..],
-                Identity::new(
-                    Name::try_new("John Doe").unwrap(),
-                    Email::new("john@doe.com")
-                )
-            ))
-        );
-    }
-
-    #[test]
-    fn identity_rejects_invalid_input() {
-        assert_matches!(identity.parse_peek(b"  <john@doe.com>"), Err(_));
-        assert_matches!(identity.parse_peek(b" <john@doe.com>"), Err(_));
-        assert_matches!(identity.parse_peek(b"<john@doe.com>"), Err(_));
-        assert_matches!(identity.parse_peek(b"j<john@doe.com>"), Err(_));
-        assert_matches!(identity.parse_peek(b"<john@doe.com"), Err(_));
-        assert_matches!(identity.parse_peek(b"john@doe.com>"), Err(_));
-        assert_matches!(identity.parse_peek(b"john@doe.com"), Err(_));
-        // TODO: should this validate emails?
-        assert_matches!(identity.parse_peek(b"johndoe.com"), Err(_));
     }
 
     #[test]

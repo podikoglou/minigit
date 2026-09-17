@@ -4,20 +4,16 @@
 //! crate. It should be stressed that they will not fail if they have excess input, as they are
 //! incremental and built to be combined.
 
-use chrono::{DateTime, FixedOffset};
 use sha1::digest::array::Array;
 use winnow::{
     ModalResult, Parser,
-    ascii::{digit1, oct_digit1},
-    combinator::{alt, repeat, seq, terminated},
+    ascii::oct_digit1,
+    combinator::{repeat, seq, terminated},
     error::{ContextError, ErrMode, StrContext, StrContextValue},
     token::{take, take_till, take_until},
 };
 
-use crate::{
-    object::{commit::CommitProperty, hash::ObjectHash},
-    time::Timestamp,
-};
+use crate::object::{commit::CommitProperty, hash::ObjectHash};
 
 pub type Stream<'a> = &'a [u8];
 
@@ -134,38 +130,11 @@ pub fn object_hash_str<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectHash> {
         .parse_next(input)
 }
 
-/// Parses a [Timestamp] from some bytes.
-pub fn timestamp<'a>(input: &mut Stream<'a>) -> ModalResult<Timestamp> {
-    seq!(
-        digit1.parse_to::<i64>(),
-        _: " ",
-        alt((b'+'.value(1), b'-'.value(-1))),
-        take(2usize).parse_to::<i32>(),
-        take(2usize).parse_to::<i32>(),
-    )
-    .verify_map(|(secs, sign, hours, minutes)| {
-        let offset = FixedOffset::east_opt(sign * (hours * 3600 + minutes * 60))?;
-
-        DateTime::from_timestamp(secs, 0).map(|dt| dt.with_timezone(&offset))
-    })
-    .map(Timestamp::try_new)
-    .verify_map(Result::ok)
-    .context(StrContext::Label("timestamp"))
-    .context(StrContext::Expected(StrContextValue::Description(
-        "<unix time> <offset>",
-    )))
-    .parse_next(input)
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::{
-        storage::object::loose::parser::{
-            extra_property, mode, multiline_property, object_hash_str, timestamp,
-        },
-        time::Timestamp,
+    use crate::storage::object::loose::parser::{
+        extra_property, mode, multiline_property, object_hash_str,
     };
-    use chrono::{DateTime, FixedOffset, NaiveDateTime};
     use std::assert_matches;
     use winnow::{Parser, error::ErrMode};
 
@@ -188,22 +157,6 @@ mod tests {
                 .into()
             ))
         )
-    }
-
-    #[test]
-    fn timestamp_parses_basic_timestamps() {
-        assert_eq!(
-            timestamp.parse_peek(b"1789057194 +0300"),
-            Ok((
-                &b""[..],
-                Timestamp::try_new(DateTime::<FixedOffset>::from_naive_utc_and_offset(
-                    #[allow(deprecated)]
-                    NaiveDateTime::from_timestamp(1789057194, 0),
-                    FixedOffset::east_opt(3 * 3600).unwrap(),
-                ))
-                .unwrap()
-            ))
-        );
     }
 
     #[test]

@@ -11,19 +11,18 @@ use winnow::{
     ascii::{dec_uint, digit1, oct_digit1},
     combinator::{alt, repeat, seq, terminated},
     error::{ContextError, ErrMode, StrContext, StrContextValue},
-    token::{literal, rest, take, take_till, take_until},
+    token::{literal, take, take_till, take_until},
 };
 
 use crate::{
     MinigitError,
     error::ParserContext,
-    identity::parse_identity,
     object::{
         Object, ObjectType,
         blob::parse_blob,
         commit::{CommitProperty, parse_commit},
         hash::ObjectHash,
-        tag::Tag,
+        tag::parse_tag,
         tree::parse_tree,
     },
     time::Timestamp,
@@ -49,7 +48,7 @@ pub fn object<'a>(input: &mut Stream<'a>) -> ModalResult<Object> {
         ObjectType::Blob => parse_blob.map(Object::Blob).parse_next(&mut bytes),
         ObjectType::Tree => parse_tree.map(Object::Tree).parse_next(&mut bytes),
         ObjectType::Commit => parse_commit.map(Object::from).parse_next(&mut bytes),
-        ObjectType::Tag => tag.map(Object::from).parse_next(&mut bytes),
+        ObjectType::Tag => parse_tag.map(Object::from).parse_next(&mut bytes),
     }
 }
 
@@ -149,21 +148,6 @@ pub fn extra_property<'a>(input: &mut Stream<'a>) -> ModalResult<CommitProperty>
         })
     )
     .map(|(key, value)| (key.to_owned(), value))
-    .parse_next(input)
-}
-
-/// Parses a tag object from some bytes.
-pub fn tag<'a>(input: &mut Stream<'a>) -> ModalResult<Tag> {
-    seq! {Tag{
-    target: seq!(
-        property("object", object_hash_str),
-        property("type", object_type),
-    ),
-    name: property("tag", take_until(1.., "\n").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned)),
-    tagger: property("tagger", seq!(parse_identity, _: " ", timestamp)),
-    _: "\n",
-    description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
-    }}.context(StrContext::Label("tag object"))
     .parse_next(input)
 }
 

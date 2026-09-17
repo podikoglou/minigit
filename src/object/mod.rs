@@ -12,11 +12,20 @@ use flate2::{Compression, write::ZlibEncoder};
 use sha1::{Digest, Sha1};
 use strum::{EnumDiscriminants, EnumString, IntoStaticStr, VariantArray};
 use tree::Tree;
+use winnow::{
+    ModalResult, Parser,
+    combinator::alt,
+    error::{StrContext, StrContextValue},
+    token::literal,
+};
 
 use crate::{
     MinigitError,
     object::{commit::Commit, hash::ObjectHash, tag::Tag},
-    storage::object::{LazyObject, loose::WriteLoose},
+    storage::object::{
+        LazyObject,
+        loose::{WriteLoose, parser::Stream},
+    },
 };
 
 #[derive(Debug, PartialEq, Eq, Clone, EnumDiscriminants)]
@@ -116,4 +125,19 @@ impl TryFrom<LazyObject> for Object {
     fn try_from(value: LazyObject) -> Result<Self, Self::Error> {
         value.into_object()
     }
+}
+
+/// Parses an object type string from some bytes.
+pub fn parse_object_type<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectType> {
+    alt((
+        literal("blob").value(ObjectType::Blob),
+        literal("tree").value(ObjectType::Tree),
+        literal("commit").value(ObjectType::Commit),
+        literal("tag").value(ObjectType::Tag),
+    ))
+    .context(StrContext::Label("type"))
+    .context(StrContext::Expected(StrContextValue::Description(
+        "blob | tree | commit | tag",
+    )))
+    .parse_next(input)
 }

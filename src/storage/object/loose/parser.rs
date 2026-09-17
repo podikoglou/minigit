@@ -11,7 +11,7 @@ use winnow::{
     ascii::{dec_uint, digit1, oct_digit1},
     combinator::{alt, repeat, seq, terminated},
     error::{ContextError, ErrMode, StrContext, StrContextValue},
-    token::{literal, take, take_till, take_until},
+    token::{take, take_till, take_until},
 };
 
 use crate::{
@@ -22,6 +22,7 @@ use crate::{
         blob::parse_blob,
         commit::{CommitProperty, parse_commit},
         hash::ObjectHash,
+        parse_object_type,
         tag::parse_tag,
         tree::parse_tree,
     },
@@ -60,24 +61,9 @@ pub fn header<'a>(input: &mut Stream<'a>) -> ModalResult<(ObjectType, usize)> {
             "bytes amount",
         )));
 
-    seq!(object_type, _: " ", size, _: "\0")
+    seq!(parse_object_type, _: " ", size, _: "\0")
         .context(StrContext::Label("header"))
         .parse_next(input)
-}
-
-/// Parses an object type string from some bytes.
-pub fn object_type<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectType> {
-    alt((
-        literal("blob").value(ObjectType::Blob),
-        literal("tree").value(ObjectType::Tree),
-        literal("commit").value(ObjectType::Commit),
-        literal("tag").value(ObjectType::Tag),
-    ))
-    .context(StrContext::Label("type"))
-    .context(StrContext::Expected(StrContextValue::Description(
-        "blob | tree | commit | tag",
-    )))
-    .parse_next(input)
 }
 
 /// Helper for creating parsers that parse a key value pair found in a commit object, such as

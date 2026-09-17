@@ -10,7 +10,7 @@ use chrono::{DateTime, FixedOffset};
 use sha1::digest::array::Array;
 use winnow::{
     ModalResult, Parser,
-    ascii::{dec_uint, digit1, oct_digit1, till_line_ending},
+    ascii::{dec_uint, digit1, oct_digit1},
     combinator::{alt, repeat, seq, terminated},
     error::{ContextError, ErrMode, StrContext, StrContextValue},
     token::{literal, rest, take, take_till, take_until},
@@ -199,7 +199,7 @@ pub fn tag<'a>(input: &mut Stream<'a>) -> ModalResult<Tag> {
         property("object", object_hash_str),
         property("type", object_type),
     ),
-    name: property("tag", till_line_ending.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned)),
+    name: property("tag", take_until(1.., "\n").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned)),
     tagger: property("tagger", seq!(identity, _: " ", timestamp)),
     _: "\n",
     description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),

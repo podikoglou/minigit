@@ -381,13 +381,25 @@ mod roundtrip {
 
         #[hegel::composite]
         pub fn timestamp(tc: &TestCase) -> Timestamp {
-            tc.draw(
-                datetimes()
-                    .map(Timestamp::try_new)
-                    .filter(Result::is_ok)
-                    .map(Result::unwrap)
+            let epoch_mins: i64 = tc.draw(
+                gs::integers()
+                    .min_value(0)
+                    .max_value(2_147_483_647 / 60)
                     .print_as_debug(),
-            )
+            );
+            // Timezone offset in minutes (e.g. -12h to +14h)
+            let offset_mins: i32 = tc.draw(
+                gs::integers()
+                    .min_value(-12 * 60)
+                    .max_value(14 * 60)
+                    .print_as_debug(),
+            );
+            let offset = chrono::FixedOffset::east_opt(offset_mins * 60).unwrap();
+            let dt = chrono::DateTime::from_timestamp(epoch_mins * 60, 0)
+                .unwrap()
+                .with_timezone(&offset);
+
+            Timestamp::try_new(dt).unwrap()
         }
 
         #[hegel::composite]

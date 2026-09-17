@@ -4,8 +4,6 @@
 //! crate. It should be stressed that they will not fail if they have excess input, as they are
 //! incremental and built to be combined.
 
-use std::collections::BTreeMap;
-
 use chrono::{DateTime, FixedOffset};
 use sha1::digest::array::Array;
 use winnow::{
@@ -19,7 +17,6 @@ use winnow::{
 use crate::{
     MinigitError,
     error::ParserContext,
-    fs::{FileName, parse_file_name},
     identity::parse_identity,
     object::{
         Object, ObjectType,
@@ -27,7 +24,7 @@ use crate::{
         commit::{Commit, CommitProperty},
         hash::ObjectHash,
         tag::Tag,
-        tree::{Tree, TreeEntry},
+        tree::parse_tree,
     },
     time::Timestamp,
 };
@@ -50,7 +47,7 @@ pub fn object<'a>(input: &mut Stream<'a>) -> ModalResult<Object> {
 
     match typee {
         ObjectType::Blob => parse_blob.map(Object::Blob).parse_next(&mut bytes),
-        ObjectType::Tree => tree.map(Object::Tree).parse_next(&mut bytes),
+        ObjectType::Tree => parse_tree.map(Object::Tree).parse_next(&mut bytes),
         ObjectType::Commit => commit.map(Object::from).parse_next(&mut bytes),
         ObjectType::Tag => tag.map(Object::from).parse_next(&mut bytes),
     }
@@ -82,22 +79,6 @@ pub fn object_type<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectType> {
         "blob | tree | commit | tag",
     )))
     .parse_next(input)
-}
-
-/// Parses a tree object from some bytes.
-pub fn tree<'a>(input: &mut Stream<'a>) -> ModalResult<Tree> {
-    // NOTE: not sure if this should be `0..` or `1..`
-    // should we be able to parse empty trees?
-    repeat(0.., tree_entry)
-        .map(|entries: Vec<(u16, FileName, ObjectHash)>| {
-            entries
-                .into_iter()
-                .map(|(mode, name, hash)| (name, TreeEntry::new(mode, hash)))
-                .collect::<BTreeMap<FileName, TreeEntry>>()
-        })
-        .context(StrContext::Label("tree object"))
-        .map(Tree::new)
-        .parse_next(input)
 }
 
 /// Helper for creating parsers that parse a key value pair found in a commit object, such as
@@ -200,13 +181,6 @@ pub fn tag<'a>(input: &mut Stream<'a>) -> ModalResult<Tag> {
     .parse_next(input)
 }
 
-/// Parses a tree object's entry into a tuple `(mode, name, hash)` from some bytes.
-pub fn tree_entry<'a>(input: &mut Stream<'a>) -> ModalResult<(u16, FileName, ObjectHash)> {
-    seq!((mode, _: " ", parse_file_name, object_hash))
-        .context(StrContext::Label("tree entry"))
-        .parse_next(input)
-}
-
 /// Parses a UTF-8 encoded file mode such as 100644 from some bytes.
 pub fn mode<'a>(input: &mut Stream<'a>) -> ModalResult<u16> {
     oct_digit1
@@ -278,7 +252,7 @@ mod tests {
         object::ObjectType,
         storage::object::loose::parser::{
             extra_property, header, mode, multiline_property, object_hash_str, object_type,
-            timestamp, tree_entry,
+            timestamp,
         },
         time::Timestamp,
     };
@@ -330,14 +304,6 @@ mod tests {
     fn mode_parses_valid_modes() {
         assert_eq!(mode.parse_peek(b"000000"), Ok((&b""[..], 0)));
         assert_eq!(mode.parse_peek(b"100644"), Ok((&b""[..], 0o100644)));
-    }
-
-    #[test]
-    fn tree_entry_parses_valid_entries() {
-        assert_eq!(
-            tree_entry.parse_peek(b"100644 cli.rs\0\x29\xf3\x23\xb3\x1a\xd1\x29\x96\x4f\xfb\x4f\x97\xf2\x03\xbe\x9c\x2f\x35\x10\x7d"),
-            Ok((&b""[..], (0o100644, "cli.rs\0".parse().unwrap(), [0x29, 0xf3, 0x23, 0xb3, 0x1a, 0xd1, 0x29, 0x96, 0x4f, 0xfb, 0x4f, 0x97, 0xf2, 0x03, 0xbe, 0x9c, 0x2f, 0x35, 0x10, 0x7d].into() )))
-        );
     }
 
     #[test]

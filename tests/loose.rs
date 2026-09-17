@@ -274,6 +274,37 @@ mod fixtures {
     }
 
     #[test]
+    fn read_loose_commit_with_empty_author_name() {
+        let bytes = include_bytes!("fixtures/objects/commit-9");
+        let object = read_object_compressed(&bytes[..], ParserContext::None)
+            .expect("should be able to read loose commit object");
+
+        let Object::Commit(commit) = &object else {
+            panic!("expected Object::Commit, got {object:?}");
+        };
+
+        assert_eq!(
+            commit.tree.to_string(),
+            "5efa09ed89088363d6b1ea1d3c76bad1eeccc5b8"
+        );
+        assert_eq!(
+            commit.parents,
+            vec![
+                "5ea6f2c33f0c8b126136dbf1776ffbc444772cd7".parse().unwrap(),
+                "c16ef1ceedff27c1b452724ca7f89b729651098f".parse().unwrap(),
+            ]
+        );
+        assert_eq!(commit.author.0.name, "");
+        assert_eq!(commit.author.0.email, "jgarzik@pretzel.yyz.us");
+        assert_eq!(commit.committer.0.name, "Jeff Garzik");
+        assert_eq!(commit.committer.0.email, "jgarzik@pobox.com");
+        assert_eq!(
+            commit.description,
+            "Automatic merge of /spare/repo/netdev-2.6 branch ns83820\n"
+        );
+    }
+
+    #[test]
     fn read_loose_tag() {
         let bytes = include_bytes!("fixtures/objects/tag-1");
         let object = read_object_compressed(&bytes[..], ParserContext::None)

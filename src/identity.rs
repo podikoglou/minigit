@@ -5,8 +5,14 @@
 use std::io::Write;
 
 use nutype::nutype;
+use winnow::{
+    ModalResult, Parser,
+    combinator::seq,
+    error::{StrContext, StrContextValue},
+    token::take_until,
+};
 
-use crate::storage::object::loose::WriteLoose;
+use crate::storage::object::loose::{WriteLoose, parser::Stream};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Identity {
@@ -75,4 +81,19 @@ impl PartialEq<Email> for &str {
     fn eq(&self, other: &Email) -> bool {
         *self == other.as_ref()
     }
+}
+
+/// Parses an identity in the form of `John Doe <john@doe.com>` from some bytes.
+pub fn parse_identity<'a>(input: &mut Stream<'a>) -> ModalResult<Identity> {
+    seq!(take_until(1.., " <").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned).map(Name::try_new).verify_map(Result::ok).context(StrContext::Label("name")),
+        _: " <",
+        take_until(0.., ">").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned).map(Email::new).context(StrContext::Label("email")),
+        _: ">"
+    )
+    .map(|(name, email)| Identity::new(name, email))
+    .context(StrContext::Label("identity"))
+    .context(StrContext::Expected(StrContextValue::Description(
+        "<name> <<email>>",
+    )))
+    .parse_next(input)
 }

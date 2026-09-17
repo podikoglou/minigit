@@ -7,10 +7,10 @@ use winnow::{
 
 use crate::{
     identity::{Identity, parse_identity},
-    object::hash::ObjectHash,
+    object::hash::{ObjectHash, parse_object_hash_str},
     storage::object::loose::{
         WriteLoose,
-        parser::{Stream, extra_property, object_hash_str, property},
+        parser::{Stream, extra_property, property},
     },
     time::{Timestamp, parse_timestamp},
 };
@@ -80,8 +80,8 @@ impl WriteLoose for Commit {
 /// Parses a commit object from some bytes.
 pub fn parse_commit<'a>(input: &mut Stream<'a>) -> ModalResult<Commit> {
     seq! {Commit{
-        tree: property("tree", object_hash_str),
-        parents: repeat(0.., property("parent", object_hash_str)),
+        tree: property("tree", parse_object_hash_str),
+        parents: repeat(0.., property("parent", parse_object_hash_str)),
         author: property("author", seq!(parse_identity, _: " ", parse_timestamp)),
         committer: property("committer", seq!(parse_identity, _: " ", parse_timestamp)),
         extra: repeat(0.., extra_property),

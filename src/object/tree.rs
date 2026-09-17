@@ -9,10 +9,10 @@ use winnow::{
 
 use crate::{
     fs::{FileName, parse_file_name},
-    object::hash::ObjectHash,
+    object::hash::{ObjectHash, parse_object_hash},
     storage::object::loose::{
         WriteLoose,
-        parser::{Stream, mode, object_hash},
+        parser::{Stream, mode},
     },
 };
 
@@ -87,7 +87,7 @@ impl WriteLoose for (&FileName, &TreeEntry) {
 }
 /// Parses a tree object's entry into a tuple `(mode, name, hash)` from some bytes.
 pub fn parse_tree_entry<'a>(input: &mut Stream<'a>) -> ModalResult<(u16, FileName, ObjectHash)> {
-    seq!((mode, _: " ", parse_file_name, object_hash))
+    seq!((mode, _: " ", parse_file_name, parse_object_hash))
         .context(StrContext::Label("tree entry"))
         .parse_next(input)
 }

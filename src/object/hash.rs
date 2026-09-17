@@ -2,8 +2,13 @@
 use std::{fmt::Display, path::PathBuf, str::FromStr};
 
 use sha1::digest::{array::Array, consts::U20};
+use winnow::{
+    ModalResult, Parser,
+    error::{StrContext, StrContextValue},
+    token::take,
+};
 
-use crate::{MinigitError, error::ParserContext};
+use crate::{MinigitError, error::ParserContext, storage::object::loose::parser::Stream};
 
 /// A hash that identifies an [`super::Object`]. It is a SHA1 hash of the header and
 /// contents of the object.
@@ -81,6 +86,37 @@ impl From<ObjectHash> for Array<u8, U20> {
     }
 }
 
+/// Parses a binary hash from some bytes.
+///
+/// To parse a UTF-8 hash, see [object_hash_str].
+pub fn parse_object_hash<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectHash> {
+    take(20usize)
+        .map(Array::try_from)
+        .verify_map(Result::ok)
+        .map(ObjectHash::from)
+        .context(StrContext::Label("object hash"))
+        .context(StrContext::Expected(StrContextValue::Description(
+            "hash bytes",
+        )))
+        .parse_next(input)
+}
+
+/// Parses a UTF-8 encoded hash from some bytes.
+///
+/// To parse a binary-encoded hash, see [object_hash].
+pub fn parse_object_hash_str<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectHash> {
+    take(40usize)
+        .map(str::from_utf8)
+        .verify_map(Result::ok)
+        .map(str::parse::<ObjectHash>)
+        .verify_map(Result::ok)
+        .context(StrContext::Label("object hash"))
+        .context(StrContext::Expected(StrContextValue::Description(
+            "hash string",
+        )))
+        .parse_next(input)
+}
+
 /// Prefix of an [ObjectHash]. This is the first byte of the hash.
 ///
 /// This is used in the object store for indexing objects by the first byte of their hash.
@@ -117,7 +153,24 @@ impl FromStr for HashPrefix {
 mod test {
     use std::path::PathBuf;
 
-    use crate::object::hash::{HashPrefix, ObjectHash};
+    use winnow::Parser;
+
+    use crate::object::hash::{HashPrefix, ObjectHash, parse_object_hash_str};
+
+    #[test]
+    fn object_hash_str_parses_valid_hashes() {
+        assert_eq!(
+            parse_object_hash_str.parse_peek(b"29f323b31ad129964ffb4f97f203be9c2f35107d"),
+            Ok((
+                &b""[..],
+                [
+                    0x29, 0xf3, 0x23, 0xb3, 0x1a, 0xd1, 0x29, 0x96, 0x4f, 0xfb, 0x4f, 0x97, 0xf2,
+                    0x03, 0xbe, 0x9c, 0x2f, 0x35, 0x10, 0x7d
+                ]
+                .into()
+            ))
+        )
+    }
 
     #[test]
     fn parse_objecthash_try_from_path() {

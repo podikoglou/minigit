@@ -9,10 +9,14 @@ use winnow::{
 
 use crate::{
     identity::{Identity, parse_identity},
-    object::{ObjectType, hash::ObjectHash, parse_object_type},
+    object::{
+        ObjectType,
+        hash::{ObjectHash, parse_object_hash_str},
+        parse_object_type,
+    },
     storage::object::loose::{
         WriteLoose,
-        parser::{Stream, object_hash_str, property},
+        parser::{Stream, property},
     },
     time::{Timestamp, parse_timestamp},
 };
@@ -72,7 +76,7 @@ impl WriteLoose for Tag {
 pub fn parse_tag<'a>(input: &mut Stream<'a>) -> ModalResult<Tag> {
     seq! {Tag{
     target: seq!(
-        property("object", object_hash_str),
+        property("object", parse_object_hash_str),
         property("type", parse_object_type),
     ),
     name: property("tag", take_until(1.., "\n").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned)),

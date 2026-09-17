@@ -4,16 +4,15 @@
 //! crate. It should be stressed that they will not fail if they have excess input, as they are
 //! incremental and built to be combined.
 
-use sha1::digest::array::Array;
 use winnow::{
     ModalResult, Parser,
     ascii::oct_digit1,
     combinator::{repeat, seq, terminated},
-    error::{ContextError, ErrMode, StrContext, StrContextValue},
-    token::{take, take_till, take_until},
+    error::{ContextError, ErrMode, StrContext},
+    token::{take_till, take_until},
 };
 
-use crate::object::{commit::CommitProperty, hash::ObjectHash};
+use crate::object::commit::CommitProperty;
 
 pub type Stream<'a> = &'a [u8];
 
@@ -99,42 +98,9 @@ pub fn mode<'a>(input: &mut Stream<'a>) -> ModalResult<u16> {
         .parse_next(input)
 }
 
-/// Parses a binary hash from some bytes.
-///
-/// To parse a UTF-8 hash, see [object_hash_str].
-pub fn object_hash<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectHash> {
-    take(20usize)
-        .map(Array::try_from)
-        .verify_map(Result::ok)
-        .map(ObjectHash::from)
-        .context(StrContext::Label("object hash"))
-        .context(StrContext::Expected(StrContextValue::Description(
-            "hash bytes",
-        )))
-        .parse_next(input)
-}
-
-/// Parses a UTF-8 encoded hash from some bytes.
-///
-/// To parse a binary-encoded hash, see [object_hash].
-pub fn object_hash_str<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectHash> {
-    take(40usize)
-        .map(str::from_utf8)
-        .verify_map(Result::ok)
-        .map(str::parse::<ObjectHash>)
-        .verify_map(Result::ok)
-        .context(StrContext::Label("object hash"))
-        .context(StrContext::Expected(StrContextValue::Description(
-            "hash string",
-        )))
-        .parse_next(input)
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::storage::object::loose::parser::{
-        extra_property, mode, multiline_property, object_hash_str,
-    };
+    use crate::storage::object::loose::parser::{extra_property, mode, multiline_property};
     use std::assert_matches;
     use winnow::{Parser, error::ErrMode};
 
@@ -142,21 +108,6 @@ mod tests {
     fn mode_parses_valid_modes() {
         assert_eq!(mode.parse_peek(b"000000"), Ok((&b""[..], 0)));
         assert_eq!(mode.parse_peek(b"100644"), Ok((&b""[..], 0o100644)));
-    }
-
-    #[test]
-    fn object_hash_str_parses_valid_hashes() {
-        assert_eq!(
-            object_hash_str.parse_peek(b"29f323b31ad129964ffb4f97f203be9c2f35107d"),
-            Ok((
-                &b""[..],
-                [
-                    0x29, 0xf3, 0x23, 0xb3, 0x1a, 0xd1, 0x29, 0x96, 0x4f, 0xfb, 0x4f, 0x97, 0xf2,
-                    0x03, 0xbe, 0x9c, 0x2f, 0x35, 0x10, 0x7d
-                ]
-                .into()
-            ))
-        )
     }
 
     #[test]

@@ -5,6 +5,7 @@
 - `repo-2`: Repo with 414 commits of one text file (containing three numbers) each
 - `repo-3`: Repo with 4 commits of one text file each, ending with a merge commit that has two parents
 - `repo-4`: Repo with 4 commits, and a tag
+- `repo-3`: Repo with 2 commits, with the objects related to the first packed, and the others not
 
 ## Creating a repository fixture
 - Create a repository somewhere, initialize it as you like

@@ -31,10 +31,7 @@ use crate::{
         tree::parse_tree,
     },
     parsing::Stream,
-    storage::object::{
-        LazyObject,
-        loose::WriteLoose,
-    },
+    storage::object::{LazyObject, loose::WriteLoose},
 };
 
 #[derive(Debug, PartialEq, Eq, Clone, EnumDiscriminants)]

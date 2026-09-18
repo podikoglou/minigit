@@ -2,7 +2,7 @@ use std::io::Write;
 
 use winnow::{
     ModalResult, Parser,
-    combinator::seq,
+    combinator::{opt, seq},
     error::StrContext,
     token::{rest, take_until},
 };
@@ -29,7 +29,7 @@ pub struct Tag {
     pub name: String,
 
     /// The tagger and time of creation of the tag.
-    pub tagger: (Identity, Timestamp),
+    pub tagger: Option<(Identity, Timestamp)>,
 
     /// The description of the tag.
     pub description: String,
@@ -39,7 +39,7 @@ impl Tag {
     pub fn new(
         target: TagTarget,
         name: String,
-        tagger: (Identity, Timestamp),
+        tagger: Option<(Identity, Timestamp)>,
         description: String,
     ) -> Self {
         Self {
@@ -59,8 +59,12 @@ impl WriteLoose for Tag {
         writeln!(writer, "object {}", self.target.0)?;
         writeln!(writer, "type {}", Into::<&'static str>::into(self.target.1))?;
         writeln!(writer, "tag {}", self.name)?;
-        write!(writer, "tagger ")?;
-        self.tagger.write_loose(writer)?;
+
+        if let Some(tagger) = &self.tagger {
+            write!(writer, "tagger ")?;
+            tagger.write_loose(writer)?;
+        }
+
         writeln!(writer)?;
 
         writeln!(writer)?;
@@ -75,10 +79,11 @@ pub fn parse_tag<'a>(input: &mut Stream<'a>) -> ModalResult<Tag> {
     seq! {Tag{
     target: seq!(
         property("object", parse_object_hash_str),
+
         property("type", parse_object_type),
     ),
     name: property("tag", take_until(1.., "\n").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned)),
-    tagger: property("tagger", seq!(parse_identity, _: " ", parse_timestamp)),
+    tagger: opt(property("tagger", seq!(parse_identity, _: " ", parse_timestamp))),
     _: "\n",
     description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
     }}.context(StrContext::Label("tag object"))

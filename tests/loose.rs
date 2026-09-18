@@ -378,6 +378,29 @@ mod fixtures {
             ))
         );
     }
+
+    #[test]
+    fn read_loose_taggerless_tag() {
+        let bytes = include_bytes!("fixtures/objects/tag-3");
+        let object = read_object_compressed(&bytes[..], ParserContext::None)
+            .expect("should be able to read loose tag object");
+
+        let Object::Tag(tag) = &object else {
+            panic!("expected Object::Tag, got {object:?}");
+        };
+
+        assert_eq!(
+            tag.target.0.to_string(),
+            "2a24ab628aa7b190be32f63dfb6d96f3fb61580a"
+        );
+        assert_eq!(tag.target.1, ObjectType::Commit);
+        assert_eq!(tag.name, "v2.6.12-rc5");
+        assert_eq!(
+            tag.description,
+            "Linux-2.6.12-rc5 release\n-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1.2.4 (GNU/Linux)\n\niD8DBQBCk/HHF3YsRnbiHLsRArQsAJ97eO9U7ZKRxOJO84l9AcALAKvJfwCgsGt0\ndVOL/gCk7M2QYRr8RNxLSmI=\n=vOPg\n-----END PGP SIGNATURE-----\n"
+        );
+        assert_eq!(tag.tagger, None);
+    }
 }
 
 mod roundtrip {

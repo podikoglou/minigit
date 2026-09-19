@@ -56,6 +56,10 @@ impl ObjectsBucket {
     pub fn objects(
         self,
     ) -> Result<impl Iterator<Item = Result<LazyObject, MinigitError>>, MinigitError> {
-        Ok(fs::read_dir(self.path)?.map(|path| Ok(LazyObject::loose(path?.path()))))
+        Ok(fs::read_dir(self.path)?.filter_map(|path| match path {
+            Err(err) => Some(Err(err.into())),
+            Ok(entry) if entry.file_name().len() == 38 => Some(Ok(LazyObject::loose(entry.path()))),
+            Ok(_) => None,
+        }))
     }
 }

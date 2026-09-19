@@ -1,4 +1,7 @@
-use std::env;
+use std::{
+    env,
+    io::{self, BufWriter, Write},
+};
 
 use argh::FromArgs;
 use minigit::{
@@ -49,18 +52,21 @@ impl LsObjectsCommand {
                 )
             };
 
+        let stdout = io::stdout();
+        let mut out = BufWriter::new(stdout.lock());
+
         match (pretty, pretty_2) {
             (false, false) => {
                 // default output, just print object hashes
                 for object in objects {
-                    println!("{}", object?.hash()?);
+                    writeln!(out, "{}", object?.hash()?)?;
                 }
             }
             (true, _) => {
                 for lazy_object in objects.filter_map(Result::ok) {
                     let object = lazy_object.into_object()?;
 
-                    println!("{} {:?}", lazy_object.hash()?, object.discriminant());
+                    writeln!(out, "{} {:?}", lazy_object.hash()?, object.discriminant())?;
                 }
             }
             (_, true) => {
@@ -71,22 +77,21 @@ impl LsObjectsCommand {
 
                     match object {
                         minigit::object::Object::Blob(blob) => {
-                            println!("{}  blob    {} bytes", hash, blob.0.len())
+                            writeln!(out, "{}  blob    {} bytes", hash, blob.0.len())
                         }
                         minigit::object::Object::Tree(tree) => {
-                            println!("{}  tree    {} entries", hash, tree.entries.len())
+                            writeln!(out, "{}  tree    {} entries", hash, tree.entries.len())
                         }
-                        minigit::object::Object::Commit(commit) => {
-                            println!(
-                                "{}  commit  {}",
-                                hash,
-                                commit.description.lines().next().unwrap_or_default()
-                            )
-                        }
+                        minigit::object::Object::Commit(commit) => writeln!(
+                            out,
+                            "{}  commit  {}",
+                            hash,
+                            commit.description.lines().next().unwrap_or_default(),
+                        ),
                         minigit::object::Object::Tag(tag) => {
-                            println!("{}  tag  {}", hash, tag.name)
+                            writeln!(out, "{}  tag  {}", hash, tag.name)
                         }
-                    }
+                    }?;
                 }
             }
         };

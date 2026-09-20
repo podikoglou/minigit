@@ -1,6 +1,8 @@
 //! This module contains items that deal with file names.
 
-use crate::{MinigitError, error::ParserContext, storage::object::loose::WriteLoose};
+use crate::{
+    MinigitError, error::ParserContext, parsing::Stream, storage::object::loose::WriteLoose,
+};
 use std::{fmt::Display, path::PathBuf, str::FromStr};
 use winnow::{ModalResult, Parser, combinator::terminated, token::take_until};
 
@@ -18,15 +20,15 @@ use winnow::{ModalResult, Parser, combinator::terminated, token::take_until};
 /// assert_eq!(name.as_str(), "foo.rs");
 /// ```
 #[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Clone)]
-pub struct FileName(String);
+pub struct FileName<'a>(&'a str);
 
-impl FileName {
+impl<'a> FileName<'a> {
     pub fn as_str(&self) -> &str {
         &self.0
     }
 }
 
-impl FromStr for FileName {
+impl<'a> FromStr for FileName<'a> {
     type Err = MinigitError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -36,19 +38,19 @@ impl FromStr for FileName {
     }
 }
 
-impl Display for FileName {
+impl<'a> Display for FileName<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.0)
     }
 }
 
-impl From<FileName> for PathBuf {
+impl<'a> From<FileName<'a>> for PathBuf {
     fn from(val: FileName) -> Self {
         PathBuf::from(val.0)
     }
 }
 
-impl WriteLoose for FileName {
+impl<'a> WriteLoose for FileName<'a> {
     fn write_loose<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
         write!(writer, "{}", self.0)?;
 
@@ -57,11 +59,10 @@ impl WriteLoose for FileName {
 }
 
 /// Parses a file name from some UTF-8 encoded bytes.
-pub fn parse_file_name(input: &mut &[u8]) -> ModalResult<FileName> {
+pub fn parse_file_name<'a>(input: &mut Stream<'a>) -> ModalResult<FileName<'a>> {
     terminated(take_until(1.., "\x00"), "\x00")
         .map(str::from_utf8)
         .verify_map(Result::ok)
-        .map(str::to_owned)
         .map(FileName)
         .parse_next(input)
 }

@@ -39,14 +39,14 @@ use crate::{
 #[strum_discriminants(derive(EnumString, IntoStaticStr, VariantArray))]
 #[strum_discriminants(strum(ascii_case_insensitive))]
 #[strum_discriminants(strum(serialize_all = "lowercase"))]
-pub enum Object {
+pub enum Object<'a> {
     Blob(Blob),
-    Tree(Tree),
+    Tree(Tree<'a>),
     Commit(Box<Commit>),
     Tag(Tag),
 }
 
-impl Object {
+impl Object<'_> {
     /// Creates a SHA1 hash of the object.
     pub fn hash(&self) -> Result<ObjectHash, MinigitError> {
         let mut buf = Vec::new();
@@ -56,7 +56,7 @@ impl Object {
     }
 }
 
-impl WriteLoose for Object {
+impl WriteLoose for Object<'_> {
     /// Writes the uncompressed object to a write.
     fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
         let mut buf: Vec<u8> = Vec::new();
@@ -91,7 +91,7 @@ impl WriteLoose for Object {
     }
 }
 
-impl Object {
+impl Object<'_> {
     pub fn write_loose_compressed<W: Write>(
         &self,
         writer: &mut W,
@@ -102,30 +102,30 @@ impl Object {
     }
 }
 
-impl From<Blob> for Object {
+impl From<Blob> for Object<'_> {
     fn from(val: Blob) -> Self {
         Self::Blob(val)
     }
 }
 
-impl From<Tree> for Object {
-    fn from(val: Tree) -> Self {
+impl<'a> From<Tree<'a>> for Object<'a> {
+    fn from(val: Tree<'a>) -> Self {
         Self::Tree(val)
     }
 }
 
-impl From<Commit> for Object {
+impl From<Commit> for Object<'_> {
     fn from(val: Commit) -> Self {
         Self::Commit(Box::new(val))
     }
 }
-impl From<Tag> for Object {
+impl From<Tag> for Object<'_> {
     fn from(val: Tag) -> Self {
         Self::Tag(val)
     }
 }
 
-impl TryFrom<LazyObject> for Object {
+impl TryFrom<LazyObject> for Object<'_> {
     type Error = MinigitError;
 
     fn try_from(value: LazyObject) -> Result<Self, Self::Error> {
@@ -143,7 +143,7 @@ pub fn parse_object(input: &[u8], context: ParserContext) -> Result<Object, Mini
 }
 
 /// Parses an [Object] from some input.
-pub fn object<'a>(input: &mut Stream<'a>) -> ModalResult<Object> {
+pub fn object<'a>(input: &mut Stream<'a>) -> ModalResult<Object<'a>> {
     let (typee, size) = parse_header.parse_next(input)?;
     let mut bytes: Stream<'a> = take(size).parse_next(input)?;
 

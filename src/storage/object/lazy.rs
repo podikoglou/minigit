@@ -15,13 +15,13 @@ pub enum LazyObject {
     Loose(PathBuf),
 }
 
-impl LazyObject {
+impl<'a> LazyObject {
     pub fn loose(path: PathBuf) -> Self {
         Self::Loose(path)
     }
 
     /// Reads the full object.
-    pub fn into_object(&self) -> Result<Object, MinigitError> {
+    pub fn into_object(self) -> Result<Object<'a>, MinigitError> {
         match self {
             LazyObject::Loose(path) => {
                 // TODO: remove clones here?

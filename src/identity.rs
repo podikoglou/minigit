@@ -86,9 +86,9 @@ impl PartialEq<Email> for &str {
 
 /// Parses an identity in the form of `John Doe <john@doe.com>` from some bytes.
 pub fn parse_identity(input: &mut Stream<'_>) -> ModalResult<Identity> {
-    seq!(take_until(0.., " <").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned).map(Name::try_new).verify_map(Result::ok).context(StrContext::Label("name")),
+    seq!(take_until(0.., " <").map(String::from_utf8_lossy).map(Name::try_new).verify_map(Result::ok).context(StrContext::Label("name")),
         _: " <",
-        take_until(0.., ">").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned).map(Email::new).context(StrContext::Label("email")),
+        take_until(0.., ">").map(String::from_utf8_lossy).map(Email::new).context(StrContext::Label("email")),
         _: ">"
     )
     .map(|(name, email)| Identity::new(name, email))

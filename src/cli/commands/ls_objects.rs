@@ -71,25 +71,25 @@ impl LsObjectsCommand {
 
                     match object {
                         minigit::object::Object::Blob(blob) => {
-                            println!("{}  blob    {} bytes", hash, blob.0.len())
+                            println!("{}  blob    {} bytes", hash, blob.0.len());
                         }
                         minigit::object::Object::Tree(tree) => {
-                            println!("{}  tree    {} entries", hash, tree.entries.len())
+                            println!("{}  tree    {} entries", hash, tree.entries.len());
                         }
                         minigit::object::Object::Commit(commit) => {
                             println!(
                                 "{}  commit  {}",
                                 hash,
                                 commit.description.lines().next().unwrap_or_default()
-                            )
+                            );
                         }
                         minigit::object::Object::Tag(tag) => {
-                            println!("{}  tag  {}", hash, tag.name)
+                            println!("{}  tag  {}", hash, tag.name);
                         }
                     }
                 }
             }
-        };
+        }
 
         Ok(())
     }

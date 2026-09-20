@@ -19,7 +19,7 @@ use crate::{
     time::{Timestamp, parse_timestamp},
 };
 
-/// A tag: an object that points to an [crate::object::Object].
+/// A tag: an object that points to an [`crate::object::Object`].
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Tag {
     /// The object it's pointing to, along with its type.

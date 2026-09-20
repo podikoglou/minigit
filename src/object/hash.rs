@@ -16,7 +16,7 @@ use crate::{MinigitError, error::ParserContext, parsing::Stream};
 pub struct ObjectHash(Array<u8, U20>);
 
 impl ObjectHash {
-    /// Gets the [HashPrefix] (first byte) of the hash.
+    /// Gets the [`HashPrefix`] (first byte) of the hash.
     #[must_use]
     pub fn prefix(&self) -> HashPrefix {
         self.0[0].into()
@@ -54,7 +54,7 @@ impl FromStr for ObjectHash {
 impl TryFrom<&PathBuf> for ObjectHash {
     type Error = MinigitError;
 
-    /// Converts a [PathBuf] into an [ObjectHash]. This expects a path to a loose object that is
+    /// Converts a [`PathBuf`] into an [`ObjectHash`]. This expects a path to a loose object that is
     /// under a bucket directory.
     fn try_from(value: &PathBuf) -> Result<Self, Self::Error> {
         let prefix = value
@@ -89,7 +89,7 @@ impl From<ObjectHash> for Array<u8, U20> {
 
 /// Parses a binary hash from some bytes.
 ///
-/// To parse a UTF-8 hash, see [object_hash_str].
+/// To parse a UTF-8 hash, see [`object_hash_str`].
 pub fn parse_object_hash(input: &mut Stream<'_>) -> ModalResult<ObjectHash> {
     take(20usize)
         .map(Array::try_from)
@@ -104,7 +104,7 @@ pub fn parse_object_hash(input: &mut Stream<'_>) -> ModalResult<ObjectHash> {
 
 /// Parses a UTF-8 encoded hash from some bytes.
 ///
-/// To parse a binary-encoded hash, see [object_hash].
+/// To parse a binary-encoded hash, see [`object_hash`].
 pub fn parse_object_hash_str(input: &mut Stream<'_>) -> ModalResult<ObjectHash> {
     take(40usize)
         .map(str::from_utf8)
@@ -118,7 +118,7 @@ pub fn parse_object_hash_str(input: &mut Stream<'_>) -> ModalResult<ObjectHash> 
         .parse_next(input)
 }
 
-/// Prefix of an [ObjectHash]. This is the first byte of the hash.
+/// Prefix of an [`ObjectHash`]. This is the first byte of the hash.
 ///
 /// This is used in the object store for indexing objects by the first byte of their hash.
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]

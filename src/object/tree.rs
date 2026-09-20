@@ -17,9 +17,9 @@ use crate::{
 /// A tree: an object that associates file names to [tree entries](TreeEntry).
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Tree {
-    /// A mapping from [String] -> [TreeEntry]
+    /// A mapping from [String] -> [`TreeEntry`]
     ///
-    /// A [BTreeMap] is used instead of a [std::collections::HashMap], because iteration order is
+    /// A [`BTreeMap`] is used instead of a [`std::collections::HashMap`], because iteration order is
     /// deterministic, and that's desirable here, since ideally we'd like the program to be able to
     /// parse an object and print it back out, without anything changing.
     pub entries: BTreeMap<FileName, TreeEntry>,

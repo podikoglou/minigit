@@ -1,8 +1,8 @@
 //! This module deals with buckets in a loose object store.
 //!
 //! In the loose object database (`.git/objects/`), objects are indexed by their
-//! [crate::object::hash::ObjectHash] represented in hexadecimal. In particular, they are placed in
-//! *buckets* named after the [HashPrefix], (i.e. the first two characters of the hexadecimal hash),
+//! [`crate::object::hash::ObjectHash`] represented in hexadecimal. In particular, they are placed in
+//! *buckets* named after the [`HashPrefix`], (i.e. the first two characters of the hexadecimal hash),
 //! and the prefix is removed from the object file name.
 //!
 //! ```txt
@@ -29,7 +29,7 @@ pub struct ObjectsBucket {
 }
 
 impl ObjectsBucket {
-    /// Tries to open a [ObjectsBucket], validating that it exists.
+    /// Tries to open a [`ObjectsBucket`], validating that it exists.
     pub fn open(path: impl Into<PathBuf>) -> Result<ObjectsBucket, MinigitError> {
         let path = path.into();
 
@@ -47,7 +47,7 @@ impl ObjectsBucket {
         }
     }
 
-    /// Returns a lazy iterator over the [LazyObject]s in this bucket.
+    /// Returns a lazy iterator over the [`LazyObject`]s in this bucket.
     ///
     /// A bucket can hold thousands of objects, so its contents are not read eagerly.
     ///

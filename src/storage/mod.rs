@@ -50,7 +50,7 @@ impl Store {
             .collect()
     }
 
-    /// Finds an [ObjectsBucket] in .git/objects/
+    /// Finds an [`ObjectsBucket`] in .git/objects/
     pub fn bucket(&self, prefix: HashPrefix) -> Result<ObjectsBucket, MinigitError> {
         self.buckets()?
             .into_iter()

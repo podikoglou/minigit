@@ -21,6 +21,7 @@ pub struct Identity {
 }
 
 impl Identity {
+    #[must_use]
     pub fn new(name: Name, email: Email) -> Self {
         Self { name, email }
     }

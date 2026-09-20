@@ -26,6 +26,7 @@ pub struct Tree {
 }
 
 impl Tree {
+    #[must_use]
     pub fn new(entries: BTreeMap<FileName, TreeEntry>) -> Self {
         Self { entries }
     }
@@ -68,6 +69,7 @@ pub struct TreeEntry {
 }
 
 impl TreeEntry {
+    #[must_use]
     pub fn new(mode: u16, object: ObjectHash) -> Self {
         Self { mode, object }
     }

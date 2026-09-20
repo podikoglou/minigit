@@ -11,6 +11,7 @@ use crate::{parsing::Stream, storage::object::loose::WriteLoose};
 pub struct Blob(pub Vec<u8>);
 
 impl Blob {
+    #[must_use]
     pub fn new(bytes: Vec<u8>) -> Self {
         Self(bytes)
     }

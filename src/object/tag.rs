@@ -36,6 +36,7 @@ pub struct Tag {
 }
 
 impl Tag {
+    #[must_use]
     pub fn new(
         target: TagTarget,
         name: String,

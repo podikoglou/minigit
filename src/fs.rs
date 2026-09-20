@@ -21,6 +21,7 @@ use winnow::{ModalResult, Parser, combinator::terminated, token::take_until};
 pub struct FileName(String);
 
 impl FileName {
+    #[must_use]
     pub fn as_str(&self) -> &str {
         &self.0
     }

@@ -30,6 +30,7 @@ impl Store {
         }
     }
 
+    #[must_use]
     pub fn objects_path(&self) -> PathBuf {
         self.path.join("objects/")
     }

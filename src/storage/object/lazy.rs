@@ -16,6 +16,7 @@ pub enum LazyObject {
 }
 
 impl LazyObject {
+    #[must_use]
     pub fn loose(path: PathBuf) -> Self {
         Self::Loose(path)
     }

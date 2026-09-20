@@ -17,6 +17,7 @@ pub struct ObjectHash(Array<u8, U20>);
 
 impl ObjectHash {
     /// Gets the [HashPrefix] (first byte) of the hash.
+    #[must_use]
     pub fn prefix(&self) -> HashPrefix {
         self.0[0].into()
     }

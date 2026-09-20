@@ -27,6 +27,7 @@ pub struct Commit {
 }
 
 impl Commit {
+    #[must_use]
     pub fn new(
         tree: ObjectHash,
         parents: Vec<ObjectHash>,
@@ -46,6 +47,7 @@ impl Commit {
     }
 
     /// Attempts to get the GPG Signature (including the armor) used to sign this commit.
+    #[must_use]
     pub fn gpg_signature(&self) -> Option<&String> {
         self.extra
             .iter()

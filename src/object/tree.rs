@@ -16,22 +16,22 @@ use crate::{
 
 /// A tree: an object that associates file names to [tree entries](TreeEntry).
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub struct Tree {
+pub struct Tree<'a> {
     /// A mapping from [String] -> [TreeEntry]
     ///
     /// A [BTreeMap] is used instead of a [std::collections::HashMap], because iteration order is
     /// deterministic, and that's desirable here, since ideally we'd like the program to be able to
     /// parse an object and print it back out, without anything changing.
-    pub entries: BTreeMap<FileName, TreeEntry>,
+    pub entries: BTreeMap<FileName<'a>, TreeEntry>,
 }
 
-impl Tree {
-    pub fn new(entries: BTreeMap<FileName, TreeEntry>) -> Self {
+impl<'a> Tree<'a> {
+    pub fn new(entries: BTreeMap<FileName<'a>, TreeEntry>) -> Self {
         Self { entries }
     }
 }
 
-impl WriteLoose for Tree {
+impl<'a> WriteLoose for Tree<'a> {
     fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
         for entry in &self.entries {
             entry.write_loose(writer)?;
@@ -42,7 +42,7 @@ impl WriteLoose for Tree {
 }
 
 /// Parses a tree object from some bytes.
-pub fn parse_tree<'a>(input: &mut Stream<'a>) -> ModalResult<Tree> {
+pub fn parse_tree<'a>(input: &mut Stream<'a>) -> ModalResult<Tree<'a>> {
     // NOTE: not sure if this should be `0..` or `1..`
     // should we be able to parse empty trees?
     repeat(0.., parse_tree_entry)
@@ -73,7 +73,7 @@ impl TreeEntry {
     }
 }
 
-impl WriteLoose for (&FileName, &TreeEntry) {
+impl<'a> WriteLoose for (&FileName<'a>, &TreeEntry) {
     fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
         write!(writer, "{:o} {}\0", self.1.mode, self.0)?;
 
@@ -84,7 +84,9 @@ impl WriteLoose for (&FileName, &TreeEntry) {
     }
 }
 /// Parses a tree object's entry into a tuple `(mode, name, hash)` from some bytes.
-pub fn parse_tree_entry<'a>(input: &mut Stream<'a>) -> ModalResult<(u16, FileName, ObjectHash)> {
+pub fn parse_tree_entry<'a>(
+    input: &mut Stream<'a>,
+) -> ModalResult<(u16, FileName<'a>, ObjectHash)> {
     seq!((mode, _: " ", parse_file_name, parse_object_hash))
         .context(StrContext::Label("tree entry"))
         .parse_next(input)

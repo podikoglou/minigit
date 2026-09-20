@@ -24,7 +24,7 @@ impl LazyObject {
     /// Reads the full object.
     pub fn into_object(&self) -> Result<Object, MinigitError> {
         match self {
-            LazyObject::Loose(path) => {
+            Self::Loose(path) => {
                 // TODO: remove clones here?
                 let file = fs::File::open(path)?;
                 let reader = BufReader::new(file);
@@ -36,7 +36,7 @@ impl LazyObject {
 
     pub fn hash(&self) -> Result<ObjectHash, MinigitError> {
         match self {
-            LazyObject::Loose(path) => path.try_into(),
+            Self::Loose(path) => path.try_into(),
         }
     }
 }

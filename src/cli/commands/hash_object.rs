@@ -31,7 +31,7 @@ pub struct HashObjectCommand {
 
 impl HashObjectCommand {
     pub fn run(self) -> Result<(), MinigitError> {
-        let HashObjectCommand {
+        let Self {
             r#type,
             stdin,
             write: _,

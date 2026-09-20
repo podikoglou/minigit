@@ -27,7 +27,7 @@ pub struct LsObjectsCommand {
 
 impl LsObjectsCommand {
     pub fn run(self) -> Result<(), MinigitError> {
-        let LsObjectsCommand {
+        let Self {
             buckets,
             pretty,
             pretty_2,

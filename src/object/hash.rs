@@ -25,13 +25,13 @@ impl ObjectHash {
 
 impl From<Array<u8, U20>> for ObjectHash {
     fn from(value: Array<u8, U20>) -> Self {
-        ObjectHash(value)
+        Self(value)
     }
 }
 
 impl From<[u8; 20]> for ObjectHash {
     fn from(value: [u8; 20]) -> Self {
-        ObjectHash(value.into())
+        Self(value.into())
     }
 }
 
@@ -47,7 +47,7 @@ impl FromStr for ObjectHash {
             )
         })?;
 
-        Ok(ObjectHash(bytes.into()))
+        Ok(Self(bytes.into()))
     }
 }
 
@@ -132,7 +132,7 @@ impl Display for HashPrefix {
 
 impl From<u8> for HashPrefix {
     fn from(value: u8) -> Self {
-        HashPrefix(value)
+        Self(value)
     }
 }
 
@@ -146,7 +146,7 @@ impl FromStr for HashPrefix {
         // at least one byte
         let first_byte = decoded[0];
 
-        Ok(HashPrefix(first_byte))
+        Ok(Self(first_byte))
     }
 }
 

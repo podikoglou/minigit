@@ -30,7 +30,7 @@ pub struct ObjectsBucket {
 
 impl ObjectsBucket {
     /// Tries to open a [`ObjectsBucket`], validating that it exists.
-    pub fn open(path: impl Into<PathBuf>) -> Result<ObjectsBucket, MinigitError> {
+    pub fn open(path: impl Into<PathBuf>) -> Result<Self, MinigitError> {
         let path = path.into();
 
         let name = path

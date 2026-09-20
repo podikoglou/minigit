@@ -62,22 +62,22 @@ impl WriteLoose for Object {
         let mut buf: Vec<u8> = Vec::new();
 
         match self {
-            Object::Blob(blob) => {
+            Self::Blob(blob) => {
                 write!(writer, "blob ")?;
 
                 blob.write_loose(&mut buf)?;
             }
-            Object::Tree(tree) => {
+            Self::Tree(tree) => {
                 write!(writer, "tree ")?;
 
                 tree.write_loose(&mut buf)?;
             }
-            Object::Commit(commit) => {
+            Self::Commit(commit) => {
                 write!(writer, "commit ")?;
 
                 commit.write_loose(&mut buf)?;
             }
-            Object::Tag(tag) => {
+            Self::Tag(tag) => {
                 write!(writer, "tag ")?;
 
                 tag.write_loose(&mut buf)?;

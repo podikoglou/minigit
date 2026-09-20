@@ -45,7 +45,7 @@ impl Display for FileName {
 
 impl From<FileName> for PathBuf {
     fn from(val: FileName) -> Self {
-        PathBuf::from(val.0)
+        Self::from(val.0)
     }
 }
 

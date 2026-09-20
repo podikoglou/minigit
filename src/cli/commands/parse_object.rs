@@ -22,7 +22,7 @@ pub struct ParseObjectCommand {
 
 impl ParseObjectCommand {
     pub fn run(self) -> Result<(), MinigitError> {
-        let ParseObjectCommand { stdin, files } = self;
+        let Self { stdin, files } = self;
 
         // if stdin, deal with this first
         let stdin_data: Option<Vec<u8>> = if stdin {

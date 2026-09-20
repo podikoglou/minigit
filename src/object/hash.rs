@@ -90,7 +90,7 @@ impl From<ObjectHash> for Array<u8, U20> {
 /// Parses a binary hash from some bytes.
 ///
 /// To parse a UTF-8 hash, see [object_hash_str].
-pub fn parse_object_hash<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectHash> {
+pub fn parse_object_hash(input: &mut Stream<'_>) -> ModalResult<ObjectHash> {
     take(20usize)
         .map(Array::try_from)
         .verify_map(Result::ok)
@@ -105,7 +105,7 @@ pub fn parse_object_hash<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectHash> 
 /// Parses a UTF-8 encoded hash from some bytes.
 ///
 /// To parse a binary-encoded hash, see [object_hash].
-pub fn parse_object_hash_str<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectHash> {
+pub fn parse_object_hash_str(input: &mut Stream<'_>) -> ModalResult<ObjectHash> {
     take(40usize)
         .map(str::from_utf8)
         .verify_map(Result::ok)

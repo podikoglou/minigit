@@ -43,7 +43,7 @@ impl WriteLoose for Tree {
 }
 
 /// Parses a tree object from some bytes.
-pub fn parse_tree<'a>(input: &mut Stream<'a>) -> ModalResult<Tree> {
+pub fn parse_tree(input: &mut Stream<'_>) -> ModalResult<Tree> {
     // NOTE: not sure if this should be `0..` or `1..`
     // should we be able to parse empty trees?
     repeat(0.., parse_tree_entry)
@@ -86,7 +86,7 @@ impl WriteLoose for (&FileName, &TreeEntry) {
     }
 }
 /// Parses a tree object's entry into a tuple `(mode, name, hash)` from some bytes.
-pub fn parse_tree_entry<'a>(input: &mut Stream<'a>) -> ModalResult<(u16, FileName, ObjectHash)> {
+pub fn parse_tree_entry(input: &mut Stream<'_>) -> ModalResult<(u16, FileName, ObjectHash)> {
     seq!((mode, _: " ", parse_file_name, parse_object_hash))
         .context(StrContext::Label("tree entry"))
         .parse_next(input)

@@ -21,7 +21,7 @@ use crate::parsing::Stream;
 pub struct Timestamp(DateTime<FixedOffset>);
 
 /// Parses a [Timestamp] from some bytes.
-pub fn parse_timestamp<'a>(input: &mut Stream<'a>) -> ModalResult<Timestamp> {
+pub fn parse_timestamp(input: &mut Stream<'_>) -> ModalResult<Timestamp> {
     seq!(
         digit1.parse_to::<i64>(),
         _: " ",

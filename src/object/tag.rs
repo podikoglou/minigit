@@ -76,7 +76,7 @@ impl WriteLoose for Tag {
 }
 
 /// Parses a tag object from some bytes.
-pub fn parse_tag<'a>(input: &mut Stream<'a>) -> ModalResult<Tag> {
+pub fn parse_tag(input: &mut Stream<'_>) -> ModalResult<Tag> {
     seq! {Tag{
     target: seq!(
         property("object", parse_object_hash_str),

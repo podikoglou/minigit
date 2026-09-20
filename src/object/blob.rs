@@ -25,7 +25,7 @@ impl WriteLoose for Blob {
 }
 
 /// Parses a blob object's content from some bytes.
-pub fn parse_blob<'a>(input: &mut Stream<'a>) -> ModalResult<Blob> {
+pub fn parse_blob(input: &mut Stream<'_>) -> ModalResult<Blob> {
     rest.map(|e: Stream| Blob(e.into()))
         .context(StrContext::Label("blob object"))
         .parse_next(input)

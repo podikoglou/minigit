@@ -156,7 +156,7 @@ pub fn object<'a>(input: &mut Stream<'a>) -> ModalResult<Object> {
 }
 
 /// Parse a header (object type and size) from some bytes.
-pub fn parse_header<'a>(input: &mut Stream<'a>) -> ModalResult<(ObjectType, usize)> {
+pub fn parse_header(input: &mut Stream<'_>) -> ModalResult<(ObjectType, usize)> {
     let mut size = dec_uint::<_, usize, ErrMode<ContextError>>
         .context(StrContext::Label("payload size"))
         .context(StrContext::Expected(StrContextValue::Description(
@@ -169,7 +169,7 @@ pub fn parse_header<'a>(input: &mut Stream<'a>) -> ModalResult<(ObjectType, usiz
 }
 
 /// Parses an object type string from some bytes.
-pub fn parse_object_type<'a>(input: &mut Stream<'a>) -> ModalResult<ObjectType> {
+pub fn parse_object_type(input: &mut Stream<'_>) -> ModalResult<ObjectType> {
     alt((
         literal("blob").value(ObjectType::Blob),
         literal("tree").value(ObjectType::Tree),

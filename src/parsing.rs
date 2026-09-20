@@ -49,7 +49,7 @@ pub fn multiline_property<'a>(
 }
 
 /// Parses an arbitrary commit property including its name and value.
-pub fn extra_property<'a>(input: &mut Stream<'a>) -> ModalResult<CommitProperty> {
+pub fn extra_property(input: &mut Stream<'_>) -> ModalResult<CommitProperty> {
     seq!(
         // name
         take_till(1.., (b' ', b'\n'))
@@ -84,7 +84,7 @@ pub fn extra_property<'a>(input: &mut Stream<'a>) -> ModalResult<CommitProperty>
 }
 
 /// Parses a UTF-8 encoded file mode such as 100644 from some bytes.
-pub fn mode<'a>(input: &mut Stream<'a>) -> ModalResult<u16> {
+pub fn mode(input: &mut Stream<'_>) -> ModalResult<u16> {
     oct_digit1
         .map(str::from_utf8)
         .verify_map(Result::ok)

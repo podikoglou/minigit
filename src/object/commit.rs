@@ -78,7 +78,7 @@ impl WriteLoose for Commit {
 }
 
 /// Parses a commit object from some bytes.
-pub fn parse_commit<'a>(input: &mut Stream<'a>) -> ModalResult<Commit> {
+pub fn parse_commit(input: &mut Stream<'_>) -> ModalResult<Commit> {
     seq! {Commit{
         tree: property("tree", parse_object_hash_str),
         parents: repeat(0.., property("parent", parse_object_hash_str)),

@@ -408,7 +408,7 @@ mod roundtrip {
     use hegel::TestCase;
 
     use minigit::error::ParserContext;
-    use minigit::object::Object;
+    use minigit::object::{Object, ObjectType, hash::ObjectHash, tag::Tag};
 
     use minigit::storage::object::loose::WriteLoose;
     use minigit::storage::object::loose::read_object;
@@ -592,6 +592,23 @@ mod roundtrip {
         object.write_loose(&mut buf).unwrap();
 
         // read back
+        let read_tag = read_object(&buf[..], ParserContext::None).unwrap();
+
+        assert_eq!(read_tag, object);
+    }
+
+    #[test]
+    fn roundtrip_tag_with_empty_description() {
+        let object = Object::from(Tag::new(
+            (ObjectHash::from([0; 20]), ObjectType::Blob),
+            "v1".to_owned(),
+            None,
+            String::new(),
+        ));
+
+        let mut buf = Vec::new();
+        object.write_loose(&mut buf).unwrap();
+
         let read_tag = read_object(&buf[..], ParserContext::None).unwrap();
 
         assert_eq!(read_tag, object);

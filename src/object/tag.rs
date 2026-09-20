@@ -67,8 +67,6 @@ impl WriteLoose for Tag {
         }
 
         writeln!(writer)?;
-
-        writeln!(writer)?;
         write!(writer, "{}", self.description)?;
 
         Ok(())

@@ -58,7 +58,7 @@ impl ParseObjectCommand {
                 Ok(object) => {
                     dbg!(object);
                 }
-                Err(err) => println!("{}", err),
+                Err(err) => println!("{err}"),
             }
         }
 

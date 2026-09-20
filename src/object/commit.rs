@@ -116,14 +116,14 @@ impl WriteLoose for &CommitProperty {
         };
 
         // write first line of value
-        write!(writer, "{}", first_line)?;
+        write!(writer, "{first_line}")?;
 
         // write each subsequent line, indented by one space, indented by one space.
         //
         // (the reason we prefix with a newline rather than putting it at the end is
         // because we don't want to finish with one.)
         for line in lines {
-            write!(writer, "\n {}", line)?;
+            write!(writer, "\n {line}")?;
         }
 
         Ok(())

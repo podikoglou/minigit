@@ -73,7 +73,7 @@ impl HashObjectCommand {
                 for object in objects {
                     match object {
                         Ok(object) => println!("{}", object.hash()?),
-                        Err(err) => println!("{}", err),
+                        Err(err) => println!("{err}"),
                     }
                 }
             }

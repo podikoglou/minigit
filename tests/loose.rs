@@ -1,3 +1,7 @@
+use include_dir::{Dir, include_dir};
+use itertools::Itertools;
+use minigit::{error::ParserContext, object::Object, storage::object::loose};
+
 mod fixtures {
     use minigit::{
         error::ParserContext,
@@ -612,5 +616,36 @@ mod roundtrip {
         let read_tag = read_object(&buf[..], ParserContext::None).unwrap();
 
         assert_eq!(read_tag, object);
+    }
+}
+
+static OBJECTS_DIR: Dir = include_dir!("tests/fixtures/objects");
+
+#[test]
+fn hash_fixtures() {
+    for (hash_file, object_file) in OBJECTS_DIR
+        .files()
+        .sorted_by_key(|e| e.path().file_stem().unwrap())
+        .tuples::<(_, _)>()
+    {
+        // ensure correct setup
+        assert_eq!(hash_file.path().file_stem(), object_file.path().file_stem());
+        assert_eq!(hash_file.path().extension().unwrap(), "hash");
+        assert_eq!(object_file.path().extension().unwrap(), "obj");
+
+        let real_hash = hash_file.contents_utf8().unwrap().trim();
+        let obj_bytes = object_file.contents();
+
+        let parsed = loose::read_object_compressed(obj_bytes, ParserContext::None)
+            .expect("couldn't parse object");
+
+        let hash = parsed.hash().expect("couldn't hash object");
+
+        assert_eq!(
+            hash.to_string(),
+            real_hash,
+            "{} hash doesn't match actual hash",
+            object_file.path().to_string_lossy()
+        );
     }
 }

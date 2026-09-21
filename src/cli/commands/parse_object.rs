@@ -56,9 +56,9 @@ impl ParseObjectCommand {
         for object in objects {
             match object {
                 Ok(object) => {
-                    dbg!(object);
+                    println!("{object:?}");
                 }
-                Err(err) => println!("{err}"),
+                Err(err) => eprintln!("{err}"),
             }
         }
 

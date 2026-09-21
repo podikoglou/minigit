@@ -60,6 +60,11 @@ impl WriteLoose for Commit {
         write!(writer, "tree {}", self.tree)?;
         writeln!(writer)?;
 
+        for parent in &self.parents {
+            write!(writer, "parent {}", parent)?;
+            writeln!(writer)?;
+        }
+
         write!(writer, "author ")?;
         self.author.write_loose(writer)?;
         writeln!(writer)?;

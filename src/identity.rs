@@ -2,7 +2,7 @@
 //!
 //! It offers newtypes such as [`Identity`], which is consisted of a [`Name`] and [`Email`].
 
-use std::io::Write;
+use std::{fmt::Display, io::Write};
 
 use nutype::nutype;
 use winnow::{
@@ -36,27 +36,15 @@ impl WriteLoose for Identity {
 }
 
 #[nutype(
-    sanitize(trim),
-    validate(len_char_min = 0),
-    derive(Debug, PartialEq, Eq, Clone, Display, AsRef, Deref)
+    sanitize(with = |x| x.trim_ascii().to_vec()),
+    validate(predicate = |x| true),
+    derive(Debug, PartialEq, Eq, Clone, AsRef, Deref)
 )]
-pub struct Name(String);
+pub struct Name(Vec<u8>);
 
-impl PartialEq<&str> for Name {
-    fn eq(&self, other: &&str) -> bool {
-        self.as_ref() == *other
-    }
-}
-
-impl PartialEq<str> for Name {
-    fn eq(&self, other: &str) -> bool {
-        self.as_ref() == other
-    }
-}
-
-impl PartialEq<Name> for &str {
-    fn eq(&self, other: &Name) -> bool {
-        *self == other.as_ref()
+impl Display for Name {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", String::from_utf8_lossy(self))
     }
 }
 
@@ -86,7 +74,7 @@ impl PartialEq<Email> for &str {
 
 /// Parses an identity in the form of `John Doe <john@doe.com>` from some bytes.
 pub fn parse_identity(input: &mut Stream<'_>) -> ModalResult<Identity> {
-    seq!(take_until(0.., " <").map(String::from_utf8_lossy).map(Name::try_new).verify_map(Result::ok).context(StrContext::Label("name")),
+    seq!(take_until(0.., " <").map(|x: &[u8]| x.into()).map(Name::try_new).verify_map(Result::ok).context(StrContext::Label("name")),
         _: " <",
         take_until(0.., ">").map(String::from_utf8_lossy).map(Email::new).context(StrContext::Label("email")),
         _: ">"
@@ -113,7 +101,7 @@ mod tests {
             Ok((
                 &b""[..],
                 Identity::new(
-                    Name::try_new("John Doe").unwrap(),
+                    Name::try_new("John Doe".into()).unwrap(),
                     Email::new("john@doe.com")
                 )
             ))

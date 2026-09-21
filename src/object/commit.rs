@@ -156,7 +156,7 @@ mod tests {
         let hash = ObjectHash::from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
         let alex = (
             Identity::new(
-                Name::try_new("alex").unwrap(),
+                Name::try_new("alex".into()).unwrap(),
                 Email::new("alex.podikoglou@gmail.com"),
             ),
             Timestamp::try_new(

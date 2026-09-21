@@ -1,5 +1,9 @@
 //! Types and functions dealing with hashing of objects.
-use std::{fmt::Display, path::PathBuf, str::FromStr};
+use std::{
+    fmt::{Debug, Display},
+    path::PathBuf,
+    str::FromStr,
+};
 
 use sha1::digest::{array::Array, consts::U20};
 use winnow::{
@@ -12,7 +16,7 @@ use crate::{MinigitError, error::ParserContext, parsing::Stream};
 
 /// A hash that identifies an [`super::Object`]. It is a SHA1 hash of the header and
 /// contents of the object.
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(PartialEq, Eq, Clone)]
 pub struct ObjectHash(Array<u8, U20>);
 
 impl ObjectHash {
@@ -81,6 +85,12 @@ impl Display for ObjectHash {
     }
 }
 
+impl Debug for ObjectHash {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self)
+    }
+}
+
 impl From<ObjectHash> for Array<u8, U20> {
     fn from(val: ObjectHash) -> Self {
         val.0
@@ -121,7 +131,7 @@ pub fn parse_object_hash_str(input: &mut Stream<'_>) -> ModalResult<ObjectHash> 
 /// Prefix of an [`ObjectHash`]. This is the first byte of the hash.
 ///
 /// This is used in the object store for indexing objects by the first byte of their hash.
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+#[derive(PartialEq, Eq, Copy, Clone)]
 pub struct HashPrefix(u8);
 
 impl Display for HashPrefix {
@@ -147,6 +157,12 @@ impl FromStr for HashPrefix {
         let first_byte = decoded[0];
 
         Ok(Self(first_byte))
+    }
+}
+
+impl Debug for HashPrefix {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self)
     }
 }
 

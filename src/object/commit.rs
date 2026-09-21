@@ -57,13 +57,16 @@ impl Commit {
 
 impl WriteLoose for Commit {
     fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
-        writeln!(writer, "tree {}", self.tree)?;
+        write!(writer, "tree {}", self.tree)?;
+        writeln!(writer)?;
 
-        writeln!(writer, "author ")?;
+        write!(writer, "author ")?;
         self.author.write_loose(writer)?;
+        writeln!(writer)?;
 
-        writeln!(writer, "committer ")?;
+        write!(writer, "committer ")?;
         self.committer.write_loose(writer)?;
+        writeln!(writer)?;
 
         for property in &self.extra {
             property.write_loose(writer)?;

@@ -4,7 +4,7 @@
 ### Creating an object fixture
 - Grab object from wherever (could be a regression, so, from a real repo, or could be synthetically constructed)
 - Place into `tests/fixtures/objects`, with a file name of `<object-type>-<index>.obj`
-- Run `tests/fixtures/scripts/hashes.md`
+- Run `tests/fixtures/scripts/hashes.sh`
 
 ## Repositories
 - `repo-1`: Repo with 1 commit, of a single file. Contains three objects: one blob, one tree, one commit.

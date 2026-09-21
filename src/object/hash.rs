@@ -1,5 +1,9 @@
 //! Types and functions dealing with hashing of objects.
-use std::{fmt::Display, path::PathBuf, str::FromStr};
+use std::{
+    fmt::{Debug, Display},
+    path::PathBuf,
+    str::FromStr,
+};
 
 use sha1::digest::{array::Array, consts::U20};
 use winnow::{
@@ -12,7 +16,7 @@ use crate::{MinigitError, error::ParserContext, parsing::Stream};
 
 /// A hash that identifies an [`super::Object`]. It is a SHA1 hash of the header and
 /// contents of the object.
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(PartialEq, Eq, Clone)]
 pub struct ObjectHash(Array<u8, U20>);
 
 impl ObjectHash {
@@ -81,6 +85,12 @@ impl Display for ObjectHash {
     }
 }
 
+impl Debug for ObjectHash {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self)
+    }
+}
+
 impl From<ObjectHash> for Array<u8, U20> {
     fn from(val: ObjectHash) -> Self {
         val.0
@@ -121,7 +131,7 @@ pub fn parse_object_hash_str(input: &mut Stream<'_>) -> ModalResult<ObjectHash> 
 /// Prefix of an [`ObjectHash`]. This is the first byte of the hash.
 ///
 /// This is used in the object store for indexing objects by the first byte of their hash.
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+#[derive(PartialEq, Eq, Copy, Clone)]
 pub struct HashPrefix(u8);
 
 impl Display for HashPrefix {
@@ -150,10 +160,19 @@ impl FromStr for HashPrefix {
     }
 }
 
+impl Debug for HashPrefix {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use std::path::PathBuf;
 
+    use hegel::Generator;
+    use hegel::TestCase;
+    use hegel::generators as gs;
     use winnow::Parser;
 
     use crate::object::hash::{HashPrefix, ObjectHash, parse_object_hash_str};
@@ -198,6 +217,36 @@ mod test {
         assert_eq!(format!("{}", HashPrefix(0x10)), "10".to_string());
     }
 
+    // TODO: deduplciate with the other implementation of this in the codebase
+    #[hegel::composite]
+    pub fn hash(tc: &TestCase) -> ObjectHash {
+        tc.draw(
+            gs::arrays(gs::integers())
+                .map(|bytes: [u8; 20]| ObjectHash::from(bytes))
+                .print_as_debug(),
+        )
+    }
+
+    #[hegel::composite]
+    pub fn hash_prefix(tc: &TestCase) -> HashPrefix {
+        tc.draw(hash().map(|h| h.prefix()).print_as_debug())
+    }
+
+    #[hegel::test]
+    fn hash_prefix_debug_eq_display(tc: TestCase) {
+        let prefix = tc.draw(hash_prefix().print_as_debug());
+
+        assert_eq!(format!("{:?}", prefix), format!("{}", prefix));
+    }
+
+    #[hegel::test]
+    fn hash_prefix_length_2(tc: TestCase) {
+        let prefix = tc.draw(hash_prefix().print_as_debug());
+
+        assert_eq!(format!("{}", prefix).len(), 2);
+        assert_eq!(format!("{:?}", prefix).len(), 2);
+    }
+
     #[test]
     fn hash_display() {
         assert_eq!(
@@ -227,5 +276,18 @@ mod test {
             ),
             "dbc74b2244f57ed7ddf6e5b53c17826bfbf9be51".to_string()
         );
+    }
+    #[hegel::test]
+    fn hash_debug_eq_display(tc: TestCase) {
+        let hash = tc.draw(hash().print_as_debug());
+
+        assert_eq!(format!("{:?}", hash), format!("{}", hash));
+    }
+
+    #[hegel::test]
+    fn hash_len_40(tc: TestCase) {
+        let hash = tc.draw(hash().print_as_debug());
+
+        assert_eq!(format!("{}", hash).len(), 40);
     }
 }

@@ -1,5 +1,5 @@
 #!/bin/bash
 
 for file in ./objects/*.obj; do
-	git hash-object "$file" > "./objects/$(basename "$file" ".obj").hash"
+  pigz -dz < "$file" | sha1sum | cut -d' ' -f1 > "./objects/$(basename "$file" ".obj").hash"
 done

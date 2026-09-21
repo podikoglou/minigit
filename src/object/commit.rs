@@ -131,3 +131,57 @@ impl WriteLoose for &CommitProperty {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use chrono::{DateTime, FixedOffset};
+
+    use crate::{
+        identity::{Email, Identity, Name},
+        object::{commit::Commit, hash::ObjectHash},
+        storage::object::loose::WriteLoose,
+        time::Timestamp,
+    };
+
+    #[test]
+    fn writes_basic_commits() {
+        let hash = ObjectHash::from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+        let alex = (
+            Identity::new(
+                Name::try_new("alex").unwrap(),
+                Email::new("alex.podikoglou@gmail.com"),
+            ),
+            Timestamp::try_new(
+                DateTime::from_timestamp(0, 0)
+                    .unwrap()
+                    .with_timezone(&FixedOffset::west_opt(0).unwrap()),
+            )
+            .unwrap(),
+        );
+        let commit = Commit::new(
+            hash.clone(),
+            vec![hash.clone(), hash],
+            alex.clone(),
+            alex,
+            vec![],
+            "test commit\nsome more text maybe\n".to_string(),
+        );
+
+        let mut buf = Vec::new();
+
+        commit.write_loose(&mut buf).unwrap();
+
+        assert_eq!(
+            String::from_utf8(buf).unwrap(),
+            r#"tree 0000000000000000000000000000000000000000
+parent 0000000000000000000000000000000000000000
+parent 0000000000000000000000000000000000000000
+author alex <alex.podikoglou@gmail.com> 0 +0000
+committer alex <alex.podikoglou@gmail.com> 0 +0000
+
+test commit
+some more text maybe
+"#
+        );
+    }
+}

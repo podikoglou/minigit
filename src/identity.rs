@@ -2,8 +2,9 @@
 //!
 //! It offers newtypes such as [`Identity`], which is consisted of a [`Name`] and [`Email`].
 
-use std::{fmt::Display, io::Write};
+use std::io::Write;
 
+use bstr::BString;
 use nutype::nutype;
 use winnow::{
     ModalResult, Parser,
@@ -36,17 +37,11 @@ impl WriteLoose for Identity {
 }
 
 #[nutype(
-    sanitize(with = |x| x.trim_ascii().to_vec()),
+    sanitize(with = |x| x.trim_ascii().into()),
     validate(predicate = |x| true),
-    derive(Debug, PartialEq, Eq, Clone, AsRef, Deref)
+    derive(Debug, PartialEq, Eq, Clone, Display, AsRef, Deref)
 )]
-pub struct Name(Vec<u8>);
-
-impl Display for Name {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", String::from_utf8_lossy(self))
-    }
-}
+pub struct Name(BString);
 
 #[nutype(
     sanitize(trim),

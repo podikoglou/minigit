@@ -478,7 +478,7 @@ mod roundtrip {
         pub fn name(tc: &TestCase) -> Name {
             tc.draw(
                 gs::text()
-                    .map(String::into_bytes)
+                    .map(|x| x.into())
                     .map(Name::try_new)
                     .filter(Result::is_ok)
                     .map(Result::unwrap)

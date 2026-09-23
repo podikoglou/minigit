@@ -1,6 +1,6 @@
 use include_dir::{Dir, include_dir};
 use itertools::Itertools;
-use minigit::{error::ParserContext, object::Object, storage::object::loose};
+use minigit::{error::ParserContext, storage::object::loose};
 
 mod fixtures {
     use minigit::{
@@ -352,7 +352,7 @@ mod fixtures {
             tag.tagger.as_ref().map(|(identity, _)| identity),
             Some(&Identity::new(
                 Name::try_new("alex".into()).unwrap(),
-                Email::new("alex.podikoglou@gmail.com")
+                Email::new("alex.podikoglou@gmail.com".into())
             ))
         );
     }
@@ -378,7 +378,7 @@ mod fixtures {
             tag.tagger.as_ref().map(|(identity, _)| identity),
             Some(&Identity::new(
                 Name::try_new("alex".into()).unwrap(),
-                Email::new("alex.podikoglou@gmail.com")
+                Email::new("alex.podikoglou@gmail.com".into())
             ))
         );
     }
@@ -488,7 +488,12 @@ mod roundtrip {
 
         #[hegel::composite]
         pub fn email(tc: &TestCase) -> Email {
-            tc.draw(gs::emails().map(Email::new).print_as_debug())
+            tc.draw(
+                gs::emails()
+                    .map(|x| x.into())
+                    .map(Email::new)
+                    .print_as_debug(),
+            )
         }
 
         #[hegel::composite]

@@ -44,10 +44,10 @@ impl WriteLoose for Identity {
 pub struct Name(BString);
 
 #[nutype(
-    sanitize(trim),
+    sanitize(with = |x| x.trim_ascii().into()),
     derive(Debug, PartialEq, Eq, Clone, Display, AsRef, Deref)
 )]
-pub struct Email(String);
+pub struct Email(BString);
 
 impl PartialEq<&str> for Email {
     fn eq(&self, other: &&str) -> bool {
@@ -71,7 +71,7 @@ impl PartialEq<Email> for &str {
 pub fn parse_identity(input: &mut Stream<'_>) -> ModalResult<Identity> {
     seq!(take_until(0.., " <").map(|x: &[u8]| x.into()).map(Name::try_new).verify_map(Result::ok).context(StrContext::Label("name")),
         _: " <",
-        take_until(0.., ">").map(String::from_utf8_lossy).map(Email::new).context(StrContext::Label("email")),
+        take_until(0.., ">").map(|x: &[u8]| x.into()).map(Email::new).context(StrContext::Label("email")),
         _: ">"
     )
     .map(|(name, email)| Identity::new(name, email))
@@ -97,7 +97,7 @@ mod tests {
                 &b""[..],
                 Identity::new(
                     Name::try_new("John Doe".into()).unwrap(),
-                    Email::new("john@doe.com")
+                    Email::new("john@doe.com".into())
                 )
             ))
         );

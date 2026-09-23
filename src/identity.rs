@@ -30,7 +30,10 @@ impl Identity {
 
 impl WriteLoose for Identity {
     fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
-        write!(writer, "{} <{}>", self.name, self.email)?;
+        writer.write_all(self.name.as_ref())?;
+        writer.write_all(b" <")?;
+        writer.write_all(self.email.as_ref())?;
+        writer.write_all(b">")?;
 
         Ok(())
     }

@@ -1,12 +1,12 @@
 use std::{
     fs::{self},
-    io::{self, Read},
+    io::{self, BufWriter, Read},
     path::PathBuf,
 };
 
 use argh::FromArgs;
-use minigit::error::ParserContext;
 use minigit::{MinigitError, storage::object::loose::read_object_compressed};
+use minigit::{error::ParserContext, storage::object::loose::WriteLoose};
 
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "parse-object")]
@@ -16,13 +16,21 @@ pub struct ParseObjectCommand {
     #[argh(switch)]
     stdin: bool,
 
+    /// write the output in binary loose object format
+    #[argh(switch, short = 'b')]
+    binary: bool,
+
     #[argh(positional)]
     files: Vec<String>,
 }
 
 impl ParseObjectCommand {
     pub fn run(self) -> Result<(), MinigitError> {
-        let Self { stdin, files } = self;
+        let Self {
+            stdin,
+            files,
+            binary,
+        } = self;
 
         // if stdin, deal with this first
         let stdin_data: Option<Vec<u8>> = if stdin {
@@ -55,9 +63,14 @@ impl ParseObjectCommand {
 
         for object in objects {
             match object {
-                Ok(object) => {
-                    println!("{object:#?}");
-                }
+                Ok(object) => match binary {
+                    true => {
+                        let mut stdout = io::stdout();
+
+                        object.write_loose_compressed(&mut stdout)?;
+                    }
+                    false => println!("{object:#?}"),
+                },
                 Err(err) => eprintln!("{err}"),
             }
         }

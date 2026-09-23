@@ -1,6 +1,6 @@
 use include_dir::{Dir, include_dir};
 use itertools::Itertools;
-use minigit::{error::ParserContext, object::Object, storage::object::loose};
+use minigit::{error::ParserContext, storage::object::loose};
 
 mod fixtures {
     use minigit::{
@@ -64,9 +64,9 @@ mod fixtures {
             commit.tree.to_string(),
             "7bfeab1d89aa800dff6acaae16b3433e7df44fa6"
         );
-        assert_eq!(commit.author.0.name, "alex");
+        assert_eq!(commit.author.0.name.to_string(), "alex");
         assert_eq!(commit.author.0.email, "alex.podikoglou@gmail.com");
-        assert_eq!(commit.committer.0.name, "alex");
+        assert_eq!(commit.committer.0.name.to_string(), "alex");
         assert_eq!(commit.committer.0.email, "alex.podikoglou@gmail.com");
         assert_eq!(commit.description, "add readme\n");
     }
@@ -89,9 +89,9 @@ mod fixtures {
             commit.parents,
             vec!["497b458b242ad074b046386ec56b9f19361b2691".parse().unwrap()]
         );
-        assert_eq!(commit.author.0.name, "alex");
+        assert_eq!(commit.author.0.name.to_string(), "alex");
         assert_eq!(commit.author.0.email, "alex.podikoglou@gmail.com");
-        assert_eq!(commit.committer.0.name, "alex");
+        assert_eq!(commit.committer.0.name.to_string(), "alex");
         assert_eq!(commit.committer.0.email, "alex.podikoglou@gmail.com");
         assert_eq!(commit.description, "7133\n");
     }
@@ -117,9 +117,9 @@ mod fixtures {
                 "3e66aa515edae750fc16edabea2291a458069db0".parse().unwrap(),
             ]
         );
-        assert_eq!(commit.author.0.name, "alex");
+        assert_eq!(commit.author.0.name.to_string(), "alex");
         assert_eq!(commit.author.0.email, "alex.podikoglou@gmail.com");
-        assert_eq!(commit.committer.0.name, "alex");
+        assert_eq!(commit.committer.0.name.to_string(), "alex");
         assert_eq!(commit.committer.0.email, "alex.podikoglou@gmail.com");
         assert_eq!(commit.description, "Merge branch 'feature'\n");
     }
@@ -145,9 +145,9 @@ mod fixtures {
                 "33ba4daaf56cdd499f4cb8960eb0020db7619616".parse().unwrap(),
             ]
         );
-        assert_eq!(commit.author.0.name, "Laurens Kuiper");
+        assert_eq!(commit.author.0.name.to_string(), "Laurens Kuiper");
         assert_eq!(commit.author.0.email, "laurens@ducklabs.com");
-        assert_eq!(commit.committer.0.name, "GitHub");
+        assert_eq!(commit.committer.0.name.to_string(), "GitHub");
         assert_eq!(commit.committer.0.email, "noreply@github.com");
         assert!(commit.gpg_signature().is_some());
         assert_eq!(
@@ -174,9 +174,9 @@ mod fixtures {
             commit.parents,
             vec!["18b593788d6ebd548bcf55b18cc8f3e15d5fb4c3".parse().unwrap()]
         );
-        assert_eq!(commit.author.0.name, "Nicholas Junge");
+        assert_eq!(commit.author.0.name.to_string(), "Nicholas Junge");
         assert_eq!(commit.author.0.email, "nicho.junge@gmail.com");
-        assert_eq!(commit.committer.0.name, "Nicholas Junge");
+        assert_eq!(commit.committer.0.name.to_string(), "Nicholas Junge");
         assert_eq!(commit.committer.0.email, "nicho.junge@gmail.com");
         assert_eq!(
             commit.extra,
@@ -209,9 +209,9 @@ mod fixtures {
             commit.parents,
             vec!["09e2d957342607904124ebab892be70b0ecf9a10".parse().unwrap()]
         );
-        assert_eq!(commit.author.0.name, "Virgiel");
+        assert_eq!(commit.author.0.name.to_string(), "Virgiel");
         assert_eq!(commit.author.0.email, "");
-        assert_eq!(commit.committer.0.name, "Virgiel");
+        assert_eq!(commit.committer.0.name.to_string(), "Virgiel");
         assert_eq!(commit.committer.0.email, "Virgiel@users.noreply.github.com");
         assert_eq!(
             commit.description,
@@ -237,9 +237,9 @@ mod fixtures {
             commit.parents,
             vec!["e6e58f91d29e4660bcdf09a2bb901a5abe261573".parse().unwrap()]
         );
-        assert_eq!(commit.author.0.name, "Marc Jakobi");
+        assert_eq!(commit.author.0.name.to_string(), "Marc Jakobi");
         assert_eq!(commit.author.0.email, "marc.jakobi@tiko.energy");
-        assert_eq!(commit.committer.0.name, "Marc Jakobi");
+        assert_eq!(commit.committer.0.name.to_string(), "Marc Jakobi");
         assert_eq!(commit.committer.0.email, "marc.jakobi@tiko.energy");
         assert_eq!(
             commit.extra,
@@ -273,7 +273,7 @@ mod fixtures {
             commit.parents,
             vec!["9062d888aa448318e38792b6879a795dd10adda4".parse().unwrap()]
         );
-        assert_eq!(commit.committer.0.name, "Andi Kleen");
+        assert_eq!(commit.committer.0.name.to_string(), "Andi Kleen");
         assert_eq!(commit.committer.0.email, "andi@basil.nowhere.org");
     }
 
@@ -298,9 +298,9 @@ mod fixtures {
                 "c16ef1ceedff27c1b452724ca7f89b729651098f".parse().unwrap(),
             ]
         );
-        assert_eq!(commit.author.0.name, "");
+        assert_eq!(commit.author.0.name.to_string(), "");
         assert_eq!(commit.author.0.email, "jgarzik@pretzel.yyz.us");
-        assert_eq!(commit.committer.0.name, "Jeff Garzik");
+        assert_eq!(commit.committer.0.name.to_string(), "Jeff Garzik");
         assert_eq!(commit.committer.0.email, "jgarzik@pobox.com");
         assert_eq!(
             commit.description,
@@ -326,7 +326,7 @@ mod fixtures {
             commit.parents,
             vec!["264166e604a7e14c278e31cadd1afb06a7d51a11".parse().unwrap()]
         );
-        assert_eq!(commit.committer.0.name, "Dave Jones");
+        assert_eq!(commit.committer.0.name.to_string(), "Dave Jones");
         assert_eq!(commit.committer.0.email, "davej@redhat.com");
     }
 
@@ -351,8 +351,8 @@ mod fixtures {
         assert_eq!(
             tag.tagger.as_ref().map(|(identity, _)| identity),
             Some(&Identity::new(
-                Name::try_new("alex").unwrap(),
-                Email::new("alex.podikoglou@gmail.com")
+                Name::try_new("alex".into()).unwrap(),
+                Email::new("alex.podikoglou@gmail.com".into())
             ))
         );
     }
@@ -377,8 +377,8 @@ mod fixtures {
         assert_eq!(
             tag.tagger.as_ref().map(|(identity, _)| identity),
             Some(&Identity::new(
-                Name::try_new("alex").unwrap(),
-                Email::new("alex.podikoglou@gmail.com")
+                Name::try_new("alex".into()).unwrap(),
+                Email::new("alex.podikoglou@gmail.com".into())
             ))
         );
     }
@@ -420,6 +420,7 @@ mod roundtrip {
     mod generators {
         use crate::roundtrip::generators;
 
+        use bstr::BString;
         use hegel::Generator;
         use hegel::TestCase;
         use hegel::extras::chrono::datetimes;
@@ -478,6 +479,7 @@ mod roundtrip {
         pub fn name(tc: &TestCase) -> Name {
             tc.draw(
                 gs::text()
+                    .map(|x| x.into())
                     .map(Name::try_new)
                     .filter(Result::is_ok)
                     .map(Result::unwrap)
@@ -487,7 +489,12 @@ mod roundtrip {
 
         #[hegel::composite]
         pub fn email(tc: &TestCase) -> Email {
-            tc.draw(gs::emails().map(Email::new).print_as_debug())
+            tc.draw(
+                gs::emails()
+                    .map(|x| x.into())
+                    .map(Email::new)
+                    .print_as_debug(),
+            )
         }
 
         #[hegel::composite]
@@ -526,7 +533,7 @@ mod roundtrip {
             let author = tc.draw(gs::tuples!(identity(), timestamp()).print_as_debug());
             let committer = tc.draw(gs::tuples!(identity(), timestamp()).print_as_debug());
             let extra = tc.draw(gs::vecs(property()).print_as_debug());
-            let description = tc.draw(gs::text());
+            let description = tc.draw(gs::text().map(|x| x.into()).print_as_debug());
 
             Commit::new(tree, parents, author, committer, extra, description)
         }

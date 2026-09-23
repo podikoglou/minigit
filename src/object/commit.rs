@@ -120,7 +120,7 @@ impl WriteLoose for &CommitProperty {
         // write key
         write!(writer, "{} ", self.0)?;
 
-        let mut lines = self.1.lines();
+        let mut lines = self.1.split("\n");
 
         let Some(first_line) = lines.next() else {
             return Ok(()); // is this a failure?

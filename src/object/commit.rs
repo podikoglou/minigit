@@ -80,7 +80,7 @@ impl WriteLoose for Commit {
         }
 
         writeln!(writer)?;
-        write!(writer, "{}", self.description)?;
+        writer.write_all(self.description.as_ref())?;
 
         Ok(())
     }

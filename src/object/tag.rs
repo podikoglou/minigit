@@ -64,6 +64,7 @@ impl WriteLoose for Tag {
         if let Some(tagger) = &self.tagger {
             write!(writer, "tagger ")?;
             tagger.write_loose(writer)?;
+            writeln!(writer);
         }
 
         writeln!(writer)?;

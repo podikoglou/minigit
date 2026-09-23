@@ -1,6 +1,7 @@
 use std::env;
 
 use argh::FromArgs;
+use bstr::ByteSlice;
 use minigit::{
     MinigitError, Repo,
     object::hash::HashPrefix,
@@ -78,7 +79,7 @@ impl LsObjectsCommand {
                         }
                         minigit::object::Object::Commit(commit) => {
                             println!(
-                                "{}  commit  {}",
+                                "{}  commit  {:?}",
                                 hash,
                                 commit.description.lines().next().unwrap_or_default()
                             );

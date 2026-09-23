@@ -1,3 +1,4 @@
+use bstr::{BStr, BString};
 use winnow::{
     ModalResult, Parser,
     combinator::{repeat, seq},
@@ -23,7 +24,7 @@ pub struct Commit {
     pub committer: (Identity, Timestamp),
     pub extra: Vec<CommitProperty>,
 
-    pub description: String,
+    pub description: BString,
 }
 
 impl Commit {
@@ -34,7 +35,7 @@ impl Commit {
         author: (Identity, Timestamp),
         committer: (Identity, Timestamp),
         extra: Vec<CommitProperty>,
-        description: String,
+        description: BString,
     ) -> Self {
         Self {
             tree,
@@ -94,7 +95,7 @@ pub fn parse_commit(input: &mut Stream<'_>) -> ModalResult<Commit> {
         committer: property("committer", seq!(parse_identity, _: " ", parse_timestamp)),
         extra: repeat(0.., extra_property),
         _: "\n",
-        description: rest.map(String::from_utf8_lossy).map(|str| str.to_string()),
+        description: rest.map(|x: &[u8]| x.into()),
     }}
     .context(StrContext::Label("commit object"))
     .parse_next(input)
@@ -172,7 +173,7 @@ mod tests {
             alex.clone(),
             alex,
             vec![],
-            "test commit\nsome more text maybe\n".to_string(),
+            "test commit\nsome more text maybe\n".into(),
         );
 
         let mut buf = Vec::new();

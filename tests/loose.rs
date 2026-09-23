@@ -420,6 +420,7 @@ mod roundtrip {
     mod generators {
         use crate::roundtrip::generators;
 
+        use bstr::BString;
         use hegel::Generator;
         use hegel::TestCase;
         use hegel::extras::chrono::datetimes;
@@ -532,7 +533,7 @@ mod roundtrip {
             let author = tc.draw(gs::tuples!(identity(), timestamp()).print_as_debug());
             let committer = tc.draw(gs::tuples!(identity(), timestamp()).print_as_debug());
             let extra = tc.draw(gs::vecs(property()).print_as_debug());
-            let description = tc.draw(gs::text());
+            let description = tc.draw(gs::text().map(|x| x.into()).print_as_debug());
 
             Commit::new(tree, parents, author, committer, extra, description)
         }

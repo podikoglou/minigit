@@ -2,6 +2,8 @@
 //!
 //! In particular, this deals with version 2 of the packfile format.
 
+mod idx;
+
 use winnow::{ModalResult, Parser, binary::be_u32, combinator::seq};
 
 use crate::parsing::Stream;

@@ -41,7 +41,7 @@ impl WriteLoose for Identity {
 
 #[nutype(
     sanitize(with = |x| x.trim_ascii().into()),
-    validate(predicate = |x| true),
+    validate(predicate = |_x| true),
     derive(Debug, PartialEq, Eq, Clone, Display, AsRef, Deref)
 )]
 pub struct Name(BString);

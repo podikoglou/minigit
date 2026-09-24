@@ -1,4 +1,4 @@
-use bstr::{BStr, BString};
+use bstr::BString;
 use winnow::{
     ModalResult, Parser,
     combinator::{repeat, seq},

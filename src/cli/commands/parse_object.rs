@@ -1,12 +1,12 @@
 use std::{
     fs::{self},
-    io::{self, BufWriter, Read},
+    io::{self, Read},
     path::PathBuf,
 };
 
 use argh::FromArgs;
 use minigit::{MinigitError, storage::object::loose::read_object_compressed};
-use minigit::{error::ParserContext, storage::object::loose::WriteLoose};
+use minigit::error::ParserContext;
 
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "parse-object")]

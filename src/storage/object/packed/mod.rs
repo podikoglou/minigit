@@ -27,7 +27,5 @@ fn objects_amount(input: &mut Stream<'_>) -> ModalResult<u32> {
 
 /// Parses the header of a packfile, returning the amount of objects contained in the header.
 fn header(input: &mut Stream<'_>) -> ModalResult<PackfileHeader> {
-    seq!(magic_bytes, version, objects_amount)
-        .map(|(_, _, objects)| PackfileHeader { objects })
-        .parse_next(input)
+    seq! {PackfileHeader { _: magic_bytes, _: version, objects: objects_amount }}.parse_next(input)
 }

@@ -1,8 +1,15 @@
 //! This module deals with [Packfiles](https://git-scm.com/book/en/v2/Git-Internals-Packfiles)
+//!
+//! In particular, this deals with version 2 of the packfile format.
 
 use winnow::{ModalResult, Parser, binary::be_u32, combinator::seq};
 
 use crate::parsing::Stream;
+
+pub struct PackfileHeader {
+    /// The amount of objects contained in the packfile.
+    pub objects: u32,
+}
 
 fn magic_bytes(input: &mut Stream<'_>) -> ModalResult<()> {
     "PACK".void().parse_next(input)
@@ -17,8 +24,8 @@ fn objects_amount(input: &mut Stream<'_>) -> ModalResult<u32> {
 }
 
 /// Parses the header of a packfile, returning the amount of objects contained in the header.
-fn header(input: &mut Stream<'_>) -> ModalResult<u32> {
+fn header(input: &mut Stream<'_>) -> ModalResult<PackfileHeader> {
     seq!(magic_bytes, version, objects_amount)
-        .map(|x| x.2)
+        .map(|(_, _, objects)| PackfileHeader { objects })
         .parse_next(input)
 }

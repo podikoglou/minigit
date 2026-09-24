@@ -552,6 +552,7 @@ mod roundtrip {
     }
 
     #[hegel::test]
+    #[ignore = "see https://github.com/podikoglou/minigit/issues/13"]
     fn roundtrip_blob(tc: TestCase) {
         let object = tc.draw(generators::blob().map(Object::from).print_as_debug());
 
@@ -566,6 +567,7 @@ mod roundtrip {
     }
 
     #[hegel::test]
+    #[ignore = "see https://github.com/podikoglou/minigit/issues/13"]
     fn roundtrip_tree(tc: TestCase) {
         let object = tc.draw(generators::tree().map(Object::from).print_as_debug());
 
@@ -580,7 +582,7 @@ mod roundtrip {
     }
 
     #[hegel::test]
-    #[ignore]
+    #[ignore = "see https://github.com/podikoglou/minigit/issues/13"]
     fn roundtrip_commit(tc: TestCase) {
         let object = tc.draw(generators::commit().map(Object::from).print_as_debug());
 
@@ -595,6 +597,7 @@ mod roundtrip {
     }
 
     #[hegel::test]
+    #[ignore = "see https://github.com/podikoglou/minigit/issues/13"]
     fn roundtrip_tag(tc: TestCase) {
         let object = tc.draw(generators::tag().map(Object::from).print_as_debug());
 

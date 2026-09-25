@@ -17,6 +17,7 @@ fn magic_bytes(input: &mut Stream<'_>) -> ModalResult<()> {
 }
 
 fn version(input: &mut Stream<'_>) -> ModalResult<()> {
+    // TODO: 3?
     seq!(0x00, 0x02).void().parse_next(input)
 }
 

@@ -1,4 +1,8 @@
-//! This module deals with [Packfiles](https://git-scm.com/book/en/v2/Git-Internals-Packfiles)
+//! This module deals with packfiles
+//!
+//! References:
+//! - <https://git-scm.com/docs/pack-format>
+//! - <https://git-scm.com/book/en/v2/Git-Internals-Packfiles>
 //!
 //! In particular, this deals with version 2 of the packfile format.
 

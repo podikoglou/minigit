@@ -60,7 +60,7 @@ struct PackedObjectHeader {
 fn object_header(input: &mut Stream<'_>) -> ModalResult<PackedObjectHeader> {
     // TODO: using combinators instead of doing this imperatively would be great.
 
-    let should_continue = |byte: u8| byte & 0b10000000 == 1;
+    let should_continue = |byte: u8| (byte & 0b10000000 >> 7) == 1;
 
     let mut current_byte = any.parse_next(input)?;
 

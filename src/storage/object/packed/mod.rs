@@ -64,7 +64,7 @@ fn object_header(input: &mut Stream<'_>) -> ModalResult<PackedObjectHeader> {
 
     let mut current_byte = any.parse_next(input)?;
 
-    let type_id = current_byte & 0b01110000;
+    let type_id = (current_byte & 0b01110000) >> 4;
 
     // TODO: better error handling
     let r#type =

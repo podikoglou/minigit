@@ -70,6 +70,19 @@ fn object_header(input: &mut Stream<'_>) -> ModalResult<PackedObjectHeader> {
     let r#type =
         PackedObjectType::from_repr(type_id).ok_or_else(|| ErrMode::Cut(ContextError::new()))?;
 
+    let mut size = (current_byte as u64) << 60;
+    let mut pos = 4;
+
+    while should_continue(current_byte) {
+        current_byte = any.parse_next(input)?;
+
+        size &= (current_byte as u64 & 0b0111111) << (64 - pos - 7);
+
+        pos += 7;
+    }
+
+    todo!()
+
     // any.verify_map(|byte: u8| {
     //     let cont = byte & 0b10000000 == 1;
     //     let type_id = byte & 0b01110000;

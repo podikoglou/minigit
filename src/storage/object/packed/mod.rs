@@ -66,6 +66,9 @@ pub fn object_header(input: &mut Stream<'_>) -> ModalResult<PackedObjectHeader> 
     let mut size = (current_byte & 0b00001111) as u64;
     let mut pos = 4;
 
+    // TODO: inside this loop, we must check the size will fit inside a u64
+    // libgit2 does something similar:
+    // https://github.com/libgit2/libgit2/blob/0551dfd4ad989b6a3d5683c0d4cf326c6efef929/src/libgit2/pack.c#L434
     while should_continue(current_byte) {
         current_byte = any.parse_next(input)?;
 

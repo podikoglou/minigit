@@ -14,7 +14,7 @@ use winnow::{
     binary::be_u32,
     combinator::seq,
     error::{ContextError, ErrMode},
-    token::{any, take},
+    token::any,
 };
 
 use crate::parsing::Stream;
@@ -22,6 +22,17 @@ use crate::parsing::Stream;
 pub struct PackfileHeader {
     /// The amount of objects contained in the packfile.
     pub objects: u32,
+}
+
+#[derive(FromRepr, Debug, PartialEq)]
+#[repr(u8)]
+enum PackedObjectType {
+    Commit = 1,
+    Tree = 2,
+    Blob = 3,
+    Tag = 4,
+    OfsDelta = 6,
+    RefDelta = 7,
 }
 
 fn magic_bytes(input: &mut Stream<'_>) -> ModalResult<()> {
@@ -39,17 +50,6 @@ fn objects_amount(input: &mut Stream<'_>) -> ModalResult<u32> {
 /// Parses the header of a packfile, returning the amount of objects contained in the header.
 fn header(input: &mut Stream<'_>) -> ModalResult<PackfileHeader> {
     seq! {PackfileHeader { _: magic_bytes, _: version, objects: objects_amount }}.parse_next(input)
-}
-
-#[derive(FromRepr, Debug, PartialEq)]
-#[repr(u8)]
-enum PackedObjectType {
-    Commit = 1,
-    Tree = 2,
-    Blob = 3,
-    Tag = 4,
-    OfsDelta = 6,
-    RefDelta = 7,
 }
 
 struct PackedObjectHeader {

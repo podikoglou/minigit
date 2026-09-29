@@ -76,8 +76,11 @@ fn object_header(input: &mut Stream<'_>) -> ModalResult<PackedObjectHeader> {
     while should_continue(current_byte) {
         current_byte = any.parse_next(input)?;
 
-        size &= (current_byte as u64 & 0b0111111) << (64 - pos - 7);
+        // these are the bits that constitute the size, which is the byte as-is, but with the first
+        // bit masked off as it's the continuation bit
+        let chunk = (current_byte & 0b0111_1111) as u64;
 
+        size |= chunk << pos;
         pos += 7;
     }
 

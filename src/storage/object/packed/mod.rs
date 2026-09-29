@@ -8,13 +8,16 @@
 
 mod idx;
 
+use std::io::Read;
+
+use flate2::read::ZlibDecoder;
 use strum::FromRepr;
 use winnow::{
     ModalResult, Parser,
     binary::be_u32,
     combinator::seq,
     error::{ContextError, ErrMode},
-    token::any,
+    token::{any, take},
 };
 
 use crate::{
@@ -103,11 +106,33 @@ fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<Object> {
         })
         .parse_next(input)?;
 
+    let payload = take(header.length)
+        .verify_map(|bytes| {
+            let mut decoder = ZlibDecoder::new(bytes);
+
+            let mut buf = Vec::new();
+            decoder.read_to_end(&mut buf).ok()?;
+
+            Some(buf)
+        })
+        .parse_next(input)?;
+
     match header.r#type {
-        PackedObjectType::Commit => parse_commit.map(Object::from).parse_next(input),
-        PackedObjectType::Tree => parse_tree.map(Object::from).parse_next(input),
-        PackedObjectType::Blob => parse_blob.map(Object::from).parse_next(input),
-        PackedObjectType::Tag => parse_tag.map(Object::from).parse_next(input),
+        PackedObjectType::Commit => parse_commit
+            .map(Object::from)
+            .parse_next(&mut payload.as_slice()),
+
+        PackedObjectType::Tree => parse_tree
+            .map(Object::from)
+            .parse_next(&mut payload.as_slice()),
+
+        PackedObjectType::Blob => parse_blob
+            .map(Object::from)
+            .parse_next(&mut payload.as_slice()),
+
+        PackedObjectType::Tag => parse_tag
+            .map(Object::from)
+            .parse_next(&mut payload.as_slice()),
         _ => unreachable!(),
     }
 }

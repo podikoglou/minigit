@@ -24,9 +24,14 @@ pub struct PackfileHeader {
     pub objects: u32,
 }
 
+pub struct PackedObjectHeader {
+    pub r#type: PackedObjectType,
+    pub length: u64,
+}
+
 #[derive(FromRepr, Debug, PartialEq)]
 #[repr(u8)]
-enum PackedObjectType {
+pub enum PackedObjectType {
     Commit = 1,
     Tree = 2,
     Blob = 3,
@@ -35,13 +40,8 @@ enum PackedObjectType {
     RefDelta = 7,
 }
 
-struct PackedObjectHeader {
-    r#type: PackedObjectType,
-    length: u64,
-}
-
 /// Parses the header of a packfile, returning the amount of objects contained in the packfile.
-fn header(input: &mut Stream<'_>) -> ModalResult<PackfileHeader> {
+pub fn header(input: &mut Stream<'_>) -> ModalResult<PackfileHeader> {
     seq! {PackfileHeader {
         _: "PACK",
         _: seq!(0x00, 0x00, 0x00, 0x02),
@@ -50,7 +50,7 @@ fn header(input: &mut Stream<'_>) -> ModalResult<PackfileHeader> {
     .parse_next(input)
 }
 
-fn object_header(input: &mut Stream<'_>) -> ModalResult<PackedObjectHeader> {
+pub fn object_header(input: &mut Stream<'_>) -> ModalResult<PackedObjectHeader> {
     // TODO: using combinators instead of doing this imperatively would be great.
 
     let should_continue = |byte: u8| byte & 0b10000000 != 0;

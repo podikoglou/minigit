@@ -122,4 +122,14 @@ mod tests {
         assert_eq!(header.length, 36);
         assert_eq!(rest, &[0x78, 0x9c]);
     }
+
+    #[test]
+    fn object_header_parses_single_byte_header() {
+        let (rest, header) = object_header
+            .parse_peek(&[0x19, 0x0a][..])
+            .expect("commit header should parse");
+        assert_eq!(header.r#type, PackedObjectType::Commit);
+        assert_eq!(header.length, 9);
+        assert_eq!(rest, &[0x0a]);
+    }
 }

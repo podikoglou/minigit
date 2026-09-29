@@ -31,7 +31,10 @@ pub struct PackfileHeader {
 }
 
 pub struct PackedObjectHeader {
+    /// The object type.
     pub r#type: PackedObjectType,
+
+    /// The length of the *decompressed* data.
     pub length: u64,
 }
 
@@ -106,33 +109,32 @@ fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<Object> {
         })
         .parse_next(input)?;
 
-    let payload = take(header.length)
-        .verify_map(|bytes| {
-            let mut decoder = ZlibDecoder::new(bytes);
+    // we create a buffer with the size we read from the header
+    //
+    // keep in mind the fact that this size is the size of the decompressed data
+    // rather than the compressed data
+    let mut buf = vec![0; header.length as usize];
+    let mut decoder = ZlibDecoder::new(&input[..]);
 
-            let mut buf = Vec::new();
-            decoder.read_to_end(&mut buf).ok()?;
+    decoder
+        .read_exact(&mut buf)
+        .map_err(|_| ErrMode::Cut(ContextError::new()))?;
 
-            Some(buf)
-        })
-        .parse_next(input)?;
+    // NOTE: the `input` slice is still pointing to the start of the compressed data, as the
+    // `ZlibDecoder` didn't mutate it.
+    //
+    // generally, this slice will not be used after this method call, and the parsing below uses
+    // a slice pointing to `buf`, so this is likely fine.
 
     match header.r#type {
         PackedObjectType::Commit => parse_commit
             .map(Object::from)
-            .parse_next(&mut payload.as_slice()),
+            .parse_next(&mut buf.as_slice()),
 
-        PackedObjectType::Tree => parse_tree
-            .map(Object::from)
-            .parse_next(&mut payload.as_slice()),
+        PackedObjectType::Tree => parse_tree.map(Object::from).parse_next(&mut buf.as_slice()),
+        PackedObjectType::Blob => parse_blob.map(Object::from).parse_next(&mut buf.as_slice()),
+        PackedObjectType::Tag => parse_tag.map(Object::from).parse_next(&mut buf.as_slice()),
 
-        PackedObjectType::Blob => parse_blob
-            .map(Object::from)
-            .parse_next(&mut payload.as_slice()),
-
-        PackedObjectType::Tag => parse_tag
-            .map(Object::from)
-            .parse_next(&mut payload.as_slice()),
         _ => unreachable!(),
     }
 }
@@ -181,14 +183,20 @@ mod tests {
 
     #[test]
     fn undeltified_object_parses_basic_object() {
-        let (rest, obj) = undeltified_object
+        let (_, obj) = undeltified_object
             .parse_peek(&[
                 0x99, 0x0a, 0x78, 0x9c, 0x9d, 0xcb, 0x4d, 0x0a, 0xc2, 0x30, 0x10, 0x40, 0xe1, 0x7d,
-                0x4e, 0x31, 0x7b, 0xa1, 0x64, 0x12, 0xf3,
+                0x4e, 0x31, 0x7b, 0xa1, 0x64, 0x12, 0xf3, 0x53, 0x10, 0xf1, 0x2a, 0x99, 0x66, 0xd2,
+                0x0e, 0x26, 0x46, 0x4a, 0x0a, 0x1e, 0x5f, 0xbd, 0x42, 0x37, 0x6f, 0xf1, 0xc1, 0x1b,
+                0x3b, 0x33, 0xc4, 0x84, 0x3e, 0x73, 0x28, 0x14, 0x09, 0x83, 0x8f, 0x64, 0x9c, 0x0b,
+                0x4b, 0xd1, 0x96, 0x8c, 0x29, 0xd1, 0x73, 0x66, 0x6b, 0x08, 0x73, 0xc9, 0x2a, 0x1d,
+                0x63, 0xeb, 0x3b, 0xa4, 0xca, 0x1f, 0xb8, 0xfd, 0x3b, 0xbd, 0x7b, 0x96, 0x67, 0x5f,
+                0x6b, 0x3f, 0x1e, 0x6b, 0x4b, 0x52, 0xa7, 0xa5, 0xb7, 0x3b, 0x60, 0x88, 0xb3, 0xf7,
+                0xd7, 0x19, 0x1d, 0x5c, 0xb4, 0xd5, 0x5a, 0xfd, 0xb4, 0xc9, 0x18, 0x7c, 0xe6, 0x55,
+                0xf2, 0x92, 0xa1, 0xbe, 0xc5, 0xe5, 0x34, 0x91, 0xb7, 0x02, 0x78, 0x9c,
             ])
             .expect("commit object should parse");
 
-        assert_matches!(obj, Object::Blob(_));
-        assert_eq!(rest, &[]);
+        assert_matches!(obj, Object::Commit(_));
     }
 }

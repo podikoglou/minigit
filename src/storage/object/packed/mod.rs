@@ -70,7 +70,7 @@ fn object_header(input: &mut Stream<'_>) -> ModalResult<PackedObjectHeader> {
     let r#type =
         PackedObjectType::from_repr(type_id).ok_or_else(|| ErrMode::Cut(ContextError::new()))?;
 
-    let mut size = current_byte & 0b00001111;
+    let mut size = (current_byte & 0b00001111) as u64;
     let mut pos = 4;
 
     while should_continue(current_byte) {
@@ -84,18 +84,10 @@ fn object_header(input: &mut Stream<'_>) -> ModalResult<PackedObjectHeader> {
         pos += 7;
     }
 
-    todo!()
-
-    // any.verify_map(|byte: u8| {
-    //     let cont = byte & 0b10000000 == 1;
-    //     let type_id = byte & 0b01110000;
-    //     let first_nibble = byte & 0b00001111;
-    //
-    //     match PackedObjectType::from_repr(type_id) {
-    //         Some(r#type) => Some((cont, r#type)),
-    //         None => None,
-    //     }
-    // })
+    Ok(PackedObjectHeader {
+        r#type,
+        length: size,
+    })
 }
 
 fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<()> {

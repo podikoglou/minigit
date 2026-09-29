@@ -123,7 +123,8 @@ fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<Object> {
     // NOTE: the `input` slice is still pointing to the start of the compressed data, as the
     // `ZlibDecoder` didn't mutate it.
     //
-    // generally, this slice will not be used after this method call, and the parsing below uses
+    // generally, this slice will not be used after this method call, since we'll be reading at
+    // specific offsets and thus creating a new slice every time. the parsing below uses
     // a slice pointing to `buf`, so this is likely fine.
 
     match header.r#type {

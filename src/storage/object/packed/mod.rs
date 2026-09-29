@@ -114,7 +114,10 @@ fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<Object> {
 
 #[cfg(test)]
 mod tests {
+    use crate::{object::Object, storage::object::packed::undeltified_object};
+
     use super::{PackedObjectType, object_header};
+    use std::assert_matches;
     use winnow::Parser;
 
     #[test]
@@ -149,5 +152,18 @@ mod tests {
         assert_eq!(header.r#type, PackedObjectType::Commit);
         assert_eq!(header.length, 9);
         assert_eq!(rest, &[0x0a]);
+    }
+
+    #[test]
+    fn undeltified_object_parses_basic_object() {
+        let (rest, obj) = undeltified_object
+            .parse_peek(&[
+                0x99, 0x0a, 0x78, 0x9c, 0x9d, 0xcb, 0x4d, 0x0a, 0xc2, 0x30, 0x10, 0x40, 0xe1, 0x7d,
+                0x4e, 0x31, 0x7b, 0xa1, 0x64, 0x12, 0xf3,
+            ])
+            .expect("commit object should parse");
+
+        assert_matches!(obj, Object::Blob(_));
+        assert_eq!(rest, &[]);
     }
 }

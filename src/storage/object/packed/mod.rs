@@ -29,7 +29,7 @@ fn magic_bytes(input: &mut Stream<'_>) -> ModalResult<()> {
 }
 
 fn version(input: &mut Stream<'_>) -> ModalResult<()> {
-    seq!(0x00, 0x02).void().parse_next(input)
+    seq!(0x00, 0x00, 0x00, 0x02).void().parse_next(input)
 }
 
 fn objects_amount(input: &mut Stream<'_>) -> ModalResult<u32> {
@@ -92,4 +92,34 @@ fn object_header(input: &mut Stream<'_>) -> ModalResult<PackedObjectHeader> {
 
 fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<()> {
     todo!()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{PackedObjectType, object_header};
+    use winnow::Parser;
+
+    #[test]
+    fn object_header_parses_basic_headers() {
+        let (rest, header) = object_header
+            .parse_peek(&[0x99, 0x0a, 0x78, 0x9c][..])
+            .expect("commit header should parse");
+        assert_eq!(header.r#type, PackedObjectType::Commit);
+        assert_eq!(header.length, 169);
+        assert_eq!(rest, &[0x78, 0x9c]);
+
+        let (rest, header) = object_header
+            .parse_peek(&[0xb7, 0x02, 0x78, 0x9c][..])
+            .expect("blob header should parse");
+        assert_eq!(header.r#type, PackedObjectType::Blob);
+        assert_eq!(header.length, 39);
+        assert_eq!(rest, &[0x78, 0x9c]);
+
+        let (rest, header) = object_header
+            .parse_peek(&[0xa4, 0x02, 0x78, 0x9c][..])
+            .expect("tree header should parse");
+        assert_eq!(header.r#type, PackedObjectType::Tree);
+        assert_eq!(header.length, 36);
+        assert_eq!(rest, &[0x78, 0x9c]);
+    }
 }

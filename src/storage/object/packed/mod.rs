@@ -70,7 +70,7 @@ fn object_header(input: &mut Stream<'_>) -> ModalResult<PackedObjectHeader> {
     let r#type =
         PackedObjectType::from_repr(type_id).ok_or_else(|| ErrMode::Cut(ContextError::new()))?;
 
-    let mut size = (current_byte as u64) << 60;
+    let mut size = current_byte & 0b00001111;
     let mut pos = 4;
 
     while should_continue(current_byte) {

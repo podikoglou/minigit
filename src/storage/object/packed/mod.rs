@@ -17,7 +17,10 @@ use winnow::{
     token::any,
 };
 
-use crate::parsing::Stream;
+use crate::{
+    object::{Object, blob::parse_blob, commit::parse_commit, tag::parse_tag, tree::parse_tree},
+    parsing::Stream,
+};
 
 pub struct PackfileHeader {
     /// The amount of objects contained in the packfile.
@@ -86,8 +89,27 @@ pub fn object_header(input: &mut Stream<'_>) -> ModalResult<PackedObjectHeader> 
     })
 }
 
-fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<()> {
-    todo!()
+/// Parses the header and data of an undeltified object. Also takes care of decompressing the data.
+fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<Object> {
+    let header = object_header
+        .verify(|header| {
+            matches!(
+                header.r#type,
+                PackedObjectType::Commit
+                    | PackedObjectType::Tag
+                    | PackedObjectType::Blob
+                    | PackedObjectType::Tree
+            )
+        })
+        .parse_next(input)?;
+
+    match header.r#type {
+        PackedObjectType::Commit => parse_commit.map(Object::from).parse_next(input),
+        PackedObjectType::Tree => parse_tree.map(Object::from).parse_next(input),
+        PackedObjectType::Blob => parse_blob.map(Object::from).parse_next(input),
+        PackedObjectType::Tag => parse_tag.map(Object::from).parse_next(input),
+        _ => unreachable!(),
+    }
 }
 
 #[cfg(test)]

@@ -58,7 +58,7 @@ pub enum PackedObjectType {
     RefDelta = 7,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum BaseObject {
     Ref(ObjectHash),
 
@@ -207,7 +207,7 @@ fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<Object> {
 mod tests {
     use crate::{object::Object, storage::object::packed::undeltified_object};
 
-    use super::{PackedObjectType, object_header};
+    use super::{BaseObject, PackedObjectType, object_header, parse_base_object};
     use std::assert_matches;
     use winnow::Parser;
 
@@ -262,5 +262,15 @@ mod tests {
             .expect("commit object should parse");
 
         assert_matches!(obj, Object::Commit(_));
+    }
+
+    #[test]
+    fn parse_base_object_parses_offset_delta() {
+        let (rest, base_object) = parse_base_object(PackedObjectType::OfsDelta)
+            .parse_peek(&[0x81, 0x08, 0x78, 0x9c][..])
+            .expect("ofs delta base object should parse");
+
+        assert_eq!(base_object, BaseObject::Ofs(264));
+        assert_eq!(rest, &[0x78, 0x9c]);
     }
 }

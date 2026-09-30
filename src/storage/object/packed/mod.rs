@@ -119,7 +119,7 @@ fn parse_base_object(
         PackedObjectType::OfsDelta => |input: &mut Stream<'_>| {
             // this is the same format as the size format in object_header
             let mut current_byte = any.parse_next(input)?;
-            let mut offset = (current_byte & 0b00001111) as u64;
+            let mut offset = (current_byte & 0b0111_1111) as u64;
             let mut pos = 7;
 
             while current_byte > 128 {

@@ -21,7 +21,14 @@ use winnow::{
 };
 
 use crate::{
-    object::{Object, blob::parse_blob, commit::parse_commit, tag::parse_tag, tree::parse_tree},
+    object::{
+        Object,
+        blob::parse_blob,
+        commit::parse_commit,
+        hash::{ObjectHash, parse_object_hash_str},
+        tag::parse_tag,
+        tree::parse_tree,
+    },
     parsing::Stream,
 };
 
@@ -52,12 +59,10 @@ pub enum PackedObjectType {
 }
 
 #[derive(Debug)]
-pub enum DeltifiedObject {
-    /// A deltified object where the base object is identified by its name.
-    Ref {},
+pub enum BaseObject {
+    Ref(ObjectHash),
 
-    /// A deltified object where the base object is identified by an offset into the packfile.
-    Offset {},
+    Ofs(u64),
 }
 
 /// Parses the header of a packfile, returning the amount of objects contained in the packfile.
@@ -117,7 +122,32 @@ fn deltified_object(input: &mut Stream<'_>) -> ModalResult<DeltifiedObject> {
             )
         })
         .parse_next(input)?;
-    todo!()
+
+    let base_object = match header.r#type {
+        PackedObjectType::OfsDelta => {
+            // this is the same format as the size format in object_header
+            let mut current_byte = any.parse_next(input)?;
+            let mut offset = (current_byte & 0b00001111) as u64;
+            let mut pos = 7;
+
+            while current_byte > 128 {
+                current_byte = any.parse_next(input)?;
+
+                let chunk = (current_byte & 0b0111_1111) as u64;
+
+                offset |= chunk << pos;
+
+                pos += 7;
+            }
+
+            BaseObject::Ofs(offset)
+        }
+        PackedObjectType::RefDelta => parse_object_hash_str
+            .map(BaseObject::Ref)
+            .parse_next(input)?,
+
+        _ => unreachable!(),
+    };
 }
 
 /// Parses the header and data of an undeltified object. Also takes care of decompressing the data.

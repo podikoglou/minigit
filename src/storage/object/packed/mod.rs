@@ -17,7 +17,7 @@ use winnow::{
     binary::be_u32,
     combinator::seq,
     error::{ContextError, ErrMode},
-    token::{any, take},
+    token::any,
 };
 
 use crate::{

@@ -106,6 +106,19 @@ pub fn object_header(input: &mut Stream<'_>) -> ModalResult<PackedObjectHeader> 
     })
 }
 
+/// Parses the header and data of a deltified object. Does not take care of resolving the deltas.
+fn deltified_object(input: &mut Stream<'_>) -> ModalResult<DeltifiedObject> {
+    let header = object_header
+        .verify(|header| {
+            matches!(
+                header.r#type,
+                PackedObjectType::OfsDelta | PackedObjectType::RefDelta
+            )
+        })
+        .parse_next(input)?;
+    todo!()
+}
+
 /// Parses the header and data of an undeltified object. Also takes care of decompressing the data.
 fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<Object> {
     let header = object_header

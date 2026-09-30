@@ -112,19 +112,11 @@ pub fn object_header(input: &mut Stream<'_>) -> ModalResult<PackedObjectHeader> 
     })
 }
 
-/// Parses the header and data of a deltified object. Does not take care of resolving the deltas.
-fn deltified_object(input: &mut Stream<'_>) -> ModalResult<DeltifiedObject> {
-    let header = object_header
-        .verify(|header| {
-            matches!(
-                header.r#type,
-                PackedObjectType::OfsDelta | PackedObjectType::RefDelta
-            )
-        })
-        .parse_next(input)?;
-
-    let base_object = match header.r#type {
-        PackedObjectType::OfsDelta => {
+fn parse_base_object(
+    r#type: PackedObjectType,
+) -> impl FnMut(&mut Stream<'_>) -> ModalResult<BaseObject> {
+    match r#type {
+        PackedObjectType::OfsDelta => |input: &mut Stream<'_>| {
             // this is the same format as the size format in object_header
             let mut current_byte = any.parse_next(input)?;
             let mut offset = (current_byte & 0b00001111) as u64;
@@ -140,14 +132,30 @@ fn deltified_object(input: &mut Stream<'_>) -> ModalResult<DeltifiedObject> {
                 pos += 7;
             }
 
-            BaseObject::Ofs(offset)
+            Ok(BaseObject::Ofs(offset))
+        },
+        PackedObjectType::RefDelta => {
+            |input: &mut Stream<'_>| parse_object_hash_str.map(BaseObject::Ref).parse_next(input)
         }
-        PackedObjectType::RefDelta => parse_object_hash_str
-            .map(BaseObject::Ref)
-            .parse_next(input)?,
 
         _ => unreachable!(),
-    };
+    }
+}
+
+/// Parses the header and data of a deltified object. Does not take care of resolving the deltas.
+fn deltified_object(input: &mut Stream<'_>) -> ModalResult<()> {
+    let header = object_header
+        .verify(|header| {
+            matches!(
+                header.r#type,
+                PackedObjectType::OfsDelta | PackedObjectType::RefDelta
+            )
+        })
+        .parse_next(input)?;
+
+    let base_object = parse_base_object(header.r#type).parse_next(input)?;
+
+    todo!()
 }
 
 /// Parses the header and data of an undeltified object. Also takes care of decompressing the data.

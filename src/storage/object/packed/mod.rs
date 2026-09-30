@@ -51,6 +51,15 @@ pub enum PackedObjectType {
     RefDelta = 7,
 }
 
+#[derive(Debug)]
+pub enum DeltifiedObject {
+    /// A deltified object where the base object is identified by its name.
+    Ref {},
+
+    /// A deltified object where the base object is identified by an offset into the packfile.
+    Offset {},
+}
+
 /// Parses the header of a packfile, returning the amount of objects contained in the packfile.
 pub fn header(input: &mut Stream<'_>) -> ModalResult<PackfileHeader> {
     seq! {PackfileHeader {

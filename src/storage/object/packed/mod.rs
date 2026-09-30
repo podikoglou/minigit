@@ -73,8 +73,6 @@ pub fn header(input: &mut Stream<'_>) -> ModalResult<PackfileHeader> {
 pub fn object_header(input: &mut Stream<'_>) -> ModalResult<PackedObjectHeader> {
     // TODO: using combinators instead of doing this imperatively would be great.
 
-    let should_continue = |byte: u8| byte & 0b10000000 != 0;
-
     let mut current_byte = any.parse_next(input)?;
 
     let type_id = (current_byte & 0b01110000) >> 4;
@@ -89,7 +87,10 @@ pub fn object_header(input: &mut Stream<'_>) -> ModalResult<PackedObjectHeader> 
     // TODO: inside this loop, we must check the size will fit inside a u64
     // libgit2 does something similar:
     // https://github.com/libgit2/libgit2/blob/0551dfd4ad989b6a3d5683c0d4cf326c6efef929/src/libgit2/pack.c#L434
-    while should_continue(current_byte) {
+
+    // keep reading, the continuation bit is 1
+    // (thanks for the trick Aditya! - https://codewords.recurse.com/issues/three/unpacking-git-packfiles)
+    while current_byte > 128 {
         current_byte = any.parse_next(input)?;
 
         // these are the bits that constitute the size, which is the byte as-is, but with the first

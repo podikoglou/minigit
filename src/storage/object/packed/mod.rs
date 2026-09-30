@@ -25,11 +25,13 @@ use crate::{
     parsing::Stream,
 };
 
+#[derive(Debug)]
 pub struct PackfileHeader {
     /// The amount of objects contained in the packfile.
     pub objects: u32,
 }
 
+#[derive(Debug)]
 pub struct PackedObjectHeader {
     /// The object type.
     pub r#type: PackedObjectType,

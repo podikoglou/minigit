@@ -112,25 +112,29 @@ pub fn object_header(input: &mut Stream<'_>) -> ModalResult<PackedObjectHeader> 
     })
 }
 
+fn offset(input: &mut Stream<'_>) -> ModalResult<u64> {
+    let mut current_byte = any.parse_next(input)?;
+    let mut offset = (current_byte & 0b0111_1111) as u64;
+
+    while current_byte >= 128 {
+        current_byte = any.parse_next(input)?;
+
+        let chunk = (current_byte & 0b0111_1111) as u64;
+
+        offset += 1;
+        offset = (offset << 7) | chunk;
+    }
+
+    Ok(offset)
+}
+
 fn parse_base_object(
     r#type: PackedObjectType,
 ) -> impl FnMut(&mut Stream<'_>) -> ModalResult<BaseObject> {
     match r#type {
-        PackedObjectType::OfsDelta => |input: &mut Stream<'_>| {
-            let mut current_byte = any.parse_next(input)?;
-            let mut offset = (current_byte & 0b0111_1111) as u64;
-
-            while current_byte >= 128 {
-                current_byte = any.parse_next(input)?;
-
-                let chunk = (current_byte & 0b0111_1111) as u64;
-
-                offset += 1;
-                offset = (offset << 7) | chunk;
-            }
-
-            Ok(BaseObject::Ofs(offset))
-        },
+        PackedObjectType::OfsDelta => {
+            |input: &mut Stream<'_>| offset.map(BaseObject::Ofs).parse_next(input)
+        }
         PackedObjectType::RefDelta => {
             |input: &mut Stream<'_>| parse_object_hash_str.map(BaseObject::Ref).parse_next(input)
         }

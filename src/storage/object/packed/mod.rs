@@ -95,7 +95,7 @@ pub fn object_header(input: &mut Stream<'_>) -> ModalResult<PackedObjectHeader> 
 
     // keep reading, the continuation bit is 1
     // (thanks for the trick Aditya! - https://codewords.recurse.com/issues/three/unpacking-git-packfiles)
-    while current_byte > 128 {
+    while current_byte >= 128 {
         current_byte = any.parse_next(input)?;
 
         // these are the bits that constitute the size, which is the byte as-is, but with the first
@@ -117,11 +117,10 @@ fn parse_base_object(
 ) -> impl FnMut(&mut Stream<'_>) -> ModalResult<BaseObject> {
     match r#type {
         PackedObjectType::OfsDelta => |input: &mut Stream<'_>| {
-            // this is the same format as the size format in object_header
             let mut current_byte = any.parse_next(input)?;
             let mut offset = (current_byte & 0b0111_1111) as u64;
 
-            while current_byte > 128 {
+            while current_byte >= 128 {
                 current_byte = any.parse_next(input)?;
 
                 let chunk = (current_byte & 0b0111_1111) as u64;

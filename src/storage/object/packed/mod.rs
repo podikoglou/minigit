@@ -78,7 +78,7 @@ pub enum Instruction {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct InsertInstruction(Vec<u8>);
+pub struct InsertInstruction(pub Vec<u8>);
 
 #[derive(Debug, PartialEq)]
 pub struct CopyInstruction {

@@ -15,7 +15,7 @@ use strum::FromRepr;
 use winnow::{
     ModalResult, Parser,
     binary::be_u32,
-    combinator::seq,
+    combinator::{alt, seq},
     error::{ContextError, ErrMode, StrContext},
     token::any,
 };
@@ -63,6 +63,12 @@ pub enum BaseObject {
     Ref(ObjectHash),
 
     Ofs(u64),
+}
+
+#[derive(Debug, PartialEq)]
+pub enum PackedObject {
+    Deltified { base: BaseObject },
+    Undeltified(Object),
 }
 
 /// Parses the header of a packfile, returning the amount of objects contained in the packfile.
@@ -113,6 +119,14 @@ pub fn object_header(input: &mut Stream<'_>) -> ModalResult<PackedObjectHeader> 
     })
 }
 
+pub fn object(input: &mut Stream<'_>) -> ModalResult<PackedObject> {
+    alt((
+        deltified_object.map(|(base,)| PackedObject::Deltified { base }),
+        undeltified_object.map(PackedObject::Undeltified),
+    ))
+    .parse_next(input)
+}
+
 fn offset(input: &mut Stream<'_>) -> ModalResult<u64> {
     let mut current_byte = any.parse_next(input)?;
     let mut offset = (current_byte & 0b0111_1111) as u64;
@@ -149,7 +163,7 @@ fn base_object(r#type: PackedObjectType) -> impl FnMut(&mut Stream<'_>) -> Modal
 }
 
 /// Parses the header and data of a deltified object. Does not take care of resolving the deltas.
-fn deltified_object(input: &mut Stream<'_>) -> ModalResult<()> {
+fn deltified_object(input: &mut Stream<'_>) -> ModalResult<(BaseObject,)> {
     let header = object_header
         .verify(|header| {
             matches!(
@@ -163,7 +177,7 @@ fn deltified_object(input: &mut Stream<'_>) -> ModalResult<()> {
         .context(StrContext::Label("base object"))
         .parse_next(input)?;
 
-    todo!()
+    Ok((base_object,))
 }
 
 /// Parses the header and data of an undeltified object. Also takes care of decompressing the data.

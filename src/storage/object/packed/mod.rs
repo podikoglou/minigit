@@ -127,7 +127,7 @@ fn parse_base_object(
 
                 let chunk = (current_byte & 0b0111_1111) as u64;
 
-                offset |= chunk << pos;
+                offset |= (chunk << pos) + 1;
 
                 pos += 7;
             }

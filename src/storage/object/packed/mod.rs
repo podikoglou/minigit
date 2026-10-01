@@ -219,6 +219,22 @@ fn delta(input: &mut Stream<'_>) -> ModalResult<()> {
     todo!()
 }
 
+fn instruction(input: &mut Stream<'_>) -> ModalResult<()> {
+    alt((insert_instruction, copy_instruction)).parse_next(input)
+}
+
+fn insert_instruction(input: &mut Stream<'_>) -> ModalResult<()> {
+    let first_byte = any.verify(|byte| *byte < 128).parse_next(input)?;
+
+    todo!()
+}
+
+fn copy_instruction(input: &mut Stream<'_>) -> ModalResult<()> {
+    let first_byte = any.verify(|byte| *byte >= 128).parse_next(input)?;
+
+    todo!()
+}
+
 /// Parses the header and data of an undeltified object. Also takes care of decompressing the data.
 fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<Object> {
     let header = object_header

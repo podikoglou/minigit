@@ -119,6 +119,7 @@ pub fn object_header(input: &mut Stream<'_>) -> ModalResult<PackedObjectHeader> 
     })
 }
 
+/// Parses an object. Takes care of parsing the header too.
 pub fn object(input: &mut Stream<'_>) -> ModalResult<PackedObject> {
     alt((
         deltified_object

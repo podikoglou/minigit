@@ -33,12 +33,6 @@ fn undeltified_packfile_parse() {
 
     // object 1
     {
-        let object_header = packed::object_header
-            .parse_next(&mut slice)
-            .expect("should be able to parse object header");
-
-        assert_eq!(object_header.r#type, PackedObjectType::Commit);
-
         let object = packed::object
             .parse_next(&mut slice)
             .expect("should be able to parse object");
@@ -48,12 +42,6 @@ fn undeltified_packfile_parse() {
 
     // object 2
     {
-        let object_header = packed::object_header
-            .parse_next(&mut slice)
-            .expect("should be able to parse object header");
-
-        assert_eq!(object_header.r#type, PackedObjectType::Blob);
-
         let object = packed::object
             .parse_next(&mut slice)
             .expect("should be able to parse object");
@@ -63,12 +51,6 @@ fn undeltified_packfile_parse() {
 
     // object 3
     {
-        let object_header = packed::object_header
-            .parse_next(&mut slice)
-            .expect("should be able to parse object header");
-
-        assert_eq!(object_header.r#type, PackedObjectType::Tree);
-
         let object = packed::object
             .parse_next(&mut slice)
             .expect("should be able to parse object");

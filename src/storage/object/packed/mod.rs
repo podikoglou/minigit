@@ -16,7 +16,7 @@ use winnow::{
     ModalResult, Parser,
     binary::be_u32,
     combinator::seq,
-    error::{ContextError, ErrMode},
+    error::{ContextError, ErrMode, StrContext},
     token::any,
 };
 
@@ -68,10 +68,11 @@ pub enum BaseObject {
 /// Parses the header of a packfile, returning the amount of objects contained in the packfile.
 pub fn header(input: &mut Stream<'_>) -> ModalResult<PackfileHeader> {
     seq! {PackfileHeader {
-        _: "PACK",
-        _: seq!(0x00, 0x00, 0x00, 0x02),
-        objects: be_u32
+        _: "PACK".context(StrContext::Label("magic bytes")),
+        _: seq!(0x00, 0x00, 0x00, 0x02).context(StrContext::Label("packfile version")),
+        objects: be_u32.context(StrContext::Label("objects amount"))
     }}
+    .context(StrContext::Label("packfile header"))
     .parse_next(input)
 }
 
@@ -130,12 +131,18 @@ fn offset(input: &mut Stream<'_>) -> ModalResult<u64> {
 
 fn base_object(r#type: PackedObjectType) -> impl FnMut(&mut Stream<'_>) -> ModalResult<BaseObject> {
     match r#type {
-        PackedObjectType::OfsDelta => {
-            |input: &mut Stream<'_>| offset.map(BaseObject::Ofs).parse_next(input)
-        }
-        PackedObjectType::RefDelta => {
-            |input: &mut Stream<'_>| parse_object_hash_str.map(BaseObject::Ref).parse_next(input)
-        }
+        PackedObjectType::OfsDelta => |input: &mut Stream<'_>| {
+            offset
+                .map(BaseObject::Ofs)
+                .context(StrContext::Label("base object offset"))
+                .parse_next(input)
+        },
+        PackedObjectType::RefDelta => |input: &mut Stream<'_>| {
+            parse_object_hash_str
+                .map(BaseObject::Ref)
+                .context(StrContext::Label("base object name"))
+                .parse_next(input)
+        },
 
         _ => unreachable!(),
     }
@@ -152,7 +159,9 @@ fn deltified_object(input: &mut Stream<'_>) -> ModalResult<()> {
         })
         .parse_next(input)?;
 
-    let base_object = base_object(header.r#type).parse_next(input)?;
+    let base_object = base_object(header.r#type)
+        .context(StrContext::Label("base object"))
+        .parse_next(input)?;
 
     todo!()
 }

@@ -25,7 +25,7 @@ use crate::{
         Object,
         blob::parse_blob,
         commit::parse_commit,
-        hash::{ObjectHash, parse_object_hash_str},
+        hash::{ObjectHash, parse_object_hash},
         tag::parse_tag,
         tree::parse_tree,
     },
@@ -158,7 +158,7 @@ fn base_object(r#type: PackedObjectType) -> impl FnMut(&mut Stream<'_>) -> Modal
                 .parse_next(input)
         },
         PackedObjectType::RefDelta => |input: &mut Stream<'_>| {
-            parse_object_hash_str
+            parse_object_hash
                 .map(BaseObject::Ref)
                 .context(StrContext::Label("base object name"))
                 .parse_next(input)

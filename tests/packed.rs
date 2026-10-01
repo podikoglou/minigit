@@ -1,8 +1,14 @@
 use std::fs::File;
 
 use memmap2::Mmap;
-use minigit::{Repo, storage::object::packed};
+use minigit::{
+    Repo,
+    object::Object,
+    storage::object::packed::{self, PackedObject, PackedObjectType},
+};
 use winnow::Parser;
+
+use std::assert_matches;
 
 mod common;
 
@@ -23,5 +29,50 @@ fn undeltified_packfile_parse() {
         .parse_next(&mut slice)
         .expect("should be able to parse packfile header");
 
-    assert_eq!(header.objects, 3);
+    assert_eq!(header.objects, 3, "should have three objects");
+
+    // object 1
+    {
+        let object_header = packed::object_header
+            .parse_next(&mut slice)
+            .expect("should be able to parse object header");
+
+        assert_eq!(object_header.r#type, PackedObjectType::Commit);
+
+        let object = packed::object
+            .parse_next(&mut slice)
+            .expect("should be able to parse object");
+
+        assert_matches!(object, PackedObject::Undeltified(Object::Commit(_)));
+    }
+
+    // object 2
+    {
+        let object_header = packed::object_header
+            .parse_next(&mut slice)
+            .expect("should be able to parse object header");
+
+        assert_eq!(object_header.r#type, PackedObjectType::Blob);
+
+        let object = packed::object
+            .parse_next(&mut slice)
+            .expect("should be able to parse object");
+
+        assert_matches!(object, PackedObject::Undeltified(Object::Blob(_)));
+    }
+
+    // object 3
+    {
+        let object_header = packed::object_header
+            .parse_next(&mut slice)
+            .expect("should be able to parse object header");
+
+        assert_eq!(object_header.r#type, PackedObjectType::Tree);
+
+        let object = packed::object
+            .parse_next(&mut slice)
+            .expect("should be able to parse object");
+
+        assert_matches!(object, PackedObject::Undeltified(Object::Tree(_)));
+    }
 }

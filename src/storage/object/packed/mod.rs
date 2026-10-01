@@ -222,7 +222,7 @@ fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<Object> {
     // passed to it when we created it), which *is* advanced.
     //
     // this is only useful for when the caller of this function needs to linearly read the packfile
-    *input = decoder.into_inner();
+    *input = &input[decoder.total_in() as usize..];
 
     match header.r#type {
         PackedObjectType::Commit => parse_commit

@@ -15,7 +15,7 @@ use strum::FromRepr;
 use winnow::{
     ModalResult, Parser,
     binary::be_u32,
-    combinator::{alt, seq},
+    combinator::{alt, repeat, seq},
     error::{ContextError, ErrMode, StrContext},
     token::{any, take},
 };
@@ -249,10 +249,12 @@ fn delta(input: &mut Stream<'_>) -> ModalResult<Delta> {
         .context(StrContext::Label("base object size"))
         .parse_next(input)?;
 
+    let instructions = repeat(0.., instruction).parse_next(input)?;
+
     Ok(Delta {
         base_object_size,
         deltified_object_size,
-        instructions: vec![],
+        instructions,
     })
 }
 

@@ -74,10 +74,17 @@ pub enum PackedObject {
 #[derive(Debug, PartialEq)]
 pub enum Instruction {
     Insert(InsertInstruction),
+    Copy(CopyInstruction),
 }
 
 #[derive(Debug, PartialEq)]
 pub struct InsertInstruction(Vec<u8>);
+
+#[derive(Debug, PartialEq)]
+pub struct CopyInstruction {
+    pub offset: u64,
+    pub size: u64,
+}
 
 /// Parses the header of a packfile, returning the amount of objects contained in the packfile.
 pub fn header(input: &mut Stream<'_>) -> ModalResult<PackfileHeader> {
@@ -230,7 +237,7 @@ fn delta(input: &mut Stream<'_>) -> ModalResult<()> {
 fn instruction(input: &mut Stream<'_>) -> ModalResult<Instruction> {
     alt((
         insert_instruction.map(Instruction::Insert),
-        copy_instruction,
+        copy_instruction.map(Instruction::Copy),
     ))
     .parse_next(input)
 }
@@ -244,10 +251,61 @@ fn insert_instruction(input: &mut Stream<'_>) -> ModalResult<InsertInstruction> 
         .parse_next(input)
 }
 
-fn copy_instruction(input: &mut Stream<'_>) -> ModalResult<()> {
+fn copy_instruction(input: &mut Stream<'_>) -> ModalResult<CopyInstruction> {
     let first_byte = any.verify(|byte| *byte >= 128).parse_next(input)?;
 
-    todo!()
+    let has_offset_1 = first_byte & 0b0000_0001 == 1;
+    let has_offset_2 = first_byte & 0b0000_0010 >> 1 == 1;
+    let has_offset_3 = first_byte & 0b0000_0100 >> 2 == 1;
+    let has_offset_4 = first_byte & 0b0000_1000 >> 3 == 1;
+    let has_size_1 = first_byte & 0b0001_0000 >> 4 == 1;
+    let has_size_2 = first_byte & 0b0010_0000 >> 5 == 1;
+    let has_size_3 = first_byte & 0b0100_0000 >> 6 == 1;
+
+    let offset_1 = if has_offset_1 {
+        any.parse_next(input)? as u64
+    } else {
+        0
+    };
+
+    let offset_2 = if has_offset_2 {
+        any.parse_next(input)? as u64
+    } else {
+        0
+    };
+
+    let offset_3 = if has_offset_3 {
+        any.parse_next(input)? as u64
+    } else {
+        0
+    };
+
+    let offset_4 = if has_offset_4 {
+        any.parse_next(input)? as u64
+    } else {
+        0
+    };
+
+    let size_1 = if has_size_1 {
+        any.parse_next(input)? as u64
+    } else {
+        0
+    };
+    let size_2 = if has_size_2 {
+        any.parse_next(input)? as u64
+    } else {
+        0
+    };
+    let size_3 = if has_size_3 {
+        any.parse_next(input)? as u64
+    } else {
+        0
+    };
+
+    let offset = offset_1 | (offset_2 << 8) | (offset_3 << 16) | (offset_4 << 24);
+    let size = size_1 | (size_2 << 8) | (size_3 << 16);
+
+    Ok(CopyInstruction { offset, size })
 }
 
 /// Parses the header and data of an undeltified object. Also takes care of decompressing the data.

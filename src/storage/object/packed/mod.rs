@@ -278,13 +278,13 @@ fn insert_instruction(input: &mut Stream<'_>) -> ModalResult<InsertInstruction> 
 fn copy_instruction(input: &mut Stream<'_>) -> ModalResult<CopyInstruction> {
     let first_byte = any.verify(|byte| *byte >= 128).parse_next(input)?;
 
-    let has_offset_1 = first_byte & 0b0000_0001 == 1;
-    let has_offset_2 = first_byte & 0b0000_0010 >> 1 == 1;
-    let has_offset_3 = first_byte & 0b0000_0100 >> 2 == 1;
-    let has_offset_4 = first_byte & 0b0000_1000 >> 3 == 1;
-    let has_size_1 = first_byte & 0b0001_0000 >> 4 == 1;
-    let has_size_2 = first_byte & 0b0010_0000 >> 5 == 1;
-    let has_size_3 = first_byte & 0b0100_0000 >> 6 == 1;
+    let has_offset_1 = (first_byte & 0b0000_0001) != 0;
+    let has_offset_2 = (first_byte & 0b0000_0010) != 0;
+    let has_offset_3 = (first_byte & 0b0000_0100) != 0;
+    let has_offset_4 = (first_byte & 0b0000_1000) != 0;
+    let has_size_1 = (first_byte & 0b0001_0000) != 0;
+    let has_size_2 = (first_byte & 0b0010_0000) != 0;
+    let has_size_3 = (first_byte & 0b0100_0000) != 0;
 
     let offset_1 = if has_offset_1 {
         any.parse_next(input)? as u64

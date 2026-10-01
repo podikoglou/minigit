@@ -67,7 +67,7 @@ pub enum BaseObject {
 
 #[derive(Debug, PartialEq)]
 pub enum PackedObject {
-    Deltified { base: BaseObject },
+    Deltified { base: BaseObject, delta: Delta },
     Undeltified(Object),
 }
 
@@ -84,6 +84,13 @@ pub struct InsertInstruction(Vec<u8>);
 pub struct CopyInstruction {
     pub offset: u64,
     pub size: u64,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct Delta {
+    pub base_object_size: u64,
+    pub deltified_object_size: u64,
+    pub instructions: Vec<Instruction>,
 }
 
 /// Parses the header of a packfile, returning the amount of objects contained in the packfile.
@@ -138,7 +145,7 @@ pub fn object_header(input: &mut Stream<'_>) -> ModalResult<PackedObjectHeader> 
 pub fn object(input: &mut Stream<'_>) -> ModalResult<PackedObject> {
     alt((
         deltified_object
-            .map(|(base,)| PackedObject::Deltified { base })
+            .map(|(base, delta)| PackedObject::Deltified { base, delta })
             .context(StrContext::Label("deltified object")),
         undeltified_object
             .map(PackedObject::Undeltified)
@@ -184,7 +191,7 @@ fn base_object(r#type: PackedObjectType) -> impl FnMut(&mut Stream<'_>) -> Modal
 }
 
 /// Parses the header and data of a deltified object. Does not take care of resolving the deltas.
-fn deltified_object(input: &mut Stream<'_>) -> ModalResult<(BaseObject,)> {
+fn deltified_object(input: &mut Stream<'_>) -> ModalResult<(BaseObject, Delta)> {
     let header = object_header
         .verify(|header| {
             matches!(
@@ -199,7 +206,18 @@ fn deltified_object(input: &mut Stream<'_>) -> ModalResult<(BaseObject,)> {
         .context(StrContext::Label("base object"))
         .parse_next(input)?;
 
-    Ok((base_object,))
+    let mut buf = vec![0; header.length as usize];
+    let mut decoder = ZlibDecoder::new(&input[..]);
+
+    decoder
+        .read_exact(&mut buf)
+        .map_err(|_| ErrMode::Cut(ContextError::new()))?;
+
+    *input = &input[decoder.total_in() as usize..];
+
+    let delta = delta.parse_next(&mut &buf[..])?;
+
+    Ok((base_object, delta))
 }
 
 fn size(input: &mut Stream<'_>) -> ModalResult<u64> {
@@ -222,7 +240,7 @@ fn size(input: &mut Stream<'_>) -> ModalResult<u64> {
     Ok(value)
 }
 
-fn delta(input: &mut Stream<'_>) -> ModalResult<()> {
+fn delta(input: &mut Stream<'_>) -> ModalResult<Delta> {
     let base_object_size = size
         .context(StrContext::Label("base object size"))
         .parse_next(input)?;
@@ -231,7 +249,11 @@ fn delta(input: &mut Stream<'_>) -> ModalResult<()> {
         .context(StrContext::Label("base object size"))
         .parse_next(input)?;
 
-    todo!()
+    Ok(Delta {
+        base_object_size,
+        deltified_object_size,
+        instructions: vec![],
+    })
 }
 
 fn instruction(input: &mut Stream<'_>) -> ModalResult<Instruction> {

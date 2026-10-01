@@ -17,7 +17,7 @@ use winnow::{
     binary::be_u32,
     combinator::{alt, seq},
     error::{ContextError, ErrMode, StrContext},
-    token::any,
+    token::{any, take},
 };
 
 use crate::{
@@ -70,6 +70,9 @@ pub enum PackedObject {
     Deltified { base: BaseObject },
     Undeltified(Object),
 }
+
+#[derive(Debug, PartialEq)]
+pub struct InsertInstruction(Vec<u8>);
 
 /// Parses the header of a packfile, returning the amount of objects contained in the packfile.
 pub fn header(input: &mut Stream<'_>) -> ModalResult<PackfileHeader> {
@@ -223,10 +226,13 @@ fn instruction(input: &mut Stream<'_>) -> ModalResult<()> {
     alt((insert_instruction, copy_instruction)).parse_next(input)
 }
 
-fn insert_instruction(input: &mut Stream<'_>) -> ModalResult<()> {
+fn insert_instruction(input: &mut Stream<'_>) -> ModalResult<InsertInstruction> {
     let first_byte = any.verify(|byte| *byte < 128).parse_next(input)?;
+    let size = first_byte & 0b0111_1111;
 
-    todo!()
+    take(size as usize)
+        .map(|x: &[u8]| InsertInstruction(x.into()))
+        .parse_next(input)
 }
 
 fn copy_instruction(input: &mut Stream<'_>) -> ModalResult<()> {

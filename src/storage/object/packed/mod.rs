@@ -120,16 +120,14 @@ fn parse_base_object(
             // this is the same format as the size format in object_header
             let mut current_byte = any.parse_next(input)?;
             let mut offset = (current_byte & 0b0111_1111) as u64;
-            let mut pos = 7;
 
             while current_byte > 128 {
                 current_byte = any.parse_next(input)?;
 
                 let chunk = (current_byte & 0b0111_1111) as u64;
 
-                offset |= (chunk << pos) + 1;
-
-                pos += 7;
+                offset += 1;
+                offset = (offset << 7) | chunk;
             }
 
             Ok(BaseObject::Ofs(offset))

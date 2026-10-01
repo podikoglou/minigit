@@ -72,6 +72,11 @@ pub enum PackedObject {
 }
 
 #[derive(Debug, PartialEq)]
+pub enum Instruction {
+    Insert(InsertInstruction),
+}
+
+#[derive(Debug, PartialEq)]
 pub struct InsertInstruction(Vec<u8>);
 
 /// Parses the header of a packfile, returning the amount of objects contained in the packfile.
@@ -222,8 +227,12 @@ fn delta(input: &mut Stream<'_>) -> ModalResult<()> {
     todo!()
 }
 
-fn instruction(input: &mut Stream<'_>) -> ModalResult<()> {
-    alt((insert_instruction, copy_instruction)).parse_next(input)
+fn instruction(input: &mut Stream<'_>) -> ModalResult<Instruction> {
+    alt((
+        insert_instruction.map(Instruction::Insert),
+        copy_instruction,
+    ))
+    .parse_next(input)
 }
 
 fn insert_instruction(input: &mut Stream<'_>) -> ModalResult<InsertInstruction> {

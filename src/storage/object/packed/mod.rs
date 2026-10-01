@@ -121,9 +121,14 @@ pub fn object_header(input: &mut Stream<'_>) -> ModalResult<PackedObjectHeader> 
 
 pub fn object(input: &mut Stream<'_>) -> ModalResult<PackedObject> {
     alt((
-        deltified_object.map(|(base,)| PackedObject::Deltified { base }),
-        undeltified_object.map(PackedObject::Undeltified),
+        deltified_object
+            .map(|(base,)| PackedObject::Deltified { base })
+            .context(StrContext::Label("deltified object")),
+        undeltified_object
+            .map(PackedObject::Undeltified)
+            .context(StrContext::Label("undeltified object")),
     ))
+    .context(StrContext::Label("object"))
     .parse_next(input)
 }
 
@@ -171,6 +176,7 @@ fn deltified_object(input: &mut Stream<'_>) -> ModalResult<(BaseObject,)> {
                 PackedObjectType::OfsDelta | PackedObjectType::RefDelta
             )
         })
+        .context(StrContext::Label("object header"))
         .parse_next(input)?;
 
     let base_object = base_object(header.r#type)
@@ -192,6 +198,7 @@ fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<Object> {
                     | PackedObjectType::Tree
             )
         })
+        .context(StrContext::Label("object header"))
         .parse_next(input)?;
 
     // we create a buffer with the size we read from the header

@@ -17,9 +17,10 @@ fn undeltified_packfile_parse() {
     let file = File::open(path).expect("should be able to open packfile");
 
     let mmap = unsafe { Mmap::map(&file).expect("should be able to mmap file") };
+    let mut slice = &mmap[..];
 
     let header = packed::header
-        .parse(&mmap)
+        .parse_next(&mut slice)
         .expect("should be able to parse packfile header");
     dbg!(header);
 }

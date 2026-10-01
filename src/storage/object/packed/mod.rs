@@ -182,12 +182,16 @@ fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<Object> {
         .read_exact(&mut buf)
         .map_err(|_| ErrMode::Cut(ContextError::new()))?;
 
-    // NOTE: the `input` slice is still pointing to the start of the compressed data, as the
-    // `ZlibDecoder` didn't mutate it.
+    // `input`, as of the below line, should point to he beginning of the next object's header.
     //
-    // generally, this slice will not be used after this method call, since we'll be reading at
-    // specific offsets and thus creating a new slice every time. the parsing below uses
-    // a slice pointing to `buf`, so this is likely fine.
+    // because we don't use winnow for parsing the zlib-compressed data, the `input` slice is never
+    // advanced to indicate the position in the input.
+    //
+    // this line replaces the input with the decoder's `inner` field (which is the same slice we
+    // passed to it when we created it), which *is* advanced.
+    //
+    // this is only useful for when the caller of this function needs to linearly read the packfile
+    *input = decoder.into_inner();
 
     match header.r#type {
         PackedObjectType::Commit => parse_commit

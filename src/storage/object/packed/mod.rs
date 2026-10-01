@@ -206,6 +206,19 @@ fn size(input: &mut Stream<'_>) -> ModalResult<u64> {
 
     Ok(value)
 }
+
+fn delta(input: &mut Stream<'_>) -> ModalResult<()> {
+    let base_object_size = size
+        .context(StrContext::Label("base object size"))
+        .parse_next(input)?;
+
+    let deltified_object_size = size
+        .context(StrContext::Label("base object size"))
+        .parse_next(input)?;
+
+    todo!()
+}
+
 /// Parses the header and data of an undeltified object. Also takes care of decompressing the data.
 fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<Object> {
     let header = object_header

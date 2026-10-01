@@ -128,9 +128,7 @@ fn offset(input: &mut Stream<'_>) -> ModalResult<u64> {
     Ok(offset)
 }
 
-fn parse_base_object(
-    r#type: PackedObjectType,
-) -> impl FnMut(&mut Stream<'_>) -> ModalResult<BaseObject> {
+fn base_object(r#type: PackedObjectType) -> impl FnMut(&mut Stream<'_>) -> ModalResult<BaseObject> {
     match r#type {
         PackedObjectType::OfsDelta => {
             |input: &mut Stream<'_>| offset.map(BaseObject::Ofs).parse_next(input)
@@ -154,7 +152,7 @@ fn deltified_object(input: &mut Stream<'_>) -> ModalResult<()> {
         })
         .parse_next(input)?;
 
-    let base_object = parse_base_object(header.r#type).parse_next(input)?;
+    let base_object = base_object(header.r#type).parse_next(input)?;
 
     todo!()
 }
@@ -208,7 +206,7 @@ fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<Object> {
 mod tests {
     use crate::{object::Object, storage::object::packed::undeltified_object};
 
-    use super::{BaseObject, PackedObjectType, object_header, parse_base_object};
+    use super::{BaseObject, PackedObjectType, base_object, object_header};
     use std::assert_matches;
     use winnow::Parser;
 
@@ -267,7 +265,7 @@ mod tests {
 
     #[test]
     fn parse_base_object_parses_offset_delta() {
-        let (rest, base_object) = parse_base_object(PackedObjectType::OfsDelta)
+        let (rest, base_object) = base_object(PackedObjectType::OfsDelta)
             .parse_peek(&[0x81, 0x08, 0x78, 0x9c][..])
             .expect("ofs delta base object should parse");
 

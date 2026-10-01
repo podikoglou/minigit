@@ -22,5 +22,6 @@ fn undeltified_packfile_parse() {
     let header = packed::header
         .parse_next(&mut slice)
         .expect("should be able to parse packfile header");
-    dbg!(header);
+
+    assert_eq!(header.objects, 3);
 }

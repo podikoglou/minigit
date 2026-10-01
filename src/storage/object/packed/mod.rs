@@ -187,6 +187,25 @@ fn deltified_object(input: &mut Stream<'_>) -> ModalResult<(BaseObject,)> {
     Ok((base_object,))
 }
 
+fn size(input: &mut Stream<'_>) -> ModalResult<u64> {
+    // TODO: check to ensure this fits inside a u64
+    let mut current_byte = any.parse_next(input)?;
+    let mut value = (current_byte & 0b0111_1111) as u64;
+    let mut pos = 7;
+
+    while current_byte >= 128 {
+        current_byte = any.parse_next(input)?;
+
+        // these are the bits that constitute the size, which is the byte as-is, but with the first
+        // bit masked off as it's the continuation bit
+        let chunk = (current_byte & 0b0111_1111) as u64;
+
+        value |= chunk << pos;
+        pos += 7;
+    }
+
+    Ok(value)
+}
 /// Parses the header and data of an undeltified object. Also takes care of decompressing the data.
 fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<Object> {
     let header = object_header

@@ -6,7 +6,7 @@
 //!
 //! In particular, this deals with version 2 of the packfile format.
 
-mod idx;
+pub mod idx;
 
 use std::io::Read;
 

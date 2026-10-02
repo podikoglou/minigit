@@ -2,7 +2,7 @@
 
 use winnow::{
     ModalResult, Parser,
-    binary::le_u32,
+    binary::be_u32,
     combinator::{repeat, seq},
     error::StrContext,
 };
@@ -21,7 +21,7 @@ fn header(input: &mut Stream<'_>) -> ModalResult<()> {
 fn fanout_table(input: &mut Stream<'_>) -> ModalResult<Vec<u32>> {
     // TODO: should we do some basic validation here to ensure they are cumulative? (because if
     // they're not, we're probably reading something wrong or the packfile is totally garbage)
-    repeat(256, le_u32)
+    repeat(256, be_u32)
         .context(StrContext::Label("fanout table"))
         .parse_next(input)
 }

@@ -6,7 +6,7 @@ use minigit::{MinigitError, storage::object::packed};
 
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "parse-pack")]
-/// Reads packfile from a file or stdin and parses it
+/// Reads a packfile from a file and parses it
 pub struct ParsePackCommand {
     #[argh(positional)]
     file: String,

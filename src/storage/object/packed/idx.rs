@@ -32,3 +32,7 @@ fn fanout_table(input: &mut Stream<'_>) -> ModalResult<Vec<u32>> {
 fn object_names(amount: usize) -> impl FnMut(&mut Stream<'_>) -> ModalResult<Vec<ObjectHash>> {
     move |input: &mut Stream<'_>| repeat(amount, parse_object_hash).parse_next(input)
 }
+
+fn crc_entries(amount: usize) -> impl FnMut(&mut Stream<'_>) -> ModalResult<Vec<u32>> {
+    move |input: &mut Stream<'_>| repeat(amount, be_u32).parse_next(input)
+}

@@ -7,7 +7,10 @@ use winnow::{
     error::StrContext,
 };
 
-use crate::parsing::Stream;
+use crate::{
+    object::hash::{ObjectHash, parse_object_hash},
+    parsing::Stream,
+};
 
 fn header(input: &mut Stream<'_>) -> ModalResult<()> {
     seq!(
@@ -24,4 +27,8 @@ fn fanout_table(input: &mut Stream<'_>) -> ModalResult<Vec<u32>> {
     repeat(256, be_u32)
         .context(StrContext::Label("fanout table"))
         .parse_next(input)
+}
+
+fn object_names(amount: usize) -> impl FnMut(&mut Stream<'_>) -> ModalResult<Vec<ObjectHash>> {
+    move |input: &mut Stream<'_>| repeat(amount, parse_object_hash).parse_next(input)
 }

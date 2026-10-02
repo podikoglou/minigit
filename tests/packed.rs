@@ -203,3 +203,59 @@ fn deltified_packfile_parse() {
     assert_eq!(slice.len(), 20, "packfile should end with 20-byte checksum");
 }
 
+#[test]
+fn idx_parse() {
+    let (_, dir) = include_repo!("fixtures/repo-5.tar");
+
+    let path = dir
+        .path()
+        .join(".git/objects/pack/pack-a0ba98959a3d422d8bbe8e86f2cf62eb8f2b2df7.idx");
+
+    let file = File::open(path).expect("should be able to open idx file");
+
+    let mmap = unsafe { Mmap::map(&file).expect("should be able to mmap file") };
+    let mut slice = &mmap[..];
+
+    packed::idx::header
+        .parse_next(&mut slice)
+        .expect("should be able to parse header");
+
+    let fanout_table = packed::idx::fanout_table
+        .parse_next(&mut slice)
+        .expect("should be able to parse fanout table");
+
+    for (idx, window) in fanout_table.windows(2).enumerate() {
+        assert!(
+            window[0] <= window[1],
+            "window {} should not break monotonicity",
+            idx
+        );
+    }
+
+    let entries = *fanout_table
+        .last()
+        .expect("fanout table should have last element") as usize;
+
+    let object_ids = packed::idx::object_names(entries)
+        .parse_next(&mut slice)
+        .expect("should be able to parse object names");
+
+    let crcs = packed::idx::crc_entries(entries)
+        .parse_next(&mut slice)
+        .expect("should be able to parse CRC entries");
+
+    let offsets_1 = packed::idx::offsets_1(entries)
+        .parse_next(&mut slice)
+        .expect("should be able to parse first offset table");
+
+    let offsets_2_entries = offsets_1
+        .iter()
+        .filter(|entry| (*entry & 0x8000_0000) != 0)
+        .count();
+
+    let _ = packed::idx::offsets_2(offsets_2_entries)
+        .parse_next(&mut slice)
+        .expect("should be able to parse second offset table");
+
+    // TODO: checksums
+}

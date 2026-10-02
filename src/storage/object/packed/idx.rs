@@ -2,7 +2,7 @@
 
 use winnow::{
     ModalResult, Parser,
-    binary::be_u32,
+    binary::{be_u32, be_u64},
     combinator::{repeat, seq},
     error::StrContext,
 };
@@ -35,4 +35,17 @@ fn object_names(amount: usize) -> impl FnMut(&mut Stream<'_>) -> ModalResult<Vec
 
 fn crc_entries(amount: usize) -> impl FnMut(&mut Stream<'_>) -> ModalResult<Vec<u32>> {
     move |input: &mut Stream<'_>| repeat(amount, be_u32).parse_next(input)
+}
+
+// significant part about this: each entry here should use up to 31 bytes.
+// if it uses more than 31 bytes, i.e. the MSB is 1, then this is not an offset,
+// but an index (with the MSB 0) to the
+fn offsets_1(amount: usize) -> impl FnMut(&mut Stream<'_>) -> ModalResult<Vec<u32>> {
+    move |input: &mut Stream<'_>| repeat(amount, be_u32).parse_next(input)
+}
+
+// this is the second offsets table. the amount of entries this has depends on the first table. in
+// particular it depends on the amount of entries it has that have their MSB set to 1.
+fn offsets_2(amount: usize) -> impl FnMut(&mut Stream<'_>) -> ModalResult<Vec<u64>> {
+    move |input: &mut Stream<'_>| repeat(amount, be_u64).parse_next(input)
 }

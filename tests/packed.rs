@@ -6,7 +6,7 @@ use minigit::{
     Repo,
     object::Object,
     storage::object::packed::{
-        self, BaseObject, CopyInstruction, Delta, Instruction, PackedObject,
+        self, BaseObject, CopyInstruction, Delta, Instruction, PackedObject, Packfile,
     },
 };
 use winnow::Parser;
@@ -258,4 +258,22 @@ fn idx_parse() {
         .expect("should be able to parse second offset table");
 
     // TODO: checksums
+}
+
+#[test]
+fn objects_iterator() {
+    let (_, dir) = include_repo!("fixtures/repo-6.tar");
+
+    let path = dir
+        .path()
+        .join(".git/objects/pack/pack-c7e64c7164f8f92168a1ce0953f0716848c2c32c.pack");
+
+    let packfile = Packfile::open(path, None).expect("should be able to open packfile");
+    let objects = packfile.objects();
+
+    assert_eq!(
+        objects.count(),
+        packfile.objects_count as usize,
+        "read objects should match packfile header's object count"
+    );
 }

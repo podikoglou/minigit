@@ -8,9 +8,10 @@
 
 pub mod idx;
 
-use std::io::Read;
+use std::{fs::File, io::Read, path::PathBuf};
 
 use flate2::read::ZlibDecoder;
+use memmap2::Mmap;
 use strum::FromRepr;
 use winnow::{
     ModalResult, Parser,
@@ -21,6 +22,7 @@ use winnow::{
 };
 
 use crate::{
+    MinigitError,
     object::{
         Object,
         blob::parse_blob,
@@ -31,6 +33,36 @@ use crate::{
     },
     parsing::Stream,
 };
+
+/// Holds a handle to an memory-mapped packfie and optionally its index.
+#[derive(Debug)]
+pub struct Packfile {
+    pub pack: (PathBuf, Mmap),
+    pub idx: Option<(PathBuf, Mmap)>,
+}
+
+impl Packfile {
+    /// Opens a packfile and optionally its index file.
+    pub fn open(pack_path: PathBuf, idx_path: Option<PathBuf>) -> Result<Self, MinigitError> {
+        // open packfile
+        let pack_file = File::open(&pack_path)?;
+        let pack_buf = unsafe { Mmap::map(&pack_file) }?;
+
+        let pack = (pack_path, pack_buf);
+
+        // if present, open idx
+        let idx = if let Some(path) = idx_path {
+            let idx_file = File::open(&path)?;
+            let idx_buf = unsafe { Mmap::map(&idx_file) }?;
+
+            Some((path, idx_buf))
+        } else {
+            None
+        };
+
+        Ok(Self { pack, idx })
+    }
+}
 
 #[derive(Debug)]
 pub struct PackfileHeader {

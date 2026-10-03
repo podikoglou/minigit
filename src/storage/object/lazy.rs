@@ -1,10 +1,10 @@
-use std::{fs, io::BufReader, path::PathBuf};
+use std::{fs, io::BufReader, path::PathBuf, rc::Rc};
 
 use crate::{
     MinigitError,
     error::ParserContext,
     object::{Object, hash::ObjectHash},
-    storage::object::loose,
+    storage::object::{loose, packed::Packfile},
 };
 
 /// An object which has not been loaded yet.
@@ -13,6 +13,7 @@ use crate::{
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum LazyObject {
     Loose(PathBuf),
+    Packed(Rc<Packfile>, usize),
 }
 
 impl LazyObject {

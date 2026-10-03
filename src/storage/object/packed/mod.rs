@@ -65,7 +65,17 @@ impl Packfile {
             let idx_file = File::open(&path)?;
             let idx_buf = unsafe { Mmap::map(&idx_file) }?;
 
-            Some((path, idx_buf))
+            let idx = (path, idx_buf);
+
+            // read idx header
+            //
+            // this return any information, this is mostly for validation that this is a valid idx
+            // file.
+            idx::header.parse(&mut &idx.1[..12]).map_err(|err| {
+                MinigitError::ParserError(err.to_string(), ParserContext::File(pack.0.clone()))
+            })?;
+
+            Some(idx)
         } else {
             None
         };

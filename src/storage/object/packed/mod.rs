@@ -99,6 +99,16 @@ impl Packfile {
     }
 }
 
+impl PartialEq for Packfile {
+    fn eq(&self, other: &Self) -> bool {
+        self.pack.0 == other.pack.0
+            && self.idx.as_ref().map(|(x, _)| x) == other.idx.as_ref().map(|(x, _)| x)
+            && self.objects_count == other.objects_count
+    }
+}
+
+impl Eq for Packfile {}
+
 #[derive(Debug)]
 pub struct PackfileHeader {
     /// The amount of objects contained in the packfile.

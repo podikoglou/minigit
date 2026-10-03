@@ -86,6 +86,17 @@ impl Packfile {
             objects_count: pack_header.objects,
         })
     }
+
+    /// Reads an object at a specific offset of the packfile and returns it.
+    ///
+    /// This does not resolve the deltas.
+    pub fn read_object_at_offset(&self, offset: usize) -> Result<PackedObject, MinigitError> {
+        object
+            .parse_next(&mut &self.pack.1[offset..])
+            .map_err(|err| {
+                MinigitError::ParserError(err.to_string(), ParserContext::File(self.pack.0.clone()))
+            })
+    }
 }
 
 #[derive(Debug)]

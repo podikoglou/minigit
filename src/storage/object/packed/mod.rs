@@ -87,6 +87,13 @@ impl Packfile {
         })
     }
 
+    /// Returns an iterator over the objects of the packfile.
+    pub fn objects<'a>(&'a self) -> Objects<'a> {
+        Objects {
+            buf: &self.pack.1[12..],
+        }
+    }
+
     /// Reads an object at a specific offset of the packfile and returns it.
     ///
     /// This does not resolve the deltas.
@@ -107,6 +114,19 @@ impl PartialEq for Packfile {
     }
 }
 
+/// An iterator over [PackedObject].
+pub struct Objects<'a> {
+    /// A slice of the packfile's contents, starting from the first object.
+    buf: &'a [u8],
+}
+
+impl Iterator for Objects<'_> {
+    type Item = PackedObject;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        object.parse_next(&mut self.buf).ok()
+    }
+}
 impl Eq for Packfile {}
 
 #[derive(Debug)]

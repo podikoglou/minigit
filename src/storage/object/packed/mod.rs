@@ -23,6 +23,7 @@ use winnow::{
 
 use crate::{
     MinigitError,
+    error::ParserContext,
     object::{
         Object,
         blob::parse_blob,
@@ -39,16 +40,25 @@ use crate::{
 pub struct Packfile {
     pub pack: (PathBuf, Mmap),
     pub idx: Option<(PathBuf, Mmap)>,
+
+    /// The amount of objects contained in the packfile.
+    pub objects_count: u32,
 }
 
 impl Packfile {
-    /// Opens a packfile and optionally its index file.
+    /// Creates an instance of [Packfile]. This memory maps the pack and (if present) index file,
+    /// and parses their headers.
     pub fn open(pack_path: PathBuf, idx_path: Option<PathBuf>) -> Result<Self, MinigitError> {
         // open packfile
         let pack_file = File::open(&pack_path)?;
         let pack_buf = unsafe { Mmap::map(&pack_file) }?;
 
         let pack = (pack_path, pack_buf);
+
+        // read packfile header
+        let pack_header = header.parse(&mut &pack.1[..12]).map_err(|err| {
+            MinigitError::ParserError(err.to_string(), ParserContext::File(pack.0.clone()))
+        })?;
 
         // if present, open idx
         let idx = if let Some(path) = idx_path {
@@ -60,7 +70,11 @@ impl Packfile {
             None
         };
 
-        Ok(Self { pack, idx })
+        Ok(Self {
+            pack,
+            idx,
+            objects_count: pack_header.objects,
+        })
     }
 }
 

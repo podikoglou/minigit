@@ -68,6 +68,7 @@ impl LazyObject {
 
                 Ok(RawObject::new(r#type, object_bytes))
             }
+            Self::Packed(packfile, offset) => todo!(),
         }
     }
 
@@ -81,6 +82,7 @@ impl LazyObject {
     pub fn hash(&self) -> Result<ObjectHash, MinigitError> {
         match self {
             Self::Loose(path) => path.try_into(),
+            Self::Packed(packfile, offset) => todo!(),
         }
     }
 }

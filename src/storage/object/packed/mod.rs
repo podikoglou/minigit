@@ -104,6 +104,13 @@ impl Packfile {
                 MinigitError::ParserError(err.to_string(), ParserContext::File(self.pack.0.clone()))
             })
     }
+
+    /// Reads an object by its ID ([ObjectHash]) from the packfile and returns it.
+    ///
+    /// This does not resolve the deltas.
+    pub fn read_object_by_id(&self, hash: ObjectHash) -> Result<PackedObject, MinigitError> {
+        todo!()
+    }
 }
 
 impl PartialEq for Packfile {

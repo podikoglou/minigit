@@ -25,6 +25,7 @@ use winnow::{
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum LazyObject {
     Loose(PathBuf),
+    Packed(Rc<Packfile>, usize),
 }
 
 impl LazyObject {

@@ -32,12 +32,14 @@ impl LazyObject {
 
                 loose::read_object_compressed(reader, ParserContext::File(path.clone()))
             }
+            Self::Packed(packfile, offset) => todo!(),
         }
     }
 
     pub fn hash(&self) -> Result<ObjectHash, MinigitError> {
         match self {
             Self::Loose(path) => path.try_into(),
+            Self::Packed(packfile, offset) => todo!(),
         }
     }
 }

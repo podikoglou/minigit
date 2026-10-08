@@ -175,12 +175,17 @@ mod test {
     use hegel::generators as gs;
     use winnow::Parser;
 
-    use crate::object::hash::{HashPrefix, ObjectHash, parse_object_hash_str};
+    use crate::{
+        object::hash::{HashPrefix, ObjectHash, parse_object_hash_str},
+        parsing::Stream,
+    };
 
     #[test]
     fn object_hash_str_parses_valid_hashes() {
         assert_eq!(
-            parse_object_hash_str.parse_peek(b"29f323b31ad129964ffb4f97f203be9c2f35107d"),
+            parse_object_hash_str
+                .parse_peek(Stream::new(b"29f323b31ad129964ffb4f97f203be9c2f35107d"))
+                .map(|(r, v)| (*r, v)),
             Ok((
                 &b""[..],
                 [

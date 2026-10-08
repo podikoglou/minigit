@@ -138,14 +138,14 @@ impl TryFrom<LazyObject> for Object {
 /// Unless you're building your own parsers this is the function you're looking for.
 pub fn parse_object(input: &[u8], context: ParserContext) -> Result<Object, MinigitError> {
     object
-        .parse(input)
+        .parse(Stream::new(input))
         .map_err(|err| MinigitError::ParserError(err.to_string(), context))
 }
 
 /// Parses an [Object] from some input.
 pub fn object<'a>(input: &mut Stream<'a>) -> ModalResult<Object> {
     let (typee, size) = parse_header.parse_next(input)?;
-    let mut bytes: Stream<'a> = take(size).parse_next(input)?;
+    let mut bytes: Stream<'a> = Stream::new(take(size).parse_next(input)?);
 
     match typee {
         ObjectType::Blob => parse_blob.map(Object::Blob).parse_next(&mut bytes),
@@ -189,16 +189,23 @@ mod test {
 
     use winnow::{Parser, error::ErrMode};
 
-    use crate::object::{ObjectType, parse_header, parse_object_type};
+    use crate::{
+        object::{ObjectType, parse_header, parse_object_type},
+        parsing::Stream,
+    };
 
     #[test]
     fn object_type_parses_expected_object_types() {
         assert_eq!(
-            parse_object_type.parse_peek(b"blob"),
+            parse_object_type
+                .parse_peek(Stream::new(b"blob"))
+                .map(|(r, v)| (*r, v)),
             Ok((&b""[..], ObjectType::Blob))
         );
         assert_eq!(
-            parse_object_type.parse_peek(b"tree"),
+            parse_object_type
+                .parse_peek(Stream::new(b"tree"))
+                .map(|(r, v)| (*r, v)),
             Ok((&b""[..], ObjectType::Tree))
         );
     }
@@ -206,11 +213,11 @@ mod test {
     #[test]
     fn object_type_rejects_invalid_input() {
         assert_matches!(
-            parse_object_type.parse_peek(b""),
+            parse_object_type.parse_peek(Stream::new(b"")),
             Err(ErrMode::Backtrack(_))
         );
         assert_matches!(
-            parse_object_type.parse_peek(b"blo"),
+            parse_object_type.parse_peek(Stream::new(b"blo")),
             Err(ErrMode::Backtrack(_))
         );
     }
@@ -218,11 +225,15 @@ mod test {
     #[test]
     fn header_parses_basic_headers() {
         assert_eq!(
-            parse_header.parse_peek(b"blob 3\0"),
+            parse_header
+                .parse_peek(Stream::new(b"blob 3\0"))
+                .map(|(r, v)| (*r, v)),
             Ok((&b""[..], (ObjectType::Blob, 3)))
         );
         assert_eq!(
-            parse_header.parse_peek(b"tree 333\0"),
+            parse_header
+                .parse_peek(Stream::new(b"tree 333\0"))
+                .map(|(r, v)| (*r, v)),
             Ok((&b""[..], (ObjectType::Tree, 333)))
         );
     }
@@ -230,22 +241,22 @@ mod test {
     #[test]
     fn header_rejets_invalid_input() {
         assert_matches!(
-            parse_header.parse_peek(b"tre 3"),
+            parse_header.parse_peek(Stream::new(b"tre 3")),
             Err(ErrMode::Backtrack(_))
         );
         assert_matches!(
-            parse_header.parse_peek(b"tree "),
+            parse_header.parse_peek(Stream::new(b"tree ")),
             Err(ErrMode::Backtrack(_))
         );
         assert_matches!(
-            parse_header.parse_peek(b"tree \0"),
+            parse_header.parse_peek(Stream::new(b"tree \0")),
             Err(ErrMode::Backtrack(_))
         );
         assert_matches!(
-            parse_header.parse_peek(b"tree\0"),
+            parse_header.parse_peek(Stream::new(b"tree\0")),
             Err(ErrMode::Backtrack(_))
         );
-        assert_matches!(parse_header.parse_peek(b"3"), Err(ErrMode::Backtrack(_)));
-        assert_matches!(parse_header.parse_peek(b"3\0"), Err(ErrMode::Backtrack(_)));
+        assert_matches!(parse_header.parse_peek(Stream::new(b"3")), Err(ErrMode::Backtrack(_)));
+        assert_matches!(parse_header.parse_peek(Stream::new(b"3\0")), Err(ErrMode::Backtrack(_)));
     }
 }

@@ -1,6 +1,6 @@
 //! This module contains items that deal with file names.
 
-use crate::{MinigitError, error::ParserContext, storage::object::loose::WriteLoose};
+use crate::{MinigitError, error::ParserContext, parsing::Stream, storage::object::loose::WriteLoose};
 use std::{fmt::Display, path::PathBuf, str::FromStr};
 use winnow::{ModalResult, Parser, combinator::terminated, token::take_until};
 
@@ -32,7 +32,7 @@ impl FromStr for FileName {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         parse_file_name
-            .parse(s.as_bytes())
+            .parse(Stream::new(s.as_bytes()))
             .map_err(|err| MinigitError::ParserError(err.to_string(), ParserContext::None))
     }
 }
@@ -58,7 +58,7 @@ impl WriteLoose for FileName {
 }
 
 /// Parses a file name from some UTF-8 encoded bytes.
-pub fn parse_file_name(input: &mut &[u8]) -> ModalResult<FileName> {
+pub fn parse_file_name(input: &mut Stream<'_>) -> ModalResult<FileName> {
     terminated(take_until(1.., "\x00"), "\x00")
         .map(str::from_utf8)
         .verify_map(Result::ok)
@@ -74,13 +74,13 @@ mod test {
 
     use winnow::{Parser, error::ErrMode};
 
-    use crate::fs::parse_file_name;
+    use crate::{fs::parse_file_name, parsing::Stream};
 
     #[test]
     fn file_name_parses_valid_inputs() {
         assert_eq!(
             parse_file_name
-                .parse_peek(b"foo.bar\0")
+                .parse_peek(Stream::new(b"foo.bar\0"))
                 .unwrap()
                 .1
                 .to_string(),
@@ -89,7 +89,7 @@ mod test {
 
         assert_eq!(
             parse_file_name
-                .parse_peek(b"even this!!!\0")
+                .parse_peek(Stream::new(b"even this!!!\0"))
                 .unwrap()
                 .1
                 .to_string(),
@@ -100,11 +100,11 @@ mod test {
     #[test]
     fn file_name_rejects_invalid_inputs() {
         assert_matches!(
-            parse_file_name.parse_peek(b"foo.bar"),
+            parse_file_name.parse_peek(Stream::new(b"foo.bar")),
             Err(ErrMode::Backtrack(_))
         );
         assert_matches!(
-            parse_file_name.parse_peek(b"foo.bar\n"),
+            parse_file_name.parse_peek(Stream::new(b"foo.bar\n")),
             Err(ErrMode::Backtrack(_))
         );
     }

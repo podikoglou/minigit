@@ -48,12 +48,17 @@ mod tests {
     use chrono::{DateTime, FixedOffset, NaiveDateTime};
     use winnow::Parser;
 
-    use crate::time::{Timestamp, parse_timestamp};
+    use crate::{
+        parsing::Stream,
+        time::{Timestamp, parse_timestamp},
+    };
 
     #[test]
     fn timestamp_parses_basic_timestamps() {
         assert_eq!(
-            parse_timestamp.parse_peek(b"1789057194 +0300"),
+            parse_timestamp
+                .parse_peek(Stream::new(b"1789057194 +0300"))
+                .map(|(r, v)| (*r, v)),
             Ok((
                 &b""[..],
                 Timestamp::try_new(DateTime::<FixedOffset>::from_naive_utc_and_offset(

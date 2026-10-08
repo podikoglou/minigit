@@ -11,6 +11,8 @@
 - `repo-2`: Repo with 414 commits of one text file (containing three numbers) each
 - `repo-3`: Repo with 4 commits of one text file each, ending with a merge commit that has two parents
 - `repo-4`: Repo with 4 commits, and a tag
+- `repo-5`: Repo with 2 commits, with the objects related to the first packed, and the others not
+- `repo-6`: Repo based on repo-5, with 4 commits, packed with `git gc` so that it contains delta-compressed objects
 
 ### Creating a repository fixture
 - Create a repository somewhere, initialize it as you like

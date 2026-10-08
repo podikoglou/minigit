@@ -1,7 +1,7 @@
 //! This module contains various utilities for parsing object files using the `winnow` crate.
 
 use winnow::{
-    ModalResult, Parser,
+    LocatingSlice, ModalResult, Parser,
     ascii::oct_digit1,
     combinator::{repeat, seq, terminated},
     error::{ContextError, ErrMode, StrContext},
@@ -10,7 +10,7 @@ use winnow::{
 
 use crate::object::commit::CommitProperty;
 
-pub type Stream<'a> = &'a [u8];
+pub type Stream<'a> = LocatingSlice<&'a [u8]>;
 
 /// Helper for creating parsers that parse a key value pair found in a commit object, such as
 /// `author <author>`

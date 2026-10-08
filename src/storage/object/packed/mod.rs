@@ -425,7 +425,11 @@ fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<Object> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{object::Object, storage::object::packed::undeltified_object};
+    use crate::{
+        object::Object,
+        parsing::Stream,
+        storage::object::packed::undeltified_object,
+    };
 
     use super::{BaseObject, PackedObjectType, base_object, object_header};
     use std::assert_matches;
@@ -434,41 +438,41 @@ mod tests {
     #[test]
     fn object_header_parses_basic_headers() {
         let (rest, header) = object_header
-            .parse_peek(&[0x99, 0x0a, 0x78, 0x9c][..])
+            .parse_peek(Stream::new(&[0x99, 0x0a, 0x78, 0x9c][..]))
             .expect("commit header should parse");
         assert_eq!(header.r#type, PackedObjectType::Commit);
         assert_eq!(header.length, 169);
-        assert_eq!(rest, &[0x78, 0x9c]);
+        assert_eq!(*rest, &[0x78, 0x9c]);
 
         let (rest, header) = object_header
-            .parse_peek(&[0xb7, 0x02, 0x78, 0x9c][..])
+            .parse_peek(Stream::new(&[0xb7, 0x02, 0x78, 0x9c][..]))
             .expect("blob header should parse");
         assert_eq!(header.r#type, PackedObjectType::Blob);
         assert_eq!(header.length, 39);
-        assert_eq!(rest, &[0x78, 0x9c]);
+        assert_eq!(*rest, &[0x78, 0x9c]);
 
         let (rest, header) = object_header
-            .parse_peek(&[0xa4, 0x02, 0x78, 0x9c][..])
+            .parse_peek(Stream::new(&[0xa4, 0x02, 0x78, 0x9c][..]))
             .expect("tree header should parse");
         assert_eq!(header.r#type, PackedObjectType::Tree);
         assert_eq!(header.length, 36);
-        assert_eq!(rest, &[0x78, 0x9c]);
+        assert_eq!(*rest, &[0x78, 0x9c]);
     }
 
     #[test]
     fn object_header_parses_single_byte_header() {
         let (rest, header) = object_header
-            .parse_peek(&[0x19, 0x0a][..])
+            .parse_peek(Stream::new(&[0x19, 0x0a][..]))
             .expect("commit header should parse");
         assert_eq!(header.r#type, PackedObjectType::Commit);
         assert_eq!(header.length, 9);
-        assert_eq!(rest, &[0x0a]);
+        assert_eq!(*rest, &[0x0a]);
     }
 
     #[test]
     fn undeltified_object_parses_basic_object() {
         let (_, obj) = undeltified_object
-            .parse_peek(&[
+            .parse_peek(Stream::new(&[
                 0x99, 0x0a, 0x78, 0x9c, 0x9d, 0xcb, 0x4d, 0x0a, 0xc2, 0x30, 0x10, 0x40, 0xe1, 0x7d,
                 0x4e, 0x31, 0x7b, 0xa1, 0x64, 0x12, 0xf3, 0x53, 0x10, 0xf1, 0x2a, 0x99, 0x66, 0xd2,
                 0x0e, 0x26, 0x46, 0x4a, 0x0a, 0x1e, 0x5f, 0xbd, 0x42, 0x37, 0x6f, 0xf1, 0xc1, 0x1b,
@@ -478,7 +482,7 @@ mod tests {
                 0x6b, 0x3f, 0x1e, 0x6b, 0x4b, 0x52, 0xa7, 0xa5, 0xb7, 0x3b, 0x60, 0x88, 0xb3, 0xf7,
                 0xd7, 0x19, 0x1d, 0x5c, 0xb4, 0xd5, 0x5a, 0xfd, 0xb4, 0xc9, 0x18, 0x7c, 0xe6, 0x55,
                 0xf2, 0x92, 0xa1, 0xbe, 0xc5, 0xe5, 0x34, 0x91, 0xb7, 0x02, 0x78, 0x9c,
-            ])
+            ]))
             .expect("commit object should parse");
 
         assert_matches!(obj, Object::Commit(_));
@@ -487,10 +491,10 @@ mod tests {
     #[test]
     fn parse_base_object_parses_offset_delta() {
         let (rest, base_object) = base_object(PackedObjectType::OfsDelta)
-            .parse_peek(&[0x81, 0x08, 0x78, 0x9c][..])
+            .parse_peek(Stream::new(&[0x81, 0x08, 0x78, 0x9c][..]))
             .expect("ofs delta base object should parse");
 
         assert_eq!(base_object, BaseObject::Ofs(264));
-        assert_eq!(rest, &[0x78, 0x9c]);
+        assert_eq!(*rest, &[0x78, 0x9c]);
     }
 }

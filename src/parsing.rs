@@ -1,7 +1,7 @@
 //! This module contains various utilities for parsing object files using the `winnow` crate.
 
 use winnow::{
-    ModalResult, Parser,
+    LocatingSlice, ModalResult, Parser,
     ascii::oct_digit1,
     combinator::{repeat, seq, terminated},
     error::{ContextError, ErrMode, StrContext},
@@ -10,7 +10,7 @@ use winnow::{
 
 use crate::object::commit::CommitProperty;
 
-pub type Stream<'a> = &'a [u8];
+pub type Stream<'a> = LocatingSlice<&'a [u8]>;
 
 /// Helper for creating parsers that parse a key value pair found in a commit object, such as
 /// `author <author>`
@@ -96,21 +96,29 @@ pub fn mode(input: &mut Stream<'_>) -> ModalResult<u16> {
 
 #[cfg(test)]
 mod tests {
-    use super::{extra_property, mode, multiline_property};
+    use super::{Stream, extra_property, mode, multiline_property};
     use std::assert_matches;
     use winnow::{Parser, error::ErrMode};
 
     #[test]
     fn mode_parses_valid_modes() {
-        assert_eq!(mode.parse_peek(b"000000"), Ok((&b""[..], 0)));
-        assert_eq!(mode.parse_peek(b"100644"), Ok((&b""[..], 0o100644)));
+        assert_eq!(
+            mode.parse_peek(Stream::new(b"000000")).map(|(r, v)| (*r, v)),
+            Ok((&b""[..], 0))
+        );
+        assert_eq!(
+            mode.parse_peek(Stream::new(b"100644")).map(|(r, v)| (*r, v)),
+            Ok((&b""[..], 0o100644))
+        );
     }
 
     #[test]
     fn multiline_property_parses_valid_signature() {
         let input = b"gpgsig -----BEGIN PGP SIGNATURE-----\n \n wsFcBAABCAAQBQJqc1jACRC1aQ7uu5UhlAAAFfgQACyD2HIkYM5SeaWNsgzpZsVu\n -----END PGP SIGNATURE-----\n \n";
         assert_eq!(
-            multiline_property("gpgsig").parse_peek(input),
+            multiline_property("gpgsig")
+                .parse_peek(Stream::new(input))
+                .map(|(r, v)| (*r, v)),
             Ok((
                 &b""[..],
                 "-----BEGIN PGP SIGNATURE-----\n\nwsFcBAABCAAQBQJqc1jACRC1aQ7uu5UhlAAAFfgQACyD2HIkYM5SeaWNsgzpZsVu\n-----END PGP SIGNATURE-----\n".to_string()
@@ -122,7 +130,9 @@ mod tests {
     fn extra_property_parses_single_line_property() {
         let input = b"change-id xnxouqnvmpzvuvkotwynowookslovtno\n\nmessage";
         assert_eq!(
-            extra_property.parse_peek(input),
+            extra_property
+                .parse_peek(Stream::new(input))
+                .map(|(r, v)| (*r, v)),
             Ok((
                 &b"\nmessage"[..],
                 (
@@ -137,11 +147,13 @@ mod tests {
     fn extra_property_parses_multi_line_property() {
         let input = b"gpgsig -----BEGIN PGP SIGNATURE-----\n \n wsFcBAABCAAQBQJqc1jACRC1aQ7uu5UhlAAAFfgQACyD2HIkYM5SeaWNsgzpZsVu\n -----END PGP SIGNATURE-----\n \n";
         assert_eq!(
-            extra_property.parse_peek(input),
+            extra_property
+                .parse_peek(Stream::new(input))
+                .map(|(r, v)| (*r, v)),
             Ok((
                 &b""[..],
                 (
-                    "gpgsig".to_string(), 
+                    "gpgsig".to_string(),
                     "-----BEGIN PGP SIGNATURE-----\n\nwsFcBAABCAAQBQJqc1jACRC1aQ7uu5UhlAAAFfgQACyD2HIkYM5SeaWNsgzpZsVu\n-----END PGP SIGNATURE-----\n".to_string()
                 )
             ))
@@ -150,10 +162,11 @@ mod tests {
 
     #[test]
     fn extra_property_rejects_empty_line() {
-        assert_matches!(extra_property.parse_peek(b"\n"), Err(ErrMode::Backtrack(_)));
+        assert_matches!(extra_property.parse_peek(Stream::new(b"\n")), Err(ErrMode::Backtrack(_)));
         assert_matches!(
-            extra_property.parse_peek(b"\ncommit message\n"),
+            extra_property.parse_peek(Stream::new(b"\ncommit message\n")),
             Err(ErrMode::Backtrack(_))
         );
     }
 }
+

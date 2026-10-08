@@ -5,6 +5,7 @@ use memmap2::Mmap;
 use minigit::{
     Repo,
     object::Object,
+    parsing::Stream,
     storage::object::packed::{
         self, BaseObject, CopyInstruction, Delta, Instruction, PackedObject,
     },
@@ -24,7 +25,7 @@ fn undeltified_packfile_parse() {
     let file = File::open(path).expect("should be able to open packfile");
 
     let mmap = unsafe { Mmap::map(&file).expect("should be able to mmap file") };
-    let mut slice = &mmap[..];
+    let mut slice = Stream::new(&mmap[..]);
 
     let header = packed::header
         .parse_next(&mut slice)
@@ -71,7 +72,7 @@ fn deltified_packfile_parse() {
     let file = File::open(path).expect("should be able to open packfile");
 
     let mmap = unsafe { Mmap::map(&file).expect("should be able to mmap file") };
-    let mut slice = &mmap[..];
+    let mut slice = Stream::new(&mmap[..]);
 
     let header = packed::header
         .parse_next(&mut slice)
@@ -214,7 +215,7 @@ fn idx_parse() {
     let file = File::open(path).expect("should be able to open idx file");
 
     let mmap = unsafe { Mmap::map(&file).expect("should be able to mmap file") };
-    let mut slice = &mmap[..];
+    let mut slice = Stream::new(&mmap[..]);
 
     packed::idx::header
         .parse_next(&mut slice)

@@ -2,7 +2,7 @@ use std::fs::File;
 
 use argh::FromArgs;
 use memmap2::Mmap;
-use minigit::{MinigitError, storage::object::packed};
+use minigit::{MinigitError, parsing::Stream, storage::object::packed};
 
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "parse-pack")]
@@ -19,12 +19,13 @@ impl ParsePackCommand {
         let file = File::open(file)?;
 
         let mmap = unsafe { Mmap::map(&file) }?;
-        let mut slice = &mmap[..];
+        let slice = &mmap[..];
+        let mut stream = Stream::new(slice);
 
-        packed::header(&mut slice).unwrap();
+        packed::header(&mut stream).unwrap();
 
         loop {
-            let object = match packed::object(&mut slice) {
+            let object = match packed::object(&mut stream) {
                 Ok(v) => v,
                 Err(_) => break,
             };

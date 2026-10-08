@@ -245,9 +245,10 @@ fn deltified_object(input: &mut Stream<'_>) -> ModalResult<(BaseObject, Delta)> 
         .read_exact(&mut buf)
         .map_err(|_| ErrMode::Cut(ContextError::new()))?;
 
-    *input = &input[decoder.total_in() as usize..];
+    // consume the amount of bytes that the decoder read, advancing the `input` slice
+    take(decoder.total_in() as usize).parse_next(input)?;
 
-    let delta = delta.parse_next(&mut &buf[..])?;
+    let delta = delta.parse_next(&mut Stream::new(&buf))?;
 
     Ok((base_object, delta))
 }
@@ -399,16 +400,24 @@ fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<Object> {
     // passed to it when we created it), which *is* advanced.
     //
     // this is only useful for when the caller of this function needs to linearly read the packfile
-    *input = &input[decoder.total_in() as usize..];
+    take(decoder.total_in() as usize).parse_next(input)?;
 
     match header.r#type {
         PackedObjectType::Commit => parse_commit
             .map(Object::from)
-            .parse_next(&mut buf.as_slice()),
+            .parse_next(&mut Stream::new(&buf)),
 
-        PackedObjectType::Tree => parse_tree.map(Object::from).parse_next(&mut buf.as_slice()),
-        PackedObjectType::Blob => parse_blob.map(Object::from).parse_next(&mut buf.as_slice()),
-        PackedObjectType::Tag => parse_tag.map(Object::from).parse_next(&mut buf.as_slice()),
+        PackedObjectType::Tree => parse_tree
+            .map(Object::from)
+            .parse_next(&mut Stream::new(&buf)),
+
+        PackedObjectType::Blob => parse_blob
+            .map(Object::from)
+            .parse_next(&mut Stream::new(&buf)),
+
+        PackedObjectType::Tag => parse_tag
+            .map(Object::from)
+            .parse_next(&mut Stream::new(&buf)),
 
         _ => unreachable!(),
     }

@@ -171,8 +171,26 @@ pub enum BaseObject {
 
 #[derive(Debug, PartialEq)]
 pub enum PackedObject {
-    Deltified { base: BaseObject, delta: Delta },
-    Undeltified(Object),
+    Deltified {
+        offset: usize,
+        base: BaseObject,
+        delta: Delta,
+    },
+    Undeltified(usize, Object),
+}
+
+impl PackedObject {
+    /// Gets the offset of the object from the start of the file.
+    pub fn offset(&self) -> usize {
+        match self {
+            PackedObject::Deltified {
+                offset,
+                base: _base,
+                delta: _delta,
+            } => *offset,
+            PackedObject::Undeltified(offset, _) => *offset,
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]

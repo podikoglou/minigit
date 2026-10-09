@@ -173,7 +173,8 @@ pub enum PackedObject {
 }
 
 impl PackedObject {
-    /// Gets the offset of the object from the start of the file.
+    /// Gets the offset of the object in the file - 12 (i.e. relative to the start of the objects
+    /// list)
     pub fn offset(&self) -> usize {
         match self {
             PackedObject::Deltified {

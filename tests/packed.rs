@@ -304,4 +304,13 @@ fn idx_read() {
             idx
         );
     }
+
+    let objects_count = idx
+        .objects_count()
+        .expect("should have object count (last fanout entry)");
+
+    assert_eq!(
+        objects_count, 3,
+        "object count (last fanoutt entry) should be 3"
+    );
 }

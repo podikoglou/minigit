@@ -28,6 +28,7 @@ pub struct PackIndex {
     pub object_names: Vec<ObjectHash>,
     pub crc_entries: Vec<u32>,
     pub offsets_1: Vec<u32>,
+    pub offsets_2: Vec<u64>,
 }
 
 impl PartialEq for PackIndex {
@@ -85,6 +86,20 @@ impl PackIndex {
                 MinigitError::ParserError(err.to_string(), ParserContext::File(path.clone()))
             })?;
 
+        let offsets_2_entries = offsets_1
+            .iter()
+            .filter(|entry| (*entry & 0x8000_0000) != 0)
+            .count();
+
+        let offsets_2 = offsets_2(offsets_2_entries)
+            .parse(Stream::new(
+                &mmap[8 + 256 * 4 + objects_count * 28
+                    ..8 + 256 * 4 + objects_count * 28 + offsets_2_entries * 8],
+            ))
+            .map_err(|err| {
+                MinigitError::ParserError(err.to_string(), ParserContext::File(path.clone()))
+            })?;
+
         Ok(Self {
             path,
             mmap,
@@ -93,6 +108,7 @@ impl PackIndex {
             object_names,
             crc_entries,
             offsets_1,
+            offsets_2,
         })
     }
 

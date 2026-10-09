@@ -329,4 +329,16 @@ fn idx_read() {
         objects_count,
         "offsets_1 count should match object count"
     );
+
+    let offsets_2_entries = idx
+        .offsets_1
+        .iter()
+        .filter(|entry| (*entry & 0x8000_0000) != 0)
+        .count();
+
+    assert_eq!(
+        idx.offsets_2.len(),
+        offsets_2_entries,
+        "offsets_2 count should match count of high-bit offsets in offsets_1"
+    );
 }

@@ -56,7 +56,7 @@ impl Packfile {
         let pack = (pack_path, pack_buf);
 
         // read packfile header
-        let pack_header = header.parse(&pack.1[..12]).map_err(|err| {
+        let pack_header = header.parse(Stream::new(&pack.1)).map_err(|err| {
             MinigitError::ParserError(err.to_string(), ParserContext::File(pack.0.clone()))
         })?;
 
@@ -71,7 +71,7 @@ impl Packfile {
             //
             // this return any information, this is mostly for validation that this is a valid idx
             // file.
-            idx::header.parse(&idx.1[..12]).map_err(|err| {
+            idx::header.parse(Stream::new(&idx.1)).map_err(|err| {
                 MinigitError::ParserError(err.to_string(), ParserContext::File(pack.0.clone()))
             })?;
 
@@ -99,7 +99,7 @@ impl Packfile {
     /// This does not resolve the deltas.
     pub fn read_object_at_offset(&self, offset: usize) -> Result<PackedObject, MinigitError> {
         object
-            .parse_next(&mut &self.pack.1[offset..])
+            .parse_next(&mut Stream::new(&self.pack.1[offset..]))
             .map_err(|err| {
                 MinigitError::ParserError(err.to_string(), ParserContext::File(self.pack.0.clone()))
             })
@@ -131,9 +131,10 @@ impl Iterator for Objects<'_> {
     type Item = PackedObject;
 
     fn next(&mut self) -> Option<Self::Item> {
-        object.parse_next(&mut self.buf).ok()
+        object.parse_next(&mut Stream::new(self.buf)).ok()
     }
 }
+
 impl Eq for Packfile {}
 
 #[derive(Debug)]
@@ -515,11 +516,7 @@ fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<Object> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        object::Object,
-        parsing::Stream,
-        storage::object::packed::undeltified_object,
-    };
+    use crate::{object::Object, parsing::Stream, storage::object::packed::undeltified_object};
 
     use super::{BaseObject, PackedObjectType, base_object, object_header};
     use std::assert_matches;

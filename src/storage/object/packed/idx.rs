@@ -1,5 +1,8 @@
 //! This module deals with the packfile index format.
 
+use std::{fs::File, path::PathBuf};
+
+use memmap2::Mmap;
 use winnow::{
     ModalResult, Parser,
     binary::{be_u32, be_u64},
@@ -8,9 +11,35 @@ use winnow::{
 };
 
 use crate::{
+    MinigitError,
+    error::ParserContext,
     object::hash::{ObjectHash, parse_object_hash},
     parsing::Stream,
 };
+
+/// Holds a handle to a memory-mapped pack .idx and provides an API for querying it.
+pub struct PackIndex {
+    pub path: PathBuf,
+    pub mmap: Mmap,
+}
+
+impl PackIndex {
+    /// Creates an index of [PackIndex], memory mapping the file and reading its header.
+    pub fn open(path: PathBuf) -> Result<Self, MinigitError> {
+        let file = File::open(&path)?;
+        let mmap = unsafe { Mmap::map(&file) }?;
+
+        // read idx header
+        //
+        // this return any information, this is mostly for validation that this is a valid idx
+        // file.
+        header.parse(Stream::new(&mmap[..12])).map_err(|err| {
+            MinigitError::ParserError(err.to_string(), ParserContext::File(path.clone()))
+        })?;
+
+        Ok(Self { path, mmap })
+    }
+}
 
 pub fn header(input: &mut Stream<'_>) -> ModalResult<()> {
     seq!(

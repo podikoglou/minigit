@@ -1,6 +1,10 @@
 //! This module deals with the packfile index format.
 
-use std::{fs::File, path::PathBuf};
+use std::{
+    fs::File,
+    path::PathBuf,
+    sync::{LazyLock, OnceLock},
+};
 
 use memmap2::Mmap;
 use winnow::{
@@ -22,6 +26,8 @@ use crate::{
 pub struct PackIndex {
     pub path: PathBuf,
     pub mmap: Mmap,
+
+    fanout_table: OnceLock<Result<Vec<u32>, MinigitError>>,
 }
 
 impl PartialEq for PackIndex {
@@ -44,7 +50,32 @@ impl PackIndex {
             MinigitError::ParserError(err.to_string(), ParserContext::File(path.clone()))
         })?;
 
-        Ok(Self { path, mmap })
+        Ok(Self {
+            path,
+            mmap,
+            fanout_table: Default::default(),
+        })
+    }
+
+    /// Creates a new [Stream] starting at a given offset. Convenient helper used by other functions
+    /// here.
+    #[inline(always)]
+    fn stream_from<'a>(&'a self, offset: usize) -> Stream<'a> {
+        Stream::new(&self.mmap[offset..])
+    }
+
+    /// Lazily reads the fanout table.
+    pub fn fanout_table(&self) -> Result<&Vec<u32>, &MinigitError> {
+        self.fanout_table
+            .get_or_init(|| {
+                fanout_table.parse(self.stream_from(12)).map_err(|err| {
+                    MinigitError::ParserError(
+                        err.to_string(),
+                        ParserContext::File(self.path.clone()),
+                    )
+                })
+            })
+            .as_ref()
     }
 }
 

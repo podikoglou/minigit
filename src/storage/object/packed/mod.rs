@@ -93,7 +93,7 @@ impl Packfile {
     /// Returns an iterator over the objects of the packfile.
     pub fn objects<'a>(&'a self) -> Objects<'a> {
         Objects {
-            buf: &self.pack.1[12..],
+            buf: Stream::new(&self.pack.1[12..]),
         }
     }
 
@@ -127,14 +127,14 @@ impl PartialEq for Packfile {
 /// An iterator over [PackedObject].
 pub struct Objects<'a> {
     /// A slice of the packfile's contents, starting from the first object.
-    buf: &'a [u8],
+    buf: Stream<'a>,
 }
 
 impl Iterator for Objects<'_> {
     type Item = PackedObject;
 
     fn next(&mut self) -> Option<Self::Item> {
-        object.parse_next(&mut Stream::new(self.buf)).ok()
+        object.parse_next(&mut self.buf).ok()
     }
 }
 

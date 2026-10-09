@@ -140,11 +140,11 @@ impl PackIndex {
 
         let offset_idx = search_space.binary_search(&hash).ok()?;
 
-        match self.offsets_1[offset_idx] {
-            idx @ 0x10000000.. => {
+        match self.offsets_1[a + offset_idx] {
+            idx if (idx & 0x8000_0000) != 0 => {
                 // MSB is set to 1, so this belongs to `self.offsets_2`
                 // we mask off the MSB and use `idx` as an index
-                Some(self.offsets_2[(idx & 0x0FFFFFFF) as usize] as usize)
+                Some(self.offsets_2[(idx & 0x7FFF_FFFF) as usize] as usize)
             }
             other => Some(other as usize),
         }

@@ -119,6 +119,36 @@ impl PackIndex {
     pub fn objects_count(&self) -> usize {
         self.objects_count
     }
+
+    /// Looks up an object's offset by its hash.
+    pub fn lookup(&self, hash: ObjectHash) -> Option<usize> {
+        let prefix = Into::<u8>::into(hash.prefix()) as usize;
+
+        let bounds = (prefix.saturating_sub(1), prefix);
+
+        let a = self.fanout_table[bounds.0] as usize;
+        let b = self.fanout_table[bounds.1] as usize;
+
+        // amount of objects in the "bucket" we are searching in
+        let objects = b - a;
+
+        if objects < 1 {
+            return None;
+        }
+
+        let search_space = &self.object_names[a..b];
+
+        let offset_idx = search_space.binary_search(&hash).ok()?;
+
+        match self.offsets_1[offset_idx] {
+            idx @ 0x10000000.. => {
+                // MSB is set to 1, so this belongs to `self.offsets_2`
+                // we mask off the MSB and use `idx` as an index
+                Some(self.offsets_2[(idx & 0x0FFFFFFF) as usize] as usize)
+            }
+            other => Some(other as usize),
+        }
+    }
 }
 
 pub fn header(input: &mut Stream<'_>) -> ModalResult<()> {

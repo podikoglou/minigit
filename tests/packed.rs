@@ -291,4 +291,13 @@ fn idx_read() {
             .parse::<ObjectHash>()
             .expect("should parse pack checksum")
     );
+
+    assert_eq!(
+        idx.lookup(
+            "babbe85f1e25b2b7d2c4321bc9e278bae96b718b"
+                .parse()
+                .expect("should parse hash"),
+        ),
+        Some(12)
+    );
 }

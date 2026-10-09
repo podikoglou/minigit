@@ -18,9 +18,16 @@ use crate::{
 };
 
 /// Holds a handle to a memory-mapped pack .idx and provides an API for querying it.
+#[derive(Debug)]
 pub struct PackIndex {
     pub path: PathBuf,
     pub mmap: Mmap,
+}
+
+impl PartialEq for PackIndex {
+    fn eq(&self, other: &Self) -> bool {
+        self.path == other.path
+    }
 }
 
 impl PackIndex {

@@ -94,7 +94,14 @@ impl Packfile {
     ///
     /// This does not resolve the deltas.
     pub fn read_object_by_id(&self, hash: ObjectHash) -> Result<PackedObject, MinigitError> {
-        todo!()
+        match &self.idx {
+            Some(idx) => {
+                let offset = idx.lookup(hash).ok_or(MinigitError::ObjectNotFound)?;
+
+                self.read_object_at_offset(offset)
+            }
+            None => todo!("indexless lookup by object ID"),
+        }
     }
 }
 

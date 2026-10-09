@@ -8,6 +8,7 @@ use minigit::{
     parsing::Stream,
     storage::object::packed::{
         self, BaseObject, CopyInstruction, Delta, Instruction, PackedObject, Packfile,
+        idx::PackIndex,
     },
 };
 use winnow::Parser;
@@ -278,4 +279,17 @@ fn objects_iterator() {
         packfile.objects_count as usize,
         "read objects should match packfile header's object count"
     );
+}
+
+#[test]
+fn idx_read() {
+    let (_, dir) = include_repo!("fixtures/repo-5.tar");
+
+    let path = dir
+        .path()
+        .join(".git/objects/pack/pack-a0ba98959a3d422d8bbe8e86f2cf62eb8f2b2df7.idx");
+
+    let idx = PackIndex::open(path).expect("should be able to open pack idx file");
+
+    dbg!(idx.fanout_table());
 }

@@ -271,10 +271,20 @@ pub fn object(input: &mut Stream<'_>) -> ModalResult<PackedObject> {
 
     alt((
         deltified_object
-            .map(|(base, delta)| PackedObject::Deltified {
-                offset,
-                base,
-                delta,
+            .map(|(base, delta)| {
+                let resolved_offset_base = match base {
+                    BaseObject::Ofs(relative_offset) => {
+                        BaseObject::Ofs(offset as u64 - relative_offset)
+                    }
+
+                    other => other,
+                };
+
+                PackedObject::Deltified {
+                    offset,
+                    base: resolved_offset_base,
+                    delta,
+                }
             })
             .context(StrContext::Label("deltified object")),
         undeltified_object

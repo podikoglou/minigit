@@ -7,7 +7,9 @@ use minigit::{
     object::{Object, hash::ObjectHash},
     parsing::Stream,
     storage::object::packed::{
-        self, BaseObject, CopyInstruction, Delta, Instruction, PackedObject, Packfile,
+        self, BaseObject, CopyInstruction, Delta, Instruction,
+        PackedObject::{self, Undeltified},
+        Packfile,
         idx::PackIndex,
     },
 };
@@ -222,6 +224,32 @@ fn objects_iterator() {
         packfile.objects_count as usize,
         "read objects should match packfile header's object count"
     );
+}
+
+#[test]
+fn indexed_objects_query() {
+    let (_, dir) = include_repo!("fixtures/repo-6.tar");
+
+    let pack_path = dir
+        .path()
+        .join(".git/objects/pack/pack-c7e64c7164f8f92168a1ce0953f0716848c2c32c.pack");
+
+    let idx_path = dir
+        .path()
+        .join(".git/objects/pack/pack-c7e64c7164f8f92168a1ce0953f0716848c2c32c.idx");
+
+    let packfile =
+        Packfile::open(pack_path, Some(idx_path)).expect("should be able to open packfile");
+
+    let obj = packfile
+        .read_object_by_id(
+            "babbe85f1e25b2b7d2c4321bc9e278bae96b718b"
+                .parse()
+                .expect("should be able to parse hash"),
+        )
+        .expect("should be able to read object by id");
+
+    assert_matches!(obj, PackedObject::Undeltified(0, Object::Commit(_)));
 }
 
 #[test]

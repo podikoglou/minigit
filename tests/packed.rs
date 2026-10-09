@@ -323,4 +323,10 @@ fn idx_read() {
         objects_count,
         "crc entries count should match object count"
     );
+
+    assert_eq!(
+        idx.offsets_1.len(),
+        objects_count,
+        "offsets_1 count should match object count"
+    );
 }

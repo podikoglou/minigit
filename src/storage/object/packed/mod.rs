@@ -103,6 +103,39 @@ impl Packfile {
             None => todo!("indexless lookup by object ID"),
         }
     }
+
+    /// Resolves a [PackedObject] into an [Object], resolving the deltas if it is deltified.
+    pub fn resolve(&self, object: PackedObject) -> Result<Object, MinigitError> {
+        match object {
+            PackedObject::Deltified {
+                offset,
+                base,
+                delta,
+            } => {
+                let base_packed = match base {
+                    BaseObject::Ref(id) => self.read_object_by_id(id),
+                    BaseObject::Ofs(offset) => self.read_object_at_offset(offset as usize),
+                }?;
+
+                let base_resolved = self.resolve(base_packed)?;
+
+                for instruction in delta.instructions {
+                    match instruction {
+                        Instruction::Insert(InsertInstruction(data)) => {
+                            todo!("insert instruction")
+                        }
+                        Instruction::Copy(CopyInstruction { offset, size }) => {
+                            todo!("copy instruction")
+                        }
+                    }
+                }
+
+                todo!()
+            }
+
+            PackedObject::Undeltified(_, object) => Ok(object),
+        }
+    }
 }
 
 impl PartialEq for Packfile {

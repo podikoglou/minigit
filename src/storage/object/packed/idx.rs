@@ -68,12 +68,14 @@ impl PackIndex {
     pub fn fanout_table(&self) -> Result<&Vec<u32>, &MinigitError> {
         self.fanout_table
             .get_or_init(|| {
-                fanout_table.parse(self.stream_from(8)).map_err(|err| {
-                    MinigitError::ParserError(
-                        err.to_string(),
-                        ParserContext::File(self.path.clone()),
-                    )
-                })
+                fanout_table
+                    .parse(Stream::new(&self.mmap[8..8 + 256 * 4]))
+                    .map_err(|err| {
+                        MinigitError::ParserError(
+                            err.to_string(),
+                            ParserContext::File(self.path.clone()),
+                        )
+                    })
             })
             .as_ref()
     }

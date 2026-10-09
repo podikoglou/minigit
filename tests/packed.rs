@@ -39,7 +39,7 @@ fn undeltified_packfile_parse() {
             .parse_next(&mut slice)
             .expect("should be able to parse object");
 
-        assert_matches!(object, PackedObject::Undeltified(Object::Commit(_)));
+        assert_matches!(object, PackedObject::Undeltified(_, Object::Commit(_)));
     }
 
     // object 2
@@ -48,7 +48,7 @@ fn undeltified_packfile_parse() {
             .parse_next(&mut slice)
             .expect("should be able to parse object");
 
-        assert_matches!(object, PackedObject::Undeltified(Object::Blob(_)));
+        assert_matches!(object, PackedObject::Undeltified(_, Object::Blob(_)));
     }
 
     // object 3
@@ -57,7 +57,7 @@ fn undeltified_packfile_parse() {
             .parse_next(&mut slice)
             .expect("should be able to parse object");
 
-        assert_matches!(object, PackedObject::Undeltified(Object::Tree(_)));
+        assert_matches!(object, PackedObject::Undeltified(_, Object::Tree(_)));
     }
 }
 
@@ -86,7 +86,7 @@ fn deltified_packfile_parse() {
             .parse_next(&mut slice)
             .expect("should be able to parse object");
 
-        assert_matches!(object, PackedObject::Undeltified(Object::Commit(_)));
+        assert_matches!(object, PackedObject::Undeltified(_, Object::Commit(_)));
     }
 
     // object 2
@@ -95,7 +95,7 @@ fn deltified_packfile_parse() {
             .parse_next(&mut slice)
             .expect("should be able to parse object");
 
-        assert_matches!(object, PackedObject::Undeltified(Object::Commit(_)));
+        assert_matches!(object, PackedObject::Undeltified(_, Object::Commit(_)));
     }
 
     // object 3
@@ -104,7 +104,7 @@ fn deltified_packfile_parse() {
             .parse_next(&mut slice)
             .expect("should be able to parse object");
 
-        assert_matches!(object, PackedObject::Undeltified(Object::Commit(_)));
+        assert_matches!(object, PackedObject::Undeltified(_, Object::Commit(_)));
     }
 
     // object 4
@@ -113,7 +113,7 @@ fn deltified_packfile_parse() {
             .parse_next(&mut slice)
             .expect("should be able to parse object");
 
-        assert_matches!(object, PackedObject::Undeltified(Object::Commit(_)));
+        assert_matches!(object, PackedObject::Undeltified(_, Object::Commit(_)));
     }
 
     // object 5
@@ -122,7 +122,7 @@ fn deltified_packfile_parse() {
             .parse_next(&mut slice)
             .expect("should be able to parse object");
 
-        assert_matches!(object, PackedObject::Undeltified(Object::Blob(_)));
+        assert_matches!(object, PackedObject::Undeltified(_, Object::Blob(_)));
     }
 
     // object 6
@@ -131,7 +131,7 @@ fn deltified_packfile_parse() {
             .parse_next(&mut slice)
             .expect("should be able to parse object");
 
-        assert_matches!(object, PackedObject::Undeltified(Object::Blob(_)));
+        assert_matches!(object, PackedObject::Undeltified(_, Object::Blob(_)));
     }
 
     // object 7
@@ -140,7 +140,7 @@ fn deltified_packfile_parse() {
             .parse_next(&mut slice)
             .expect("should be able to parse object");
 
-        assert_matches!(object, PackedObject::Undeltified(Object::Tree(_)));
+        assert_matches!(object, PackedObject::Undeltified(_, Object::Tree(_)));
     }
 
     // object 8
@@ -149,7 +149,7 @@ fn deltified_packfile_parse() {
             .parse_next(&mut slice)
             .expect("should be able to parse object");
 
-        assert_matches!(object, PackedObject::Undeltified(Object::Tree(_)));
+        assert_matches!(object, PackedObject::Undeltified(_, Object::Tree(_)));
     }
 
     // object 9 (deltified)
@@ -161,7 +161,8 @@ fn deltified_packfile_parse() {
         assert_eq!(
             object,
             PackedObject::Deltified {
-                base: BaseObject::Ofs(264),
+                offset: 870,
+                base: BaseObject::Ofs(870 - 264),
                 delta: Delta {
                     base_object_size: 177,
                     deltified_object_size: 154,
@@ -180,7 +181,7 @@ fn deltified_packfile_parse() {
             .parse_next(&mut slice)
             .expect("should be able to parse object");
 
-        assert_matches!(object, PackedObject::Undeltified(Object::Tree(_)));
+        assert_matches!(object, PackedObject::Undeltified(_, Object::Tree(_)));
     }
 
     // object 11
@@ -189,7 +190,7 @@ fn deltified_packfile_parse() {
             .parse_next(&mut slice)
             .expect("should be able to parse object");
 
-        assert_matches!(object, PackedObject::Undeltified(Object::Blob(_)));
+        assert_matches!(object, PackedObject::Undeltified(_, Object::Blob(_)));
     }
 
     // object 12
@@ -198,7 +199,7 @@ fn deltified_packfile_parse() {
             .parse_next(&mut slice)
             .expect("should be able to parse object");
 
-        assert_matches!(object, PackedObject::Undeltified(Object::Tree(_)));
+        assert_matches!(object, PackedObject::Undeltified(_, Object::Tree(_)));
     }
 
     assert_eq!(slice.len(), 20, "packfile should end with 20-byte checksum");

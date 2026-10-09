@@ -29,6 +29,8 @@ pub struct PackIndex {
     pub crc_entries: Vec<u32>,
     pub offsets_1: Vec<u32>,
     pub offsets_2: Vec<u64>,
+    pub pack_checksum: ObjectHash,
+    pub idx_checksum: ObjectHash,
 }
 
 impl PartialEq for PackIndex {
@@ -100,6 +102,21 @@ impl PackIndex {
                 MinigitError::ParserError(err.to_string(), ParserContext::File(path.clone()))
             })?;
 
+        let checksum_offset =
+            8 + 256 * 4 + objects_count * 28 + offsets_2_entries * 8;
+
+        let pack_checksum = checksum
+            .parse(Stream::new(&mmap[checksum_offset..checksum_offset + 20]))
+            .map_err(|err| {
+                MinigitError::ParserError(err.to_string(), ParserContext::File(path.clone()))
+            })?;
+
+        let idx_checksum = checksum
+            .parse(Stream::new(&mmap[checksum_offset + 20..checksum_offset + 40]))
+            .map_err(|err| {
+                MinigitError::ParserError(err.to_string(), ParserContext::File(path.clone()))
+            })?;
+
         Ok(Self {
             path,
             mmap,
@@ -109,6 +126,8 @@ impl PackIndex {
             crc_entries,
             offsets_1,
             offsets_2,
+            pack_checksum,
+            idx_checksum,
         })
     }
 
@@ -154,4 +173,8 @@ pub fn offsets_1(amount: usize) -> impl FnMut(&mut Stream<'_>) -> ModalResult<Ve
 // particular it depends on the amount of entries it has that have their MSB set to 1.
 pub fn offsets_2(amount: usize) -> impl FnMut(&mut Stream<'_>) -> ModalResult<Vec<u64>> {
     move |input: &mut Stream<'_>| repeat(amount, be_u64).parse_next(input)
+}
+
+pub fn checksum(input: &mut Stream<'_>) -> ModalResult<ObjectHash> {
+    parse_object_hash(input)
 }

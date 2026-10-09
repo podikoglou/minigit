@@ -18,6 +18,7 @@ use winnow::{
     binary::be_u32,
     combinator::{alt, repeat, seq},
     error::{ContextError, ErrMode, StrContext},
+    stream::Location,
     token::{any, take},
 };
 
@@ -266,12 +267,18 @@ pub fn object_header(input: &mut Stream<'_>) -> ModalResult<PackedObjectHeader> 
 
 /// Parses an object. Takes care of parsing the header too.
 pub fn object(input: &mut Stream<'_>) -> ModalResult<PackedObject> {
+    let offset = input.current_token_start();
+
     alt((
         deltified_object
-            .map(|(base, delta)| PackedObject::Deltified { base, delta })
+            .map(|(base, delta)| PackedObject::Deltified {
+                offset,
+                base,
+                delta,
+            })
             .context(StrContext::Label("deltified object")),
         undeltified_object
-            .map(PackedObject::Undeltified)
+            .map(|object| PackedObject::Undeltified(offset, object))
             .context(StrContext::Label("undeltified object")),
     ))
     .context(StrContext::Label("object"))

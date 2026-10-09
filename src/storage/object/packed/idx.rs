@@ -23,6 +23,7 @@ pub struct PackIndex {
     pub path: PathBuf,
     pub mmap: Mmap,
 
+    pub objects_count: usize,
     pub fanout_table: Vec<u32>,
     pub object_names: Vec<ObjectHash>,
 }
@@ -53,13 +54,15 @@ impl PackIndex {
                 MinigitError::ParserError(err.to_string(), ParserContext::File(path.clone()))
             })?;
 
-        let entries = fanout_table
+        let objects_count = fanout_table
             .last()
             .map(|x| Ok(*x as usize))
             .unwrap_or_else(|| Err(MinigitError::InvalidPackIndex))?;
 
-        let object_names = object_names(entries)
-            .parse(Stream::new(&mmap[8 + 256 * 4..8 + 256 * 4 + entries * 20]))
+        let object_names = object_names(objects_count)
+            .parse(Stream::new(
+                &mmap[8 + 256 * 4..8 + 256 * 4 + objects_count * 20],
+            ))
             .map_err(|err| {
                 MinigitError::ParserError(err.to_string(), ParserContext::File(path.clone()))
             })?;
@@ -67,17 +70,15 @@ impl PackIndex {
         Ok(Self {
             path,
             mmap,
+            objects_count,
             fanout_table,
             object_names,
         })
     }
 
-    /// Gets the object cuont by reading the last entry of the fanout table.
-    pub fn objects_count(&self) -> Result<usize, MinigitError> {
-        self.fanout_table
-            .last()
-            .map(|x| Ok(*x as usize))
-            .unwrap_or_else(|| Err(MinigitError::InvalidPackIndex))
+    /// Gets the object count.
+    pub fn objects_count(&self) -> usize {
+        self.objects_count
     }
 }
 

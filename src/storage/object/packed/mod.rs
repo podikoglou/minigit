@@ -63,7 +63,7 @@ impl Packfile {
         })?;
 
         // if present, open idx
-        let idx = idx_path.map(|path| PackIndex::open(path).ok()).flatten();
+        let idx = idx_path.and_then(|path| PackIndex::open(path).ok());
 
         Ok(Self {
             pack,

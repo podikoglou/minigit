@@ -1,10 +1,6 @@
 //! This module deals with the packfile index format.
 
-use std::{
-    fs::File,
-    path::PathBuf,
-    sync::{LazyLock, OnceLock},
-};
+use std::{fs::File, path::PathBuf};
 
 use memmap2::Mmap;
 use winnow::{
@@ -27,7 +23,7 @@ pub struct PackIndex {
     pub path: PathBuf,
     pub mmap: Mmap,
 
-    fanout_table: OnceLock<Result<Vec<u32>, MinigitError>>,
+    pub fanout_table: Vec<u32>,
 }
 
 impl PartialEq for PackIndex {
@@ -50,10 +46,16 @@ impl PackIndex {
             MinigitError::ParserError(err.to_string(), ParserContext::File(path.clone()))
         })?;
 
+        let fanout_table = fanout_table
+            .parse(Stream::new(&mmap[8..8 + 256 * 4]))
+            .map_err(|err| {
+                MinigitError::ParserError(err.to_string(), ParserContext::File(path.clone()))
+            })?;
+
         Ok(Self {
             path,
             mmap,
-            fanout_table: Default::default(),
+            fanout_table,
         })
     }
 
@@ -64,20 +66,12 @@ impl PackIndex {
         Stream::new(&self.mmap[offset..])
     }
 
-    /// Lazily reads the fanout table.
-    pub fn fanout_table(&self) -> Result<&Vec<u32>, &MinigitError> {
+    /// Gets the object cuont by reading the last entry of the fanout table.
+    pub fn objects_count(&self) -> Result<usize, MinigitError> {
         self.fanout_table
-            .get_or_init(|| {
-                fanout_table
-                    .parse(Stream::new(&self.mmap[8..8 + 256 * 4]))
-                    .map_err(|err| {
-                        MinigitError::ParserError(
-                            err.to_string(),
-                            ParserContext::File(self.path.clone()),
-                        )
-                    })
-            })
-            .as_ref()
+            .last()
+            .map(|x| Ok(*x as usize))
+            .unwrap_or_else(|| Err(MinigitError::InvalidPackIndex))
     }
 }
 

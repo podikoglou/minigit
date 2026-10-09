@@ -46,7 +46,7 @@ impl PackIndex {
         //
         // this return any information, this is mostly for validation that this is a valid idx
         // file.
-        header.parse(Stream::new(&mmap[..12])).map_err(|err| {
+        header.parse(Stream::new(&mmap[..8])).map_err(|err| {
             MinigitError::ParserError(err.to_string(), ParserContext::File(path.clone()))
         })?;
 
@@ -68,7 +68,7 @@ impl PackIndex {
     pub fn fanout_table(&self) -> Result<&Vec<u32>, &MinigitError> {
         self.fanout_table
             .get_or_init(|| {
-                fanout_table.parse(self.stream_from(12)).map_err(|err| {
+                fanout_table.parse(self.stream_from(8)).map_err(|err| {
                     MinigitError::ParserError(
                         err.to_string(),
                         ParserContext::File(self.path.clone()),

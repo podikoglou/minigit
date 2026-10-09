@@ -313,4 +313,10 @@ fn idx_read() {
         objects_count, 3,
         "object count (last fanoutt entry) should be 3"
     );
+
+    assert_eq!(
+        idx.object_names.len(),
+        objects_count,
+        "object names count should match object count"
+    );
 }

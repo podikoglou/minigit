@@ -24,6 +24,7 @@ pub struct PackIndex {
     pub mmap: Mmap,
 
     pub fanout_table: Vec<u32>,
+    pub object_names: Vec<ObjectHash>,
 }
 
 impl PartialEq for PackIndex {
@@ -52,10 +53,22 @@ impl PackIndex {
                 MinigitError::ParserError(err.to_string(), ParserContext::File(path.clone()))
             })?;
 
+        let entries = fanout_table
+            .last()
+            .map(|x| Ok(*x as usize))
+            .unwrap_or_else(|| Err(MinigitError::InvalidPackIndex))?;
+
+        let object_names = object_names(entries)
+            .parse(Stream::new(&mmap[8 + 256 * 4..8 + 256 * 4 + entries * 20]))
+            .map_err(|err| {
+                MinigitError::ParserError(err.to_string(), ParserContext::File(path.clone()))
+            })?;
+
         Ok(Self {
             path,
             mmap,
             fanout_table,
+            object_names,
         })
     }
 

@@ -57,7 +57,7 @@ impl Packfile {
         let pack = (pack_path, pack_buf);
 
         // read packfile header
-        let pack_header = header.parse(Stream::new(&pack.1)).map_err(|err| {
+        let pack_header = header.parse(Stream::new(&pack.1[..12])).map_err(|err| {
             MinigitError::ParserError(err.to_string(), ParserContext::File(pack.0.clone()))
         })?;
 
@@ -72,9 +72,11 @@ impl Packfile {
             //
             // this return any information, this is mostly for validation that this is a valid idx
             // file.
-            idx::header.parse(Stream::new(&idx.1)).map_err(|err| {
-                MinigitError::ParserError(err.to_string(), ParserContext::File(idx.0.clone()))
-            })?;
+            idx::header
+                .parse(Stream::new(&idx.1[..12]))
+                .map_err(|err| {
+                    MinigitError::ParserError(err.to_string(), ParserContext::File(idx.0.clone()))
+                })?;
 
             Some(idx)
         } else {

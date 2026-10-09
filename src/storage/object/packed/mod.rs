@@ -34,13 +34,14 @@ use crate::{
         tree::parse_tree,
     },
     parsing::Stream,
+    storage::object::packed::idx::PackIndex,
 };
 
 /// Holds a handle to an memory-mapped packfie and optionally its index.
 #[derive(Debug)]
 pub struct Packfile {
     pub pack: (PathBuf, Mmap),
-    pub idx: Option<(PathBuf, Mmap)>,
+    pub idx: Option<PackIndex>,
 
     /// The amount of objects contained in the packfile.
     pub objects_count: u32,
@@ -62,26 +63,7 @@ impl Packfile {
         })?;
 
         // if present, open idx
-        let idx = if let Some(path) = idx_path {
-            let idx_file = File::open(&path)?;
-            let idx_buf = unsafe { Mmap::map(&idx_file) }?;
-
-            let idx = (path, idx_buf);
-
-            // read idx header
-            //
-            // this return any information, this is mostly for validation that this is a valid idx
-            // file.
-            idx::header
-                .parse(Stream::new(&idx.1[..12]))
-                .map_err(|err| {
-                    MinigitError::ParserError(err.to_string(), ParserContext::File(idx.0.clone()))
-                })?;
-
-            Some(idx)
-        } else {
-            None
-        };
+        let idx = idx_path.map(|path| PackIndex::open(path).ok()).flatten();
 
         Ok(Self {
             pack,
@@ -119,7 +101,7 @@ impl Packfile {
 impl PartialEq for Packfile {
     fn eq(&self, other: &Self) -> bool {
         self.pack.0 == other.pack.0
-            && self.idx.as_ref().map(|(x, _)| x) == other.idx.as_ref().map(|(x, _)| x)
+            && self.idx == other.idx
             && self.objects_count == other.objects_count
     }
 }

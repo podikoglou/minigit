@@ -59,13 +59,6 @@ impl PackIndex {
         })
     }
 
-    /// Creates a new [Stream] starting at a given offset. Convenient helper used by other functions
-    /// here.
-    #[inline(always)]
-    fn stream_from<'a>(&'a self, offset: usize) -> Stream<'a> {
-        Stream::new(&self.mmap[offset..])
-    }
-
     /// Gets the object cuont by reading the last entry of the fanout table.
     pub fn objects_count(&self) -> Result<usize, MinigitError> {
         self.fanout_table

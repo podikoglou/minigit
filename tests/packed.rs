@@ -291,17 +291,13 @@ fn idx_read() {
 
     let idx = PackIndex::open(path).expect("should be able to open pack idx file");
 
-    let fanout_table = idx
-        .fanout_table()
-        .expect("should be able to parse fanout table");
-
     assert_eq!(
-        fanout_table.len(),
+        idx.fanout_table.len(),
         256,
         "fanout table should have 256 entries",
     );
 
-    for (idx, window) in fanout_table.windows(2).enumerate() {
+    for (idx, window) in idx.fanout_table.windows(2).enumerate() {
         assert!(
             window[0] <= window[1],
             "window {} should not break monotonicity",

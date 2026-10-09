@@ -146,6 +146,12 @@ impl From<u8> for HashPrefix {
     }
 }
 
+impl From<HashPrefix> for u8 {
+    fn from(val: HashPrefix) -> Self {
+        val.0
+    }
+}
+
 impl FromStr for HashPrefix {
     type Err = MinigitError;
 

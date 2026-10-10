@@ -1,10 +1,22 @@
-use std::{fs, io::BufReader, path::PathBuf};
+use std::{
+    fs,
+    io::{BufReader, Read},
+    path::PathBuf,
+};
 
 use crate::{
     MinigitError,
     error::ParserContext,
-    object::{Object, hash::ObjectHash},
+    object::{Object, hash::ObjectHash, parse_header},
+    parsing::Stream,
     storage::object::{RawObject, loose},
+};
+
+use flate2::bufread::ZlibDecoder;
+use winnow::{
+    Parser,
+    error::{ContextError, ErrMode},
+    token::take,
 };
 
 /// An object which has not been loaded yet.
@@ -21,11 +33,39 @@ impl LazyObject {
         Self::Loose(path)
     }
 
-    /// Reads the object.
+    /// Reads and decompresses the object into a [RawObject] container.
     pub fn into_raw(&self) -> Result<RawObject, MinigitError> {
-        Ok(match self {
-            Self::Loose(path) => fs::read(path).map(RawObject::new)?,
-        })
+        match self {
+            Self::Loose(path) => {
+                let contents = fs::read(path)?;
+
+                // decompress file contents
+                let mut decoder = ZlibDecoder::new(&contents[..]);
+
+                let mut decompressed = Vec::new();
+                decoder.read_to_end(&mut decompressed)?;
+
+                // parse just the header of the object
+                let mut stream = Stream::new(&decompressed);
+
+                let (r#type, size) = parse_header.parse_next(&mut stream).map_err(|err| {
+                    MinigitError::ParserError(err.to_string(), ParserContext::File(path.clone()))
+                })?;
+
+                // take the object's payload verbatim
+                let object_bytes: Vec<u8> = take(size)
+                    .parse_next(&mut stream)
+                    .map_err(|err: ErrMode<ContextError>| {
+                        MinigitError::ParserError(
+                            err.to_string(),
+                            ParserContext::File(path.clone()),
+                        )
+                    })?
+                    .into();
+
+                Ok(RawObject::new(r#type, object_bytes))
+            }
+        }
     }
 
     /// Reads and parses the full object.

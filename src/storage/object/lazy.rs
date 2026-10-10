@@ -4,7 +4,7 @@ use crate::{
     MinigitError,
     error::ParserContext,
     object::{Object, hash::ObjectHash},
-    storage::object::loose,
+    storage::object::{RawObject, loose},
 };
 
 /// An object which has not been loaded yet.
@@ -21,7 +21,14 @@ impl LazyObject {
         Self::Loose(path)
     }
 
-    /// Reads the full object.
+    /// Reads the object.
+    pub fn into_raw(&self) -> Result<RawObject, MinigitError> {
+        Ok(match self {
+            Self::Loose(path) => fs::read(path).map(RawObject::new)?,
+        })
+    }
+
+    /// Reads and parses the full object.
     pub fn into_object(&self) -> Result<Object, MinigitError> {
         match self {
             Self::Loose(path) => {

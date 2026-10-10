@@ -26,7 +26,7 @@ use crate::{
     MinigitError,
     error::ParserContext,
     object::{
-        Object,
+        Object, ObjectType,
         blob::parse_blob,
         commit::parse_commit,
         hash::{ObjectHash, parse_object_hash},
@@ -34,7 +34,7 @@ use crate::{
         tree::parse_tree,
     },
     parsing::Stream,
-    storage::object::packed::idx::PackIndex,
+    storage::object::{RawObject, packed::idx::PackIndex},
 };
 
 /// Holds a handle to an memory-mapped packfie and optionally its index.
@@ -202,7 +202,7 @@ pub enum PackedObject {
         base: BaseObject,
         delta: Delta,
     },
-    Undeltified(usize, Object),
+    Undeltified(usize, RawObject),
 }
 
 impl PackedObject {
@@ -496,7 +496,7 @@ fn copy_instruction(input: &mut Stream<'_>) -> ModalResult<CopyInstruction> {
 }
 
 /// Parses the header and data of an undeltified object. Also takes care of decompressing the data.
-fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<Object> {
+fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<RawObject> {
     let header = object_header
         .verify(|header| {
             matches!(
@@ -524,25 +524,16 @@ fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<Object> {
     // consume the amount of bytes that the decoder read, advancing the `input` slice
     take(decoder.total_in() as usize).parse_next(input)?;
 
-    match header.r#type {
-        PackedObjectType::Commit => parse_commit
-            .map(Object::from)
-            .parse_next(&mut Stream::new(&buf)),
-
-        PackedObjectType::Tree => parse_tree
-            .map(Object::from)
-            .parse_next(&mut Stream::new(&buf)),
-
-        PackedObjectType::Blob => parse_blob
-            .map(Object::from)
-            .parse_next(&mut Stream::new(&buf)),
-
-        PackedObjectType::Tag => parse_tag
-            .map(Object::from)
-            .parse_next(&mut Stream::new(&buf)),
+    let r#type = match header.r#type {
+        PackedObjectType::Commit => ObjectType::Commit,
+        PackedObjectType::Tree => ObjectType::Tree,
+        PackedObjectType::Blob => ObjectType::Blob,
+        PackedObjectType::Tag => ObjectType::Tag,
 
         _ => unreachable!(),
-    }
+    };
+
+    Ok(RawObject::new(r#type, buf))
 }
 
 #[cfg(test)]

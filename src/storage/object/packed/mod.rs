@@ -104,8 +104,8 @@ impl Packfile {
         }
     }
 
-    /// Resolves a [PackedObject] into an [Object], resolving the deltas if it is deltified.
-    pub fn resolve(&self, object: PackedObject) -> Result<Object, MinigitError> {
+    /// Resolves a [PackedObject] into a [RawObject], resolving the deltas if it is deltified.
+    pub fn resolve(&self, object: PackedObject) -> Result<RawObject, MinigitError> {
         match object {
             PackedObject::Deltified {
                 offset,
@@ -117,20 +117,24 @@ impl Packfile {
                     BaseObject::Ofs(offset) => self.read_object_at_offset(offset as usize),
                 }?;
 
-                let base_resolved = self.resolve(base_packed)?;
+                let base_raw = self.resolve(base_packed)?;
+
+                // TODO: figure out how big it should be (can figure that out by statically looking
+                // at the instructions. perhaps there's a better way?)
+                let mut new_bytes: Vec<u8> = Vec::new();
 
                 for instruction in delta.instructions {
-                    match instruction {
-                        Instruction::Insert(InsertInstruction(data)) => {
-                            todo!("insert instruction")
-                        }
+                    let mut new_data = match instruction {
+                        Instruction::Insert(InsertInstruction(data)) => data,
                         Instruction::Copy(CopyInstruction { offset, size }) => {
-                            todo!("copy instruction")
+                            base_raw.bytes[offset as usize..offset as usize + size as usize].into()
                         }
-                    }
+                    };
+
+                    new_bytes.append(&mut new_data);
                 }
 
-                todo!()
+                Ok(RawObject::new(base_raw.r#type, new_bytes))
             }
 
             PackedObject::Undeltified(_, object) => Ok(object),

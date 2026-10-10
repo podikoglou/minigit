@@ -4,13 +4,16 @@ use std::fs::File;
 use memmap2::Mmap;
 use minigit::{
     Repo,
-    object::{Object, hash::ObjectHash},
+    object::{Object, ObjectType, hash::ObjectHash},
     parsing::Stream,
-    storage::object::packed::{
-        self, BaseObject, CopyInstruction, Delta, Instruction,
-        PackedObject::{self, Undeltified},
-        Packfile,
-        idx::PackIndex,
+    storage::object::{
+        RawObject,
+        packed::{
+            self, BaseObject, CopyInstruction, Delta, Instruction,
+            PackedObject::{self, Undeltified},
+            Packfile,
+            idx::PackIndex,
+        },
     },
 };
 use winnow::Parser;
@@ -42,7 +45,10 @@ fn undeltified_packfile_parse() {
             .parse_next(&mut slice)
             .expect("should be able to parse object");
 
-        assert_matches!(object, PackedObject::Undeltified(_, Object::Commit(_)));
+        assert_matches!(
+            object,
+            PackedObject::Undeltified(_, RawObject { r#type: ObjectType::Commit, .. })
+        );
     }
 
     // object 2
@@ -51,7 +57,10 @@ fn undeltified_packfile_parse() {
             .parse_next(&mut slice)
             .expect("should be able to parse object");
 
-        assert_matches!(object, PackedObject::Undeltified(_, Object::Blob(_)));
+        assert_matches!(
+            object,
+            PackedObject::Undeltified(_, RawObject { r#type: ObjectType::Blob, .. })
+        );
     }
 
     // object 3
@@ -60,7 +69,10 @@ fn undeltified_packfile_parse() {
             .parse_next(&mut slice)
             .expect("should be able to parse object");
 
-        assert_matches!(object, PackedObject::Undeltified(_, Object::Tree(_)));
+        assert_matches!(
+            object,
+            PackedObject::Undeltified(_, RawObject { r#type: ObjectType::Tree, .. })
+        );
     }
 }
 
@@ -89,7 +101,10 @@ fn deltified_packfile_parse() {
             .parse_next(&mut slice)
             .expect("should be able to parse object");
 
-        assert_matches!(object, PackedObject::Undeltified(_, Object::Commit(_)));
+        assert_matches!(
+            object,
+            PackedObject::Undeltified(_, RawObject { r#type: ObjectType::Commit, .. })
+        );
     }
 
     // object 2
@@ -98,7 +113,10 @@ fn deltified_packfile_parse() {
             .parse_next(&mut slice)
             .expect("should be able to parse object");
 
-        assert_matches!(object, PackedObject::Undeltified(_, Object::Commit(_)));
+        assert_matches!(
+            object,
+            PackedObject::Undeltified(_, RawObject { r#type: ObjectType::Commit, .. })
+        );
     }
 
     // object 3
@@ -107,7 +125,10 @@ fn deltified_packfile_parse() {
             .parse_next(&mut slice)
             .expect("should be able to parse object");
 
-        assert_matches!(object, PackedObject::Undeltified(_, Object::Commit(_)));
+        assert_matches!(
+            object,
+            PackedObject::Undeltified(_, RawObject { r#type: ObjectType::Commit, .. })
+        );
     }
 
     // object 4
@@ -116,7 +137,10 @@ fn deltified_packfile_parse() {
             .parse_next(&mut slice)
             .expect("should be able to parse object");
 
-        assert_matches!(object, PackedObject::Undeltified(_, Object::Commit(_)));
+        assert_matches!(
+            object,
+            PackedObject::Undeltified(_, RawObject { r#type: ObjectType::Commit, .. })
+        );
     }
 
     // object 5
@@ -125,7 +149,10 @@ fn deltified_packfile_parse() {
             .parse_next(&mut slice)
             .expect("should be able to parse object");
 
-        assert_matches!(object, PackedObject::Undeltified(_, Object::Blob(_)));
+        assert_matches!(
+            object,
+            PackedObject::Undeltified(_, RawObject { r#type: ObjectType::Blob, .. })
+        );
     }
 
     // object 6
@@ -134,7 +161,10 @@ fn deltified_packfile_parse() {
             .parse_next(&mut slice)
             .expect("should be able to parse object");
 
-        assert_matches!(object, PackedObject::Undeltified(_, Object::Blob(_)));
+        assert_matches!(
+            object,
+            PackedObject::Undeltified(_, RawObject { r#type: ObjectType::Blob, .. })
+        );
     }
 
     // object 7
@@ -143,7 +173,10 @@ fn deltified_packfile_parse() {
             .parse_next(&mut slice)
             .expect("should be able to parse object");
 
-        assert_matches!(object, PackedObject::Undeltified(_, Object::Tree(_)));
+        assert_matches!(
+            object,
+            PackedObject::Undeltified(_, RawObject { r#type: ObjectType::Tree, .. })
+        );
     }
 
     // object 8
@@ -152,7 +185,10 @@ fn deltified_packfile_parse() {
             .parse_next(&mut slice)
             .expect("should be able to parse object");
 
-        assert_matches!(object, PackedObject::Undeltified(_, Object::Tree(_)));
+        assert_matches!(
+            object,
+            PackedObject::Undeltified(_, RawObject { r#type: ObjectType::Tree, .. })
+        );
     }
 
     // object 9 (deltified)
@@ -184,7 +220,10 @@ fn deltified_packfile_parse() {
             .parse_next(&mut slice)
             .expect("should be able to parse object");
 
-        assert_matches!(object, PackedObject::Undeltified(_, Object::Tree(_)));
+        assert_matches!(
+            object,
+            PackedObject::Undeltified(_, RawObject { r#type: ObjectType::Tree, .. })
+        );
     }
 
     // object 11
@@ -193,7 +232,10 @@ fn deltified_packfile_parse() {
             .parse_next(&mut slice)
             .expect("should be able to parse object");
 
-        assert_matches!(object, PackedObject::Undeltified(_, Object::Blob(_)));
+        assert_matches!(
+            object,
+            PackedObject::Undeltified(_, RawObject { r#type: ObjectType::Blob, .. })
+        );
     }
 
     // object 12
@@ -202,7 +244,10 @@ fn deltified_packfile_parse() {
             .parse_next(&mut slice)
             .expect("should be able to parse object");
 
-        assert_matches!(object, PackedObject::Undeltified(_, Object::Tree(_)));
+        assert_matches!(
+            object,
+            PackedObject::Undeltified(_, RawObject { r#type: ObjectType::Tree, .. })
+        );
     }
 
     assert_eq!(slice.len(), 20, "packfile should end with 20-byte checksum");
@@ -249,7 +294,10 @@ fn indexed_objects_query() {
         )
         .expect("should be able to read object by id");
 
-    assert_matches!(obj, PackedObject::Undeltified(0, Object::Commit(_)));
+    assert_matches!(
+        obj,
+        PackedObject::Undeltified(0, RawObject { r#type: ObjectType::Commit, .. })
+    );
 }
 
 #[test]

@@ -37,7 +37,7 @@ use crate::{
     storage::object::{RawObject, packed::idx::PackIndex},
 };
 
-/// Holds a handle to an memory-mapped packfie and optionally its index.
+/// Holds a handle to an memory-mapped packfile and optionally its index.
 #[derive(Debug)]
 pub struct Packfile {
     pub pack: (PathBuf, Mmap),

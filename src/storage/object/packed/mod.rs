@@ -542,7 +542,11 @@ fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<RawObject> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{object::Object, parsing::Stream, storage::object::packed::undeltified_object};
+    use crate::{
+        object::ObjectType,
+        parsing::Stream,
+        storage::object::{RawObject, packed::undeltified_object},
+    };
 
     use super::{BaseObject, PackedObjectType, base_object, object_header};
     use std::assert_matches;
@@ -598,7 +602,7 @@ mod tests {
             ]))
             .expect("commit object should parse");
 
-        assert_matches!(obj, Object::Commit(_));
+        assert_matches!(obj, RawObject { r#type: ObjectType::Commit, .. });
     }
 
     #[test]

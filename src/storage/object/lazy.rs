@@ -72,15 +72,9 @@ impl LazyObject {
 
     /// Reads and parses the full object.
     pub fn into_object(&self) -> Result<Object, MinigitError> {
-        match self {
-            Self::Loose(path) => {
-                // TODO: remove clones here?
-                let file = fs::File::open(path)?;
-                let reader = BufReader::new(file);
+        let raw = self.into_raw()?;
 
-                loose::read_object_compressed(reader, ParserContext::File(path.clone()))
-            }
-        }
+        raw.into_object()
     }
 
     pub fn hash(&self) -> Result<ObjectHash, MinigitError> {

@@ -53,6 +53,8 @@ impl LazyObject {
                 })?;
 
                 // take the object's payload verbatim
+                // NOTE: PERF: This creates a new Vec<u8>, so we have duplicate data in memory
+                // (`decompressed`, and `object_bytes`).
                 let object_bytes: Vec<u8> = take(size)
                     .parse_next(&mut stream)
                     .map_err(|err: ErrMode<ContextError>| {

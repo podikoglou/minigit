@@ -18,8 +18,8 @@ use crate::{
 /// At any given time it can be turned into a real [Object] using [`Self::into_object`].
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct RawObject {
-    r#type: ObjectType,
-    bytes: Vec<u8>,
+    pub r#type: ObjectType,
+    pub bytes: Vec<u8>,
 }
 
 impl RawObject {

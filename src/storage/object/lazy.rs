@@ -2,6 +2,7 @@ use std::{
     fs,
     io::{BufReader, Read},
     path::PathBuf,
+    rc::Rc,
 };
 
 use crate::{
@@ -9,7 +10,7 @@ use crate::{
     error::ParserContext,
     object::{Object, hash::ObjectHash, parse_header},
     parsing::Stream,
-    storage::object::{RawObject, loose},
+    storage::object::{RawObject, loose, packed::Packfile},
 };
 
 use flate2::bufread::ZlibDecoder;

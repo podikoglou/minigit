@@ -1,6 +1,6 @@
 //! This module deals with the packfile index format.
 
-use std::{fs::File, path::PathBuf, rc::Rc};
+use std::{fs::File, path::PathBuf};
 
 use memmap2::Mmap;
 use winnow::{
@@ -15,7 +15,6 @@ use crate::{
     error::ParserContext,
     object::hash::{ObjectHash, parse_object_hash},
     parsing::Stream,
-    storage::object::{LazyObject, packed::Packfile},
 };
 
 /// Holds a handle to a memory-mapped pack .idx and provides an API for querying it.
@@ -141,27 +140,26 @@ impl PackIndex {
 
         let offset_idx = search_space.binary_search(&hash).ok()?;
 
-        match self.offsets_1[a + offset_idx] {
-            idx if (idx & 0x8000_0000) != 0 => {
-                // MSB is set to 1, so this belongs to `self.offsets_2`
-                // we mask off the MSB and use `idx` as an index
-                Some(self.offsets_2[(idx & 0x7FFF_FFFF) as usize] as usize)
-            }
-            other => Some(other as usize),
+        Some(self.offset_at(a + offset_idx))
+    }
+
+    /// Returns the offset for the object at the given index in the packfile.
+    pub fn offset_at(&self, idx: usize) -> usize {
+        let offset = self.offsets_1[idx];
+        if (offset & 0x8000_0000) != 0 {
+            self.offsets_2[(offset & 0x7FFF_FFFF) as usize] as usize
+        } else {
+            offset as usize
         }
     }
 
-    /// Returns an iterator over the objects as [LazyObject]s.
-    pub fn objects(&self, pack: Rc<Packfile>) -> impl Iterator<Item = LazyObject> {
-        self.offsets_1.iter().map(move |&offset| {
-            let offset = if (offset & 0x8000_0000) != 0 {
-                self.offsets_2[(offset & 0x7FFF_FFFF) as usize] as usize
-            } else {
-                offset as usize
-            };
+    /// Returns the number of indexed objects.
+    pub fn len(&self) -> usize {
+        self.offsets_1.len()
+    }
 
-            LazyObject::Packed(Rc::clone(&pack), offset)
-        })
+    pub fn is_empty(&self) -> bool {
+        self.offsets_1.is_empty()
     }
 }
 

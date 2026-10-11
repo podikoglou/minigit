@@ -104,12 +104,20 @@ impl Store {
     pub fn objects(
         &self,
     ) -> Result<impl Iterator<Item = Result<LazyObject, MinigitError>>, MinigitError> {
+        let packs = self.packs()?;
+
+        let objects = packs
+            .into_iter()
+            .flat_map(Packfile::lazy_objects)
+            .map(Ok);
+
         Ok(self
             .buckets()?
             .into_iter()
             .map(ObjectsBucket::objects)
             .flatten_ok()
-            .map(Result::flatten))
+            .map(Result::flatten)
+            .chain(objects))
     }
 
     // /// Writes an object to the database.

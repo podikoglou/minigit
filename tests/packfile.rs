@@ -9,4 +9,7 @@ fn store_packs_listing() {
     let packs = repo.store.packs().expect("should be able to list packs");
 
     assert_eq!(packs.len(), 1);
+
+    let pack = packs.first().unwrap();
+    assert_eq!(pack.objects().count(), 3);
 }

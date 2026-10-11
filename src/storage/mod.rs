@@ -77,6 +77,10 @@ impl Store {
         for entry in fs::read_dir(pack_dir)? {
             let path = entry?.path();
 
+            if !path.starts_with("pack-") {
+                continue;
+            }
+
             if path.extension().and_then(|ext| ext.to_str()) == Some("pack") {
                 let idx_path = path.with_extension("idx");
 

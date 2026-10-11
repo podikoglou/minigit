@@ -75,6 +75,8 @@ impl Packfile {
     /// Returns an iterator over the objects of the packfile.
     pub fn objects<'a>(&'a self) -> Objects<'a> {
         Objects {
+            amount: self.objects_count as usize,
+            read: 0,
             buf: Stream::new(&self.pack.1[12..]),
         }
     }
@@ -152,15 +154,30 @@ impl PartialEq for Packfile {
 
 /// An iterator over [PackedObject].
 pub struct Objects<'a> {
+    /// The amount of objects to read. [`Self::next`] will start returning `None` after having read
+    /// `amount` objects.
+    amount: usize,
+
     /// A slice of the packfile's contents, starting from the first object.
     buf: Stream<'a>,
+
+    /// (state) The amount of objects that have been read so far.
+    read: usize,
 }
 
 impl Iterator for Objects<'_> {
     type Item = PackedObject;
 
     fn next(&mut self) -> Option<Self::Item> {
-        object.parse_next(&mut self.buf).ok()
+        if self.read >= self.amount {
+            return None;
+        }
+
+        let object = object.parse_next(&mut self.buf);
+
+        self.read += 1;
+
+        object.ok()
     }
 }
 
@@ -602,7 +619,13 @@ mod tests {
             ]))
             .expect("commit object should parse");
 
-        assert_matches!(obj, RawObject { r#type: ObjectType::Commit, .. });
+        assert_matches!(
+            obj,
+            RawObject {
+                r#type: ObjectType::Commit,
+                ..
+            }
+        );
     }
 
     #[test]

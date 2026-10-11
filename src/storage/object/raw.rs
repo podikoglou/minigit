@@ -4,8 +4,8 @@ use crate::{
     MinigitError,
     error::ParserContext,
     object::{
-        Object, ObjectType, blob::parse_blob, commit::parse_commit, tag::parse_tag,
-        tree::parse_tree,
+        Object, ObjectType, blob::parse_blob, commit::parse_commit, hash::ObjectHash,
+        tag::parse_tag, tree::parse_tree,
     },
     parsing::Stream,
 };
@@ -42,5 +42,12 @@ impl RawObject {
         }
         // TODO: we are losing context here
         .map_err(|err| MinigitError::ParserError(err.to_string(), ParserContext::None))
+    }
+
+    pub fn hash(&self) -> Result<ObjectHash, MinigitError> {
+        // TODO: this is inefficient, it rewrites parts it doesn't need to
+        let obj = self.into_object()?;
+
+        obj.hash()
     }
 }

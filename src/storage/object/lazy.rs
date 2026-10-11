@@ -69,7 +69,11 @@ impl LazyObject {
 
                 Ok(RawObject::new(r#type, object_bytes))
             }
-            Self::Packed(packfile, offset) => todo!(),
+            Self::Packed(packfile, offset) => {
+                let packed_obj = packfile.read_object_at_offset(*offset)?;
+
+                packfile.resolve(packed_obj)
+            }
         }
     }
 

@@ -87,7 +87,14 @@ impl LazyObject {
     pub fn hash(&self) -> Result<ObjectHash, MinigitError> {
         match self {
             Self::Loose(path) => path.try_into(),
-            Self::Packed(packfile, offset) => todo!(),
+            Self::Packed(packfile, offset) => {
+                // TODO: this is likely not the most efficient way to do this, surely we can
+                // leverage the index
+
+                let raw = self.into_raw()?;
+
+                raw.hash()
+            }
         }
     }
 }

@@ -77,7 +77,11 @@ impl Store {
         for entry in fs::read_dir(pack_dir)? {
             let path = entry?.path();
 
-            if !path.starts_with("pack-") {
+            let Some(file_name) = path.file_name().and_then(|name| name.to_str()) else {
+                continue;
+            };
+
+            if !file_name.starts_with("pack-") {
                 continue;
             }
 

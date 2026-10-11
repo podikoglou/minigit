@@ -8,7 +8,7 @@
 
 pub mod idx;
 
-use std::{fs::File, io::Read, path::PathBuf};
+use std::{fs::File, io::Read, path::PathBuf, rc::Rc};
 
 use flate2::read::ZlibDecoder;
 use memmap2::Mmap;
@@ -34,7 +34,7 @@ use crate::{
         tree::parse_tree,
     },
     parsing::Stream,
-    storage::object::{RawObject, packed::idx::PackIndex},
+    storage::object::{LazyObject, RawObject, packed::idx::PackIndex},
 };
 
 /// Holds a handle to an memory-mapped packfile and optionally its index.
@@ -79,6 +79,16 @@ impl Packfile {
             read: 0,
             buf: Stream::new(&self.pack.1[12..]),
         }
+    }
+
+    /// Returns an iterator over the objects of the packfile as [LazyObject]s.
+    pub fn lazy_objects(self: Rc<Self>) -> impl Iterator<Item = LazyObject> {
+        let count = self.idx.as_ref().map_or(0, |idx| idx.len());
+
+        (0..count).map(move |i| {
+            let offset = self.idx.as_ref().unwrap().offset_at(i);
+            LazyObject::Packed(Rc::clone(&self), offset)
+        })
     }
 
     /// Reads an object at a specific offset of the packfile and returns it.

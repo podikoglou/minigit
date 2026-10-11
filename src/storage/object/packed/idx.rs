@@ -1,6 +1,6 @@
 //! This module deals with the packfile index format.
 
-use std::{fs::File, path::PathBuf};
+use std::{fs::File, path::PathBuf, rc::Rc};
 
 use memmap2::Mmap;
 use winnow::{
@@ -15,6 +15,7 @@ use crate::{
     error::ParserContext,
     object::hash::{ObjectHash, parse_object_hash},
     parsing::Stream,
+    storage::object::{LazyObject, packed::Packfile},
 };
 
 /// Holds a handle to a memory-mapped pack .idx and provides an API for querying it.
@@ -148,6 +149,19 @@ impl PackIndex {
             }
             other => Some(other as usize),
         }
+    }
+
+    /// Returns an iterator over the objects as [LazyObject]s.
+    pub fn objects(&self, pack: Rc<Packfile>) -> impl Iterator<Item = LazyObject> {
+        self.offsets_1.iter().map(move |&offset| {
+            let offset = if (offset & 0x8000_0000) != 0 {
+                self.offsets_2[(offset & 0x7FFF_FFFF) as usize] as usize
+            } else {
+                offset as usize
+            };
+
+            LazyObject::Packed(Rc::clone(&pack), offset)
+        })
     }
 }
 

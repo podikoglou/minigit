@@ -74,10 +74,13 @@ impl Packfile {
 
     /// Returns an iterator over the objects of the packfile.
     pub fn objects<'a>(&'a self) -> Objects<'a> {
+        let mut buf = Stream::new(&self.pack.1[..]);
+        let _: ModalResult<_> = take(12usize).parse_next(&mut buf);
+
         Objects {
             amount: self.objects_count as usize,
             read: 0,
-            buf: Stream::new(&self.pack.1[12..]),
+            buf,
         }
     }
 
@@ -95,8 +98,15 @@ impl Packfile {
     ///
     /// This does not resolve the deltas.
     pub fn read_object_at_offset(&self, offset: usize) -> Result<PackedObject, MinigitError> {
+        let mut stream = Stream::new(&self.pack.1[..]);
+        take(offset)
+            .parse_next(&mut stream)
+            .map_err(|err: ErrMode<ContextError>| {
+                MinigitError::ParserError(err.to_string(), ParserContext::File(self.pack.0.clone()))
+            })?;
+
         object
-            .parse_next(&mut Stream::new(&self.pack.1[offset..]))
+            .parse_next(&mut stream)
             .map_err(|err| {
                 MinigitError::ParserError(err.to_string(), ParserContext::File(self.pack.0.clone()))
             })
@@ -237,8 +247,7 @@ pub enum PackedObject {
 }
 
 impl PackedObject {
-    /// Gets the offset of the object in the file - 12 (i.e. relative to the start of the objects
-    /// list)
+    /// Gets the offset of the object in the packfile.
     pub fn offset(&self) -> usize {
         match self {
             PackedObject::Deltified {

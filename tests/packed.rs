@@ -381,7 +381,7 @@ fn indexed_objects_query() {
     assert_matches!(
         obj,
         PackedObject::Undeltified(
-            0,
+            486,
             RawObject {
                 r#type: ObjectType::Commit,
                 ..

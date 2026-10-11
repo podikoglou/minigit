@@ -47,7 +47,13 @@ fn undeltified_packfile_parse() {
 
         assert_matches!(
             object,
-            PackedObject::Undeltified(_, RawObject { r#type: ObjectType::Commit, .. })
+            PackedObject::Undeltified(
+                _,
+                RawObject {
+                    r#type: ObjectType::Commit,
+                    ..
+                }
+            )
         );
     }
 
@@ -59,7 +65,13 @@ fn undeltified_packfile_parse() {
 
         assert_matches!(
             object,
-            PackedObject::Undeltified(_, RawObject { r#type: ObjectType::Blob, .. })
+            PackedObject::Undeltified(
+                _,
+                RawObject {
+                    r#type: ObjectType::Blob,
+                    ..
+                }
+            )
         );
     }
 
@@ -71,7 +83,13 @@ fn undeltified_packfile_parse() {
 
         assert_matches!(
             object,
-            PackedObject::Undeltified(_, RawObject { r#type: ObjectType::Tree, .. })
+            PackedObject::Undeltified(
+                _,
+                RawObject {
+                    r#type: ObjectType::Tree,
+                    ..
+                }
+            )
         );
     }
 }
@@ -103,7 +121,13 @@ fn deltified_packfile_parse() {
 
         assert_matches!(
             object,
-            PackedObject::Undeltified(_, RawObject { r#type: ObjectType::Commit, .. })
+            PackedObject::Undeltified(
+                _,
+                RawObject {
+                    r#type: ObjectType::Commit,
+                    ..
+                }
+            )
         );
     }
 
@@ -115,7 +139,13 @@ fn deltified_packfile_parse() {
 
         assert_matches!(
             object,
-            PackedObject::Undeltified(_, RawObject { r#type: ObjectType::Commit, .. })
+            PackedObject::Undeltified(
+                _,
+                RawObject {
+                    r#type: ObjectType::Commit,
+                    ..
+                }
+            )
         );
     }
 
@@ -127,7 +157,13 @@ fn deltified_packfile_parse() {
 
         assert_matches!(
             object,
-            PackedObject::Undeltified(_, RawObject { r#type: ObjectType::Commit, .. })
+            PackedObject::Undeltified(
+                _,
+                RawObject {
+                    r#type: ObjectType::Commit,
+                    ..
+                }
+            )
         );
     }
 
@@ -139,7 +175,13 @@ fn deltified_packfile_parse() {
 
         assert_matches!(
             object,
-            PackedObject::Undeltified(_, RawObject { r#type: ObjectType::Commit, .. })
+            PackedObject::Undeltified(
+                _,
+                RawObject {
+                    r#type: ObjectType::Commit,
+                    ..
+                }
+            )
         );
     }
 
@@ -151,7 +193,13 @@ fn deltified_packfile_parse() {
 
         assert_matches!(
             object,
-            PackedObject::Undeltified(_, RawObject { r#type: ObjectType::Blob, .. })
+            PackedObject::Undeltified(
+                _,
+                RawObject {
+                    r#type: ObjectType::Blob,
+                    ..
+                }
+            )
         );
     }
 
@@ -163,7 +211,13 @@ fn deltified_packfile_parse() {
 
         assert_matches!(
             object,
-            PackedObject::Undeltified(_, RawObject { r#type: ObjectType::Blob, .. })
+            PackedObject::Undeltified(
+                _,
+                RawObject {
+                    r#type: ObjectType::Blob,
+                    ..
+                }
+            )
         );
     }
 
@@ -175,7 +229,13 @@ fn deltified_packfile_parse() {
 
         assert_matches!(
             object,
-            PackedObject::Undeltified(_, RawObject { r#type: ObjectType::Tree, .. })
+            PackedObject::Undeltified(
+                _,
+                RawObject {
+                    r#type: ObjectType::Tree,
+                    ..
+                }
+            )
         );
     }
 
@@ -187,7 +247,13 @@ fn deltified_packfile_parse() {
 
         assert_matches!(
             object,
-            PackedObject::Undeltified(_, RawObject { r#type: ObjectType::Tree, .. })
+            PackedObject::Undeltified(
+                _,
+                RawObject {
+                    r#type: ObjectType::Tree,
+                    ..
+                }
+            )
         );
     }
 
@@ -222,7 +288,13 @@ fn deltified_packfile_parse() {
 
         assert_matches!(
             object,
-            PackedObject::Undeltified(_, RawObject { r#type: ObjectType::Tree, .. })
+            PackedObject::Undeltified(
+                _,
+                RawObject {
+                    r#type: ObjectType::Tree,
+                    ..
+                }
+            )
         );
     }
 
@@ -234,7 +306,13 @@ fn deltified_packfile_parse() {
 
         assert_matches!(
             object,
-            PackedObject::Undeltified(_, RawObject { r#type: ObjectType::Blob, .. })
+            PackedObject::Undeltified(
+                _,
+                RawObject {
+                    r#type: ObjectType::Blob,
+                    ..
+                }
+            )
         );
     }
 
@@ -246,7 +324,13 @@ fn deltified_packfile_parse() {
 
         assert_matches!(
             object,
-            PackedObject::Undeltified(_, RawObject { r#type: ObjectType::Tree, .. })
+            PackedObject::Undeltified(
+                _,
+                RawObject {
+                    r#type: ObjectType::Tree,
+                    ..
+                }
+            )
         );
     }
 
@@ -296,7 +380,13 @@ fn indexed_objects_query() {
 
     assert_matches!(
         obj,
-        PackedObject::Undeltified(0, RawObject { r#type: ObjectType::Commit, .. })
+        PackedObject::Undeltified(
+            0,
+            RawObject {
+                r#type: ObjectType::Commit,
+                ..
+            }
+        )
     );
 }
 

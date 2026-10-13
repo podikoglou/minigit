@@ -1,6 +1,11 @@
+use std::path::Path;
+
 use include_dir::{Dir, include_dir};
 use itertools::Itertools;
-use minigit::{error::ParserContext, storage::object::loose};
+use minigit::{
+    error::ParserContext,
+    storage::object::{LazyObject, loose},
+};
 
 mod fixtures {
     use minigit::{
@@ -646,6 +651,7 @@ fn hash_fixtures() {
         let real_hash = hash_file.contents_utf8().unwrap().trim();
         let obj_bytes = object_file.contents();
 
+        // test `Object::hash()`
         let parsed = loose::read_object_compressed(obj_bytes, ParserContext::None)
             .expect("couldn't parse object");
 
@@ -654,7 +660,26 @@ fn hash_fixtures() {
         assert_eq!(
             hash.to_string(),
             real_hash,
-            "{} hash doesn't match actual hash",
+            "{} Object hash doesn't match actual hash",
+            object_file.path().to_string_lossy()
+        );
+
+        // test `RawObject::hash()`
+        let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures/objects")
+            .join(object_file.path());
+
+        let lazy_obj = LazyObject::Loose(path);
+        let raw_obj = lazy_obj
+            .into_raw()
+            .expect("couldn't convert into raw object");
+
+        let raw_hash = raw_obj.hash().expect("couldn't hash raw object");
+
+        assert_eq!(
+            raw_hash.to_string(),
+            real_hash,
+            "{} RawObject hash doesn't match actual hash",
             object_file.path().to_string_lossy()
         );
     }

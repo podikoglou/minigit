@@ -26,12 +26,8 @@ use crate::{
     MinigitError,
     error::ParserContext,
     object::{
-        Object, ObjectType,
-        blob::parse_blob,
-        commit::parse_commit,
+        ObjectType,
         hash::{ObjectHash, parse_object_hash},
-        tag::parse_tag,
-        tree::parse_tree,
     },
     parsing::Stream,
     storage::object::{LazyObject, RawObject, packed::idx::PackIndex},
@@ -132,7 +128,7 @@ impl Packfile {
     pub fn resolve(&self, object: PackedObject) -> Result<RawObject, MinigitError> {
         match object {
             PackedObject::Deltified {
-                offset,
+                offset: _,
                 base,
                 delta,
             } => {

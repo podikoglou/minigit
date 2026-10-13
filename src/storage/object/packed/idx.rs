@@ -1,8 +1,7 @@
 //! This module deals with the packfile index format.
 
 use std::{
-    fs::{self, File},
-    io::BufReader,
+    fs::{self},
     path::PathBuf,
 };
 

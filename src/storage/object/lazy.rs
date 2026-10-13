@@ -1,6 +1,6 @@
 use std::{
     fs,
-    io::{BufReader, Read},
+    io::Read,
     path::PathBuf,
     rc::Rc,
 };
@@ -10,7 +10,7 @@ use crate::{
     error::ParserContext,
     object::{Object, hash::ObjectHash, parse_header},
     parsing::Stream,
-    storage::object::{RawObject, loose, packed::Packfile},
+    storage::object::{RawObject, packed::Packfile},
 };
 
 use flate2::bufread::ZlibDecoder;
@@ -92,7 +92,7 @@ impl LazyObject {
     pub fn hash(&self) -> Result<ObjectHash, MinigitError> {
         match self {
             Self::Loose(path) => path.try_into(),
-            Self::Packed(packfile, offset) => {
+            Self::Packed(_packfile, _offset) => {
                 let raw = self.into_raw()?;
 
                 raw.hash()

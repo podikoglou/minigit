@@ -1,14 +1,9 @@
-use std::{
-    fs::File,
-    path::{Path, PathBuf},
-};
+use std::path::PathBuf;
 
 use argh::FromArgs;
-use memmap2::Mmap;
 use minigit::{
     MinigitError,
-    parsing::Stream,
-    storage::object::packed::{self, Packfile},
+    storage::object::packed::Packfile,
 };
 
 #[derive(FromArgs, PartialEq, Debug)]

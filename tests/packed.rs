@@ -467,3 +467,79 @@ fn idx_read() {
         Some(12)
     );
 }
+
+#[test]
+fn resolve_deltified_object_copy_size_zero() {
+    let (_, dir) = include_repo!("fixtures/repo-7.tar");
+
+    let pack_path = dir
+        .path()
+        .join(".git/objects/pack/pack-c810c1b92e401673d07ba82467562a599f53e298.pack");
+
+    let idx_path = dir
+        .path()
+        .join(".git/objects/pack/pack-c810c1b92e401673d07ba82467562a599f53e298.idx");
+
+    let packfile =
+        Packfile::open(pack_path, Some(idx_path)).expect("should be able to open packfile");
+
+    let hash: ObjectHash = "db8b4b08da60fba8e2b5edab88f9cbaa01972293"
+        .parse()
+        .expect("should parse hash");
+
+    let obj = packfile
+        .read_object_at_offset(7848)
+        .expect("should be able to read deltified object at offset 7848");
+
+    assert_matches!(obj, PackedObject::Deltified { .. });
+
+    let raw = packfile
+        .resolve(obj)
+        .expect("should be able to resolve deltified object");
+
+    assert_eq!(raw.r#type, ObjectType::Blob);
+    assert_eq!(raw.bytes.len(), 78000);
+    assert_eq!(
+        raw.hash().expect("should be able to hash raw object"),
+        hash
+    );
+}
+
+#[test]
+fn resolve_deltified_object_by_id_copy_size_zero() {
+    let (_, dir) = include_repo!("fixtures/repo-7.tar");
+
+    let pack_path = dir
+        .path()
+        .join(".git/objects/pack/pack-c810c1b92e401673d07ba82467562a599f53e298.pack");
+
+    let idx_path = dir
+        .path()
+        .join(".git/objects/pack/pack-c810c1b92e401673d07ba82467562a599f53e298.idx");
+
+    let packfile =
+        Packfile::open(pack_path, Some(idx_path)).expect("should be able to open packfile");
+
+    let hash: ObjectHash = "db8b4b08da60fba8e2b5edab88f9cbaa01972293"
+        .parse()
+        .expect("should parse hash");
+
+    let obj = packfile
+        .read_object_by_id(hash.clone())
+        .expect("should be able to read deltified object by id");
+
+    assert_matches!(obj, PackedObject::Deltified { .. });
+
+    let raw = packfile
+        .resolve(obj)
+        .expect("should be able to resolve deltified object");
+
+    assert_eq!(raw.r#type, ObjectType::Blob);
+    assert_eq!(raw.bytes.len(), 78000);
+    assert_eq!(
+        raw.hash().expect("should be able to hash raw object"),
+        hash
+    );
+}
+
+

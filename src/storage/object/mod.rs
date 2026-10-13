@@ -1,5 +1,7 @@
 mod lazy;
+
 pub mod loose;
+pub mod packed;
 mod raw;
 
 pub use lazy::LazyObject;

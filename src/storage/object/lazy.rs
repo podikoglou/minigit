@@ -2,6 +2,7 @@ use std::{
     fs,
     io::{BufReader, Read},
     path::PathBuf,
+    rc::Rc,
 };
 
 use crate::{
@@ -9,7 +10,7 @@ use crate::{
     error::ParserContext,
     object::{Object, hash::ObjectHash, parse_header},
     parsing::Stream,
-    storage::object::{RawObject, loose},
+    storage::object::{RawObject, loose, packed::Packfile},
 };
 
 use flate2::bufread::ZlibDecoder;
@@ -25,6 +26,7 @@ use winnow::{
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum LazyObject {
     Loose(PathBuf),
+    Packed(Rc<Packfile>, usize),
 }
 
 impl LazyObject {
@@ -67,6 +69,11 @@ impl LazyObject {
 
                 Ok(RawObject::new(r#type, object_bytes))
             }
+            Self::Packed(packfile, offset) => {
+                let packed_obj = packfile.read_object_at_offset(*offset)?;
+
+                packfile.resolve(packed_obj)
+            }
         }
     }
 
@@ -76,6 +83,7 @@ impl LazyObject {
 
         let context = match self {
             LazyObject::Loose(path) => ParserContext::File(path.to_owned()),
+            LazyObject::Packed(packfile, _) => ParserContext::File(packfile.path().to_owned()),
         };
 
         raw.into_object(context)
@@ -84,6 +92,11 @@ impl LazyObject {
     pub fn hash(&self) -> Result<ObjectHash, MinigitError> {
         match self {
             Self::Loose(path) => path.try_into(),
+            Self::Packed(packfile, offset) => {
+                let raw = self.into_raw()?;
+
+                raw.hash()
+            }
         }
     }
 }

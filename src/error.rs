@@ -36,6 +36,9 @@ pub enum MinigitError {
     #[error("Error parsing {1:?}: {0}")]
     ParserError(String, ParserContext),
 
+    #[error("Invalid pack index")]
+    InvalidPackIndex,
+
     #[error("Hex decoding error: {0}")]
     HexDecodingError(#[from] FromHexError),
 }

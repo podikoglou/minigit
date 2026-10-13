@@ -1,14 +1,19 @@
 use std::{
     fs::{self},
     path::PathBuf,
+    rc::Rc,
 };
 
 use itertools::Itertools;
 
 use crate::{
     MinigitError,
-    object::hash::HashPrefix,
-    storage::object::{LazyObject, ObjectsBucket},
+    error::ParserContext,
+    object::{
+        Object,
+        hash::{HashPrefix, ObjectHash},
+    },
+    storage::object::{LazyObject, ObjectsBucket, packed::Packfile},
 };
 
 pub mod object;
@@ -35,6 +40,11 @@ impl Store {
         self.path.join("objects/")
     }
 
+    #[must_use]
+    pub fn packs_path(&self) -> PathBuf {
+        self.objects_path().join("pack/")
+    }
+
     /// Returns all buckets (directories named after the prefix of a hash) under `.git/objects/`.
     ///
     /// At most 256 of them exist, so they are collected eagerly.
@@ -58,15 +68,77 @@ impl Store {
             .ok_or(MinigitError::BucketNotFound)
     }
 
+    /// Gets all the [Packfile]s in the store.
+    pub fn packs(&self) -> Result<Vec<Rc<Packfile>>, MinigitError> {
+        let pack_dir = self.packs_path();
+
+        if !pack_dir.exists() {
+            return Ok(Vec::new());
+        }
+
+        let mut packs = Vec::new();
+
+        for entry in fs::read_dir(pack_dir)? {
+            let path = entry?.path();
+
+            let Some(file_name) = path.file_name().and_then(|name| name.to_str()) else {
+                continue;
+            };
+
+            if !file_name.starts_with("pack-") {
+                continue;
+            }
+
+            if path.extension().and_then(|ext| ext.to_str()) == Some("pack") {
+                let idx_path = path.with_extension("idx");
+
+                let idx = if idx_path.exists() {
+                    Some(idx_path)
+                } else {
+                    None
+                };
+
+                packs.push(Rc::new(Packfile::open(path, idx)?));
+            }
+        }
+
+        Ok(packs)
+    }
+
     pub fn objects(
         &self,
     ) -> Result<impl Iterator<Item = Result<LazyObject, MinigitError>>, MinigitError> {
+        let packs = self.packs()?;
+
+        let objects = packs.into_iter().flat_map(Packfile::lazy_objects).map(Ok);
+
         Ok(self
             .buckets()?
             .into_iter()
             .map(ObjectsBucket::objects)
             .flatten_ok()
-            .map(Result::flatten))
+            .map(Result::flatten)
+            .chain(objects))
+    }
+
+    /// Gets a [LazyObject] by its [ObjectHash].
+    pub fn object(&self, hash: ObjectHash) -> Result<Object, MinigitError> {
+        // search in packfiles
+        for pack in self.packs()? {
+            if let Ok(packed) = pack.read_object_by_id(hash.clone()) {
+                return pack
+                    .resolve(packed)
+                    .and_then(|obj| obj.into_object(ParserContext::File(pack.path().to_owned())));
+            }
+        }
+
+        // search in loose objects
+        let path = self
+            .objects_path()
+            .join(hash.prefix().to_string())
+            .join(&hash.to_string()[2..]); // <-- TODO: this could be a function of `ObjectHash`
+
+        LazyObject::loose(path).into_object()
     }
 
     // /// Writes an object to the database.

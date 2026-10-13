@@ -1,11 +1,14 @@
+use std::io::Write;
+
+use sha1::{Digest, Sha1};
 use winnow::Parser;
 
 use crate::{
     MinigitError,
     error::ParserContext,
     object::{
-        Object, ObjectType, blob::parse_blob, commit::parse_commit, tag::parse_tag,
-        tree::parse_tree,
+        Object, ObjectType, blob::parse_blob, commit::parse_commit, hash::ObjectHash,
+        tag::parse_tag, tree::parse_tree,
     },
     parsing::Stream,
 };
@@ -42,5 +45,26 @@ impl RawObject {
         }
         // TODO: we are losing context here
         .map_err(|err| MinigitError::ParserError(err.to_string(), context))
+    }
+
+    /// Computes the hash of the object.
+    pub fn hash(&self) -> Result<ObjectHash, MinigitError> {
+        let mut buf = Vec::new();
+
+        write!(
+            buf,
+            "{} {}\0",
+            match self.r#type {
+                ObjectType::Blob => "blob",
+                ObjectType::Tree => "tree",
+                ObjectType::Commit => "commit",
+                ObjectType::Tag => "tag",
+            },
+            self.bytes.len()
+        )?;
+
+        buf.write_all(&self.bytes)?;
+
+        Ok(Sha1::digest(buf).into())
     }
 }

@@ -1,8 +1,15 @@
-use std::fs::File;
+use std::{
+    fs::File,
+    path::{Path, PathBuf},
+};
 
 use argh::FromArgs;
 use memmap2::Mmap;
-use minigit::{MinigitError, parsing::Stream, storage::object::packed};
+use minigit::{
+    MinigitError,
+    parsing::Stream,
+    storage::object::packed::{self, Packfile},
+};
 
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "parse-pack")]
@@ -16,20 +23,18 @@ impl ParsePackCommand {
     pub fn run(self) -> Result<(), MinigitError> {
         let Self { file } = self;
 
-        let file = File::open(file)?;
+        let pack_path = PathBuf::from(file);
 
-        let mmap = unsafe { Mmap::map(&file) }?;
-        let slice = &mmap[..];
-        let mut stream = Stream::new(slice);
+        let idx_path = pack_path.with_extension("idx");
+        let idx_path = if idx_path.exists() {
+            Some(idx_path)
+        } else {
+            None
+        };
 
-        packed::header(&mut stream).unwrap();
+        let pack = Packfile::open(pack_path, idx_path)?;
 
-        loop {
-            let object = match packed::object(&mut stream) {
-                Ok(v) => v,
-                Err(_) => break,
-            };
-
+        for object in pack.objects() {
             println!("{object:#?}");
         }
 

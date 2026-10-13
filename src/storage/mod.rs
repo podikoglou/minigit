@@ -8,7 +8,11 @@ use itertools::Itertools;
 
 use crate::{
     MinigitError,
-    object::hash::HashPrefix,
+    error::ParserContext,
+    object::{
+        Object,
+        hash::{HashPrefix, ObjectHash},
+    },
     storage::object::{LazyObject, ObjectsBucket, packed::Packfile},
 };
 
@@ -106,10 +110,7 @@ impl Store {
     ) -> Result<impl Iterator<Item = Result<LazyObject, MinigitError>>, MinigitError> {
         let packs = self.packs()?;
 
-        let objects = packs
-            .into_iter()
-            .flat_map(Packfile::lazy_objects)
-            .map(Ok);
+        let objects = packs.into_iter().flat_map(Packfile::lazy_objects).map(Ok);
 
         Ok(self
             .buckets()?
@@ -118,6 +119,26 @@ impl Store {
             .flatten_ok()
             .map(Result::flatten)
             .chain(objects))
+    }
+
+    /// Gets a [LazyObject] by its [ObjectHash].
+    pub fn object(&self, hash: ObjectHash) -> Result<Object, MinigitError> {
+        // search in packfiles
+        for pack in self.packs()? {
+            if let Ok(packed) = pack.read_object_by_id(hash.clone()) {
+                return pack
+                    .resolve(packed)
+                    .and_then(|obj| obj.into_object(ParserContext::File(pack.path().to_owned())));
+            }
+        }
+
+        // search in loose objects
+        let path = self
+            .objects_path()
+            .join(hash.prefix().to_string())
+            .join(&hash.to_string()[2..]); // <-- TODO: this could be a function of `ObjectHash`
+
+        LazyObject::loose(path).into_object()
     }
 
     // /// Writes an object to the database.

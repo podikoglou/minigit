@@ -1,3 +1,6 @@
+use std::io::Write;
+
+use sha1::{Digest, Sha1};
 use winnow::Parser;
 
 use crate::{
@@ -44,10 +47,24 @@ impl RawObject {
         .map_err(|err| MinigitError::ParserError(err.to_string(), context))
     }
 
+    /// Computes the hash of the object.
     pub fn hash(&self) -> Result<ObjectHash, MinigitError> {
-        // TODO: this is inefficient, it rewrites parts it doesn't need to
-        let obj = self.into_object()?;
+        let mut buf = Vec::new();
 
-        obj.hash()
+        write!(
+            buf,
+            "{} {}\0",
+            match self.r#type {
+                ObjectType::Blob => "blob",
+                ObjectType::Tree => "tree",
+                ObjectType::Commit => "commit",
+                ObjectType::Tag => "tag",
+            },
+            self.bytes.len()
+        )?;
+
+        buf.write_all(&self.bytes)?;
+
+        Ok(Sha1::digest(buf).into())
     }
 }

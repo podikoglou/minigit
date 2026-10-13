@@ -103,11 +103,13 @@ mod tests {
     #[test]
     fn mode_parses_valid_modes() {
         assert_eq!(
-            mode.parse_peek(Stream::new(b"000000")).map(|(r, v)| (*r, v)),
+            mode.parse_peek(Stream::new(b"000000"))
+                .map(|(r, v)| (*r, v)),
             Ok((&b""[..], 0))
         );
         assert_eq!(
-            mode.parse_peek(Stream::new(b"100644")).map(|(r, v)| (*r, v)),
+            mode.parse_peek(Stream::new(b"100644"))
+                .map(|(r, v)| (*r, v)),
             Ok((&b""[..], 0o100644))
         );
     }
@@ -162,11 +164,13 @@ mod tests {
 
     #[test]
     fn extra_property_rejects_empty_line() {
-        assert_matches!(extra_property.parse_peek(Stream::new(b"\n")), Err(ErrMode::Backtrack(_)));
+        assert_matches!(
+            extra_property.parse_peek(Stream::new(b"\n")),
+            Err(ErrMode::Backtrack(_))
+        );
         assert_matches!(
             extra_property.parse_peek(Stream::new(b"\ncommit message\n")),
             Err(ErrMode::Backtrack(_))
         );
     }
 }
-

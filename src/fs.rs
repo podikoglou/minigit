@@ -1,6 +1,8 @@
 //! This module contains items that deal with file names.
 
-use crate::{MinigitError, error::ParserContext, parsing::Stream, storage::object::loose::WriteLoose};
+use crate::{
+    MinigitError, error::ParserContext, parsing::Stream, storage::object::loose::WriteLoose,
+};
 use std::{fmt::Display, path::PathBuf, str::FromStr};
 use winnow::{ModalResult, Parser, combinator::terminated, token::take_until};
 

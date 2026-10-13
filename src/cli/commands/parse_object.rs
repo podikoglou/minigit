@@ -5,8 +5,8 @@ use std::{
 };
 
 use argh::FromArgs;
-use minigit::{MinigitError, storage::object::loose::read_object_compressed};
 use minigit::error::ParserContext;
+use minigit::{MinigitError, storage::object::loose::read_object_compressed};
 
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "parse-object")]

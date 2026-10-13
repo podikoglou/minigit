@@ -113,12 +113,30 @@ mod tests {
 
     #[test]
     fn identity_rejects_invalid_input() {
-        assert_matches!(parse_identity.parse_peek(Stream::new(b"<john@doe.com>")), Err(_));
-        assert_matches!(parse_identity.parse_peek(Stream::new(b"j<john@doe.com>")), Err(_));
-        assert_matches!(parse_identity.parse_peek(Stream::new(b"<john@doe.com")), Err(_));
-        assert_matches!(parse_identity.parse_peek(Stream::new(b"john@doe.com>")), Err(_));
-        assert_matches!(parse_identity.parse_peek(Stream::new(b"john@doe.com")), Err(_));
+        assert_matches!(
+            parse_identity.parse_peek(Stream::new(b"<john@doe.com>")),
+            Err(_)
+        );
+        assert_matches!(
+            parse_identity.parse_peek(Stream::new(b"j<john@doe.com>")),
+            Err(_)
+        );
+        assert_matches!(
+            parse_identity.parse_peek(Stream::new(b"<john@doe.com")),
+            Err(_)
+        );
+        assert_matches!(
+            parse_identity.parse_peek(Stream::new(b"john@doe.com>")),
+            Err(_)
+        );
+        assert_matches!(
+            parse_identity.parse_peek(Stream::new(b"john@doe.com")),
+            Err(_)
+        );
         // TODO: should this validate emails?
-        assert_matches!(parse_identity.parse_peek(Stream::new(b"johndoe.com")), Err(_));
+        assert_matches!(
+            parse_identity.parse_peek(Stream::new(b"johndoe.com")),
+            Err(_)
+        );
     }
 }

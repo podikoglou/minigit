@@ -499,10 +499,7 @@ fn resolve_deltified_object_copy_size_zero() {
 
     assert_eq!(raw.r#type, ObjectType::Blob);
     assert_eq!(raw.bytes.len(), 78000);
-    assert_eq!(
-        raw.hash().expect("should be able to hash raw object"),
-        hash
-    );
+    assert_eq!(raw.hash().expect("should be able to hash raw object"), hash);
 }
 
 #[test]
@@ -536,10 +533,5 @@ fn resolve_deltified_object_by_id_copy_size_zero() {
 
     assert_eq!(raw.r#type, ObjectType::Blob);
     assert_eq!(raw.bytes.len(), 78000);
-    assert_eq!(
-        raw.hash().expect("should be able to hash raw object"),
-        hash
-    );
+    assert_eq!(raw.hash().expect("should be able to hash raw object"), hash);
 }
-
-

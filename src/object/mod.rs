@@ -256,7 +256,13 @@ mod test {
             parse_header.parse_peek(Stream::new(b"tree\0")),
             Err(ErrMode::Backtrack(_))
         );
-        assert_matches!(parse_header.parse_peek(Stream::new(b"3")), Err(ErrMode::Backtrack(_)));
-        assert_matches!(parse_header.parse_peek(Stream::new(b"3\0")), Err(ErrMode::Backtrack(_)));
+        assert_matches!(
+            parse_header.parse_peek(Stream::new(b"3")),
+            Err(ErrMode::Backtrack(_))
+        );
+        assert_matches!(
+            parse_header.parse_peek(Stream::new(b"3\0")),
+            Err(ErrMode::Backtrack(_))
+        );
     }
 }

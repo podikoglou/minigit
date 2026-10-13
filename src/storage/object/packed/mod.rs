@@ -86,6 +86,7 @@ impl Packfile {
 
     /// Returns an iterator over the objects of the packfile as [LazyObject]s.
     pub fn lazy_objects(self: Rc<Self>) -> impl Iterator<Item = LazyObject> {
+        // TODO: indexless support!
         let count = self.idx.as_ref().map_or(0, |idx| idx.len());
 
         (0..count).map(move |i| {

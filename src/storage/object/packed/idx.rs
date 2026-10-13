@@ -1,8 +1,11 @@
 //! This module deals with the packfile index format.
 
-use std::{fs::File, path::PathBuf};
+use std::{
+    fs::{self, File},
+    io::BufReader,
+    path::PathBuf,
+};
 
-use memmap2::Mmap;
 use winnow::{
     ModalResult, Parser,
     binary::{be_u32, be_u64},
@@ -21,7 +24,6 @@ use crate::{
 #[derive(Debug)]
 pub struct PackIndex {
     pub path: PathBuf,
-    pub mmap: Mmap,
 
     pub objects_count: usize,
     pub fanout_table: Vec<u32>,
@@ -42,10 +44,8 @@ impl PartialEq for PackIndex {
 impl PackIndex {
     /// Creates an index of [PackIndex], memory mapping the file and reading its header.
     pub fn open(path: PathBuf) -> Result<Self, MinigitError> {
-        let file = File::open(&path)?;
-        let mmap = unsafe { Mmap::map(&file) }?;
-
-        let mut stream = Stream::new(&mmap[..]);
+        let contents = fs::read(&path)?;
+        let mut stream = Stream::new(&contents[..]);
 
         // read idx header
         //
@@ -103,7 +103,6 @@ impl PackIndex {
 
         Ok(Self {
             path,
-            mmap,
             objects_count,
             fanout_table,
             object_names,

@@ -83,6 +83,7 @@ impl LazyObject {
 
         let context = match self {
             LazyObject::Loose(path) => ParserContext::File(path.to_owned()),
+            LazyObject::Packed(packfile, _) => ParserContext::File(packfile.path().to_owned()),
         };
 
         raw.into_object(context)

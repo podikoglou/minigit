@@ -35,8 +35,8 @@ impl RawObject {
         let mut stream = Stream::new(&self.bytes);
 
         match self.r#type {
-            ObjectType::Blob => parse_blob.map(Object::Blob).parse_next(&mut stream),
-            ObjectType::Tree => parse_tree.map(Object::Tree).parse_next(&mut stream),
+            ObjectType::Blob => parse_blob.map(Object::from).parse_next(&mut stream),
+            ObjectType::Tree => parse_tree.map(Object::from).parse_next(&mut stream),
             ObjectType::Commit => parse_commit.map(Object::from).parse_next(&mut stream),
             ObjectType::Tag => parse_tag.map(Object::from).parse_next(&mut stream),
         }

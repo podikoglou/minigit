@@ -4,13 +4,13 @@ use std::fs::File;
 use memmap2::Mmap;
 use minigit::{
     Repo,
-    object::{Object, ObjectType, hash::ObjectHash},
+    object::{ObjectType, hash::ObjectHash},
     parsing::Stream,
     storage::object::{
         RawObject,
         packed::{
             self, BaseObject, CopyInstruction, Delta, Instruction,
-            PackedObject::{self, Undeltified},
+            PackedObject::{self},
             Packfile,
             idx::PackIndex,
         },

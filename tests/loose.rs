@@ -425,7 +425,6 @@ mod roundtrip {
     mod generators {
         use crate::roundtrip::generators;
 
-        use bstr::BString;
         use hegel::Generator;
         use hegel::TestCase;
         use hegel::extras::chrono::datetimes;

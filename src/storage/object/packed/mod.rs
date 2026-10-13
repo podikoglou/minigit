@@ -142,9 +142,8 @@ impl Packfile {
 
                 let base_raw = self.resolve(base_packed)?;
 
-                // TODO: figure out how big it should be (can figure that out by statically looking
-                // at the instructions. perhaps there's a better way?)
-                let mut new_bytes: Vec<u8> = Vec::new();
+                let mut new_bytes: Vec<u8> =
+                    Vec::with_capacity(delta.deltified_object_size as usize);
 
                 for instruction in delta.instructions {
                     let mut new_data = match instruction {
@@ -455,7 +454,7 @@ fn delta(input: &mut Stream<'_>) -> ModalResult<Delta> {
         .parse_next(input)?;
 
     let deltified_object_size = size
-        .context(StrContext::Label("base object size"))
+        .context(StrContext::Label("deltified object size"))
         .parse_next(input)?;
 
     let instructions = repeat(0.., instruction).parse_next(input)?;

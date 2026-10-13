@@ -13,6 +13,7 @@
 - `repo-4`: Repo with 4 commits, and a tag
 - `repo-5`: Repo with 2 commits, with the objects related to the first packed, and the others not
 - `repo-6`: Repo based on repo-5, with 4 commits, packed with `git gc` so that it contains delta-compressed objects
+- `repo-7`: Repo with 2 commits of a file >64KB, packed with `git gc` so that it contains a delta-compressed object copying 64KB (size 0 in copy instruction header)
 
 ### Creating a repository fixture
 - Create a repository somewhere, initialize it as you like

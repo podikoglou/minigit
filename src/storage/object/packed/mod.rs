@@ -537,6 +537,7 @@ fn copy_instruction(input: &mut Stream<'_>) -> ModalResult<CopyInstruction> {
 
     let offset = offset_1 | (offset_2 << 8) | (offset_3 << 16) | (offset_4 << 24);
     let size = size_1 | (size_2 << 8) | (size_3 << 16);
+    let size = if size == 0 { 0x10000 } else { size };
 
     Ok(CopyInstruction { offset, size })
 }

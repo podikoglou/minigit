@@ -93,9 +93,6 @@ impl LazyObject {
         match self {
             Self::Loose(path) => path.try_into(),
             Self::Packed(packfile, offset) => {
-                // TODO: this is likely not the most efficient way to do this, surely we can
-                // leverage the index
-
                 let raw = self.into_raw()?;
 
                 raw.hash()

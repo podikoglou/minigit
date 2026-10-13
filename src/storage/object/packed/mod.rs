@@ -59,7 +59,7 @@ impl Packfile {
 
         // read packfile header
         let pack_header = header.parse(Stream::new(&pack.1[..12])).map_err(|err| {
-            MinigitError::ParserError(err.to_string(), ParserContext::File(pack.0.clone()))
+            MinigitError::ParserError(err.to_string(), ParserContext::File(pack.0.to_owned()))
         })?;
 
         // if present, open idx
@@ -102,14 +102,15 @@ impl Packfile {
         take(offset)
             .parse_next(&mut stream)
             .map_err(|err: ErrMode<ContextError>| {
-                MinigitError::ParserError(err.to_string(), ParserContext::File(self.pack.0.clone()))
+                MinigitError::ParserError(
+                    err.to_string(),
+                    ParserContext::File(self.path().to_owned()),
+                )
             })?;
 
-        object
-            .parse_next(&mut stream)
-            .map_err(|err| {
-                MinigitError::ParserError(err.to_string(), ParserContext::File(self.pack.0.clone()))
-            })
+        object.parse_next(&mut stream).map_err(|err| {
+            MinigitError::ParserError(err.to_string(), ParserContext::File(self.path().to_owned()))
+        })
     }
 
     /// Reads an object by its ID ([ObjectHash]) from the packfile and returns it.
@@ -162,11 +163,16 @@ impl Packfile {
             PackedObject::Undeltified(_, object) => Ok(object),
         }
     }
+
+    /// Returns the path of the packfile.
+    pub fn path(&self) -> &PathBuf {
+        &self.pack.0
+    }
 }
 
 impl PartialEq for Packfile {
     fn eq(&self, other: &Self) -> bool {
-        self.pack.0 == other.pack.0
+        self.path() == other.path()
             && self.idx == other.idx
             && self.objects_count == other.objects_count
     }

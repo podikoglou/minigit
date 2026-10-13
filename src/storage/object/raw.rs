@@ -31,7 +31,7 @@ impl RawObject {
     }
 
     /// Parses the object bytes.
-    pub fn into_object(&self) -> Result<Object, MinigitError> {
+    pub fn into_object(&self, context: ParserContext) -> Result<Object, MinigitError> {
         let mut stream = Stream::new(&self.bytes);
 
         match self.r#type {
@@ -41,6 +41,6 @@ impl RawObject {
             ObjectType::Tag => parse_tag.map(Object::from).parse_next(&mut stream),
         }
         // TODO: we are losing context here
-        .map_err(|err| MinigitError::ParserError(err.to_string(), ParserContext::None))
+        .map_err(|err| MinigitError::ParserError(err.to_string(), context))
     }
 }

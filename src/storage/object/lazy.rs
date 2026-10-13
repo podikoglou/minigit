@@ -74,7 +74,11 @@ impl LazyObject {
     pub fn into_object(&self) -> Result<Object, MinigitError> {
         let raw = self.into_raw()?;
 
-        raw.into_object()
+        let context = match self {
+            LazyObject::Loose(path) => ParserContext::File(path.to_owned()),
+        };
+
+        raw.into_object(context)
     }
 
     pub fn hash(&self) -> Result<ObjectHash, MinigitError> {

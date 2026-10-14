@@ -183,3 +183,78 @@ fn commits_match() {
             .expect("foreach should work");
     }
 }
+
+#[test]
+fn trees_match() {
+    for repo_dir in REPOS_DIR.files() {
+        let (minigit_repo, _dir) = unpack_repo(repo_dir.contents());
+        let (oracle_repo, _dir) = unpack_git2_repo(repo_dir.contents());
+
+        let oracle_odb = oracle_repo.odb().expect("should be able to open odb");
+        let minigit_store = minigit_repo.store;
+
+        oracle_odb
+            .foreach(|oid| {
+                let oid = oid.to_owned();
+
+                // minigit object
+                let hash = oid_to_hash(&oid);
+
+                let minigit_raw_obj = minigit_store
+                    .raw_object(hash)
+                    .expect("minigit should load the object");
+
+                let minigit_obj = minigit_raw_obj
+                    .into_object(ParserContext::None)
+                    .expect("should be able to parse the bject");
+
+                let Object::Tree(minigit_tree) = minigit_obj else {
+                    return true;
+                };
+
+                // oracle object
+                let oracle_odb_obj = oracle_odb
+                    .read(oid)
+                    .expect("libgit2 should load the object");
+
+                let oracle_obj = oracle_repo
+                    .find_object(oid, Some(oracle_odb_obj.kind()))
+                    .expect("libgit2 should be able to find the object");
+
+                let Some(oracle_tree) = oracle_obj.as_tree() else {
+                    return true;
+                };
+
+                assert_eq!(
+                    minigit_tree.entries.len(),
+                    oracle_tree.len(),
+                    "tree lengths match"
+                );
+
+                for (oracle_entry, minigit_entry) in
+                    oracle_tree.iter().zip(minigit_tree.entries.iter())
+                {
+                    assert_eq!(
+                        minigit_entry.0.as_str(),
+                        oracle_entry.name().unwrap(),
+                        "file names match"
+                    );
+
+                    assert_eq!(
+                        minigit_entry.1.mode as i32,
+                        oracle_entry.filemode(),
+                        "filemode mathces"
+                    );
+
+                    assert_eq!(
+                        minigit_entry.1.object,
+                        oid_to_hash(&oracle_entry.id()),
+                        "entry object hashes match"
+                    );
+                }
+
+                true
+            })
+            .expect("foreach should work");
+    }
+}

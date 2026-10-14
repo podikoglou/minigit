@@ -12,6 +12,7 @@ use crate::{
         tag::parse_tag, tree::parse_tree,
     },
     parsing::Stream,
+    storage::object::loose::WriteLoose,
 };
 
 /// An object that has not been parsed yet.
@@ -50,10 +51,18 @@ impl RawObject {
 
     /// Computes the hash of the object.
     pub fn hash(&self) -> Result<ObjectHash, MinigitError> {
-        let mut buf = Vec::new();
+        let mut buf = Vec::new(); // TODO: capacity
 
+        self.write_loose(&mut buf)?;
+
+        Ok(Sha1::digest(buf).into())
+    }
+}
+
+impl WriteLoose for RawObject {
+    fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
         write!(
-            buf,
+            writer,
             "{} {}\0",
             match self.r#type {
                 ObjectType::Blob => "blob",
@@ -64,9 +73,9 @@ impl RawObject {
             self.bytes.len()
         )?;
 
-        buf.write_all(&self.bytes)?;
+        writer.write_all(&self.bytes)?;
 
-        Ok(Sha1::digest(buf).into())
+        Ok(())
     }
 }
 

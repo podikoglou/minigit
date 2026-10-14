@@ -180,17 +180,15 @@ mod tests {
 
         commit.write_loose(&mut buf).unwrap();
 
-        assert_eq!(
-            String::from_utf8(buf).unwrap(),
-            r#"tree 0000000000000000000000000000000000000000
-parent 0000000000000000000000000000000000000000
-parent 0000000000000000000000000000000000000000
-author alex <alex.podikoglou@gmail.com> 0 +0000
-committer alex <alex.podikoglou@gmail.com> 0 +0000
+        insta::assert_snapshot!(String::from_utf8(buf).unwrap(), @r#"
+        tree 0000000000000000000000000000000000000000
+        parent 0000000000000000000000000000000000000000
+        parent 0000000000000000000000000000000000000000
+        author alex <alex.podikoglou@gmail.com> 0 +0000
+        committer alex <alex.podikoglou@gmail.com> 0 +0000
 
-test commit
-some more text maybe
-"#
-        );
+        test commit
+        some more text maybe
+        "#);
     }
 }

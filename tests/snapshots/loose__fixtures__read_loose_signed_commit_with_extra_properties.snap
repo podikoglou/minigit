@@ -1,0 +1,49 @@
+---
+source: tests/loose.rs
+expression: object
+---
+Commit(
+    Commit {
+        tree: ea00c1817f48a071f0ce201cd12eee8713b73e08,
+        parents: [
+            e6e58f91d29e4660bcdf09a2bb901a5abe261573,
+        ],
+        author: (
+            Identity {
+                name: Name(
+                    "Marc Jakobi",
+                ),
+                email: Email(
+                    "marc.jakobi@tiko.energy",
+                ),
+            },
+            Timestamp(
+                2025-08-18T18:36:02+02:00,
+            ),
+        ),
+        committer: (
+            Identity {
+                name: Name(
+                    "Marc Jakobi",
+                ),
+                email: Email(
+                    "marc.jakobi@tiko.energy",
+                ),
+            },
+            Timestamp(
+                2025-08-18T18:40:13+02:00,
+            ),
+        ),
+        extra: [
+            (
+                "change-id",
+                "ltllyyqoltutvomyxlpvwuoqyrulnqsk",
+            ),
+            (
+                "gpgsig",
+                "-----BEGIN PGP SIGNATURE-----\n\niHUEABYKAB0WIQSqZBv8LWPkpwq7yJ6mJwKyJtsKIgUCaKNXbQAKCRCmJwKyJtsK\nIkh/AP0QtdF+4X9AF8VRHGRApDJDLvGVeUrvnvcpGH3NCjVz7AD/b2yDvWxPLlut\nwFxNfprJxFErMEH4G//z59GgDU8kMgs=\n=oj+d\n-----END PGP SIGNATURE-----",
+            ),
+        ],
+        description: "feat: lazy-load indexing\n",
+    },
+)

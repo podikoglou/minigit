@@ -1,0 +1,41 @@
+---
+source: tests/loose.rs
+expression: object
+---
+Commit(
+    Commit {
+        tree: 5efa09ed89088363d6b1ea1d3c76bad1eeccc5b8,
+        parents: [
+            5ea6f2c33f0c8b126136dbf1776ffbc444772cd7,
+            c16ef1ceedff27c1b452724ca7f89b729651098f,
+        ],
+        author: (
+            Identity {
+                name: Name(
+                    "",
+                ),
+                email: Email(
+                    "jgarzik@pretzel.yyz.us",
+                ),
+            },
+            Timestamp(
+                2005-05-25T22:10:53-04:00,
+            ),
+        ),
+        committer: (
+            Identity {
+                name: Name(
+                    "Jeff Garzik",
+                ),
+                email: Email(
+                    "jgarzik@pobox.com",
+                ),
+            },
+            Timestamp(
+                2005-05-25T22:10:53-04:00,
+            ),
+        ),
+        extra: [],
+        description: "Automatic merge of /spare/repo/netdev-2.6 branch ns83820\n",
+    },
+)

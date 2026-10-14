@@ -1,0 +1,16 @@
+---
+source: tests/loose.rs
+expression: object
+---
+Tree(
+    Tree {
+        entries: {
+            FileName(
+                "README.md",
+            ): TreeEntry {
+                mode: 33188,
+                object: be27a74ddcc0445b1710e25dd8df96fad679a10d,
+            },
+        },
+    },
+)

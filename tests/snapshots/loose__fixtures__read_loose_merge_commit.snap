@@ -1,0 +1,41 @@
+---
+source: tests/loose.rs
+expression: object
+---
+Commit(
+    Commit {
+        tree: 45bf6921d3d209c3ca2623277bc41868908c6831,
+        parents: [
+            a3dbc49f01da99433914156f54c847c162256cc0,
+            3e66aa515edae750fc16edabea2291a458069db0,
+        ],
+        author: (
+            Identity {
+                name: Name(
+                    "alex",
+                ),
+                email: Email(
+                    "alex.podikoglou@gmail.com",
+                ),
+            },
+            Timestamp(
+                2026-09-14T15:48:21+03:00,
+            ),
+        ),
+        committer: (
+            Identity {
+                name: Name(
+                    "alex",
+                ),
+                email: Email(
+                    "alex.podikoglou@gmail.com",
+                ),
+            },
+            Timestamp(
+                2026-09-14T15:48:21+03:00,
+            ),
+        ),
+        extra: [],
+        description: "Merge branch \'feature\'\n",
+    },
+)

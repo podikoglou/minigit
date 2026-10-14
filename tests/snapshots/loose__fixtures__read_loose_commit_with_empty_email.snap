@@ -1,0 +1,40 @@
+---
+source: tests/loose.rs
+expression: object
+---
+Commit(
+    Commit {
+        tree: bf2c4695aac832581edbce6bf3e303db98181a71,
+        parents: [
+            09e2d957342607904124ebab892be70b0ecf9a10,
+        ],
+        author: (
+            Identity {
+                name: Name(
+                    "Virgiel",
+                ),
+                email: Email(
+                    "",
+                ),
+            },
+            Timestamp(
+                2023-07-25T18:35:35+02:00,
+            ),
+        ),
+        committer: (
+            Identity {
+                name: Name(
+                    "Virgiel",
+                ),
+                email: Email(
+                    "Virgiel@users.noreply.github.com",
+                ),
+            },
+            Timestamp(
+                2023-07-26T08:40:42+02:00,
+            ),
+        ),
+        extra: [],
+        description: "duckdb_interrupt & duckdb_query_progress\n",
+    },
+)

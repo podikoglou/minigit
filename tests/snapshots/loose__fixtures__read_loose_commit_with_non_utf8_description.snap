@@ -1,0 +1,40 @@
+---
+source: tests/loose.rs
+expression: object
+---
+Commit(
+    Commit {
+        tree: 921f686860e918a01c3d3fb6cd106ba82bf4ace6,
+        parents: [
+            264166e604a7e14c278e31cadd1afb06a7d51a11,
+        ],
+        author: (
+            Identity {
+                name: Name(
+                    "Rafa\xb3 Bilski",
+                ),
+                email: Email(
+                    "rafalbilski@interia.pl",
+                ),
+            },
+            Timestamp(
+                2007-01-01T23:49:34+01:00,
+            ),
+        ),
+        committer: (
+            Identity {
+                name: Name(
+                    "Dave Jones",
+                ),
+                email: Email(
+                    "davej@redhat.com",
+                ),
+            },
+            Timestamp(
+                2007-01-02T23:38:39-05:00,
+            ),
+        ),
+        extra: [],
+        description: "[CPUFREQ] Longhaul - Always guess FSB\n\nThis is patch that solves Ebox mini PC issue and make\nFSB code more specification compilant. At start guess_fsb\nfunction is guessing 200MHz FSB too. It is better to\nmake it in this way because, thanks to this function, driver\nwill fail for bogus FSB values caused by bogus multiplier\nvalue. For PowerSaver processors we can\'t depend on Max /\nMinMHzFSB because these values are only used for\nPowerSaver 2.0 and 3.0. Most processors on which Longhaul\nis used are PowerSaver 1.0 only. I\'m changing code for older\nCPU\'s too, but not so much as previously, and this code was\nalready used for Ezra. Using MinMHzBR for Ezra-T is outside\nspec. It is for voltage scaling purpose and don\'t have to\nbe equal to minmult (but it is). Same for Nehemiah (it\nisn\'t for sure). Added mult - current multiplier value.\n\nSigned-off-by: Rafa\xb3 Bilski <rafalbilski@interia.pl>\nSigned-off-by: Dave Jones <davej@redhat.com>\n",
+    },
+)

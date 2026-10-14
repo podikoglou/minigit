@@ -10,8 +10,6 @@ use minigit::{
 mod fixtures {
     use minigit::{
         error::ParserContext,
-        identity::{Email, Identity, Name},
-        object::{Object, ObjectType, tree::TreeEntry},
         storage::object::loose::read_object_compressed,
     };
 
@@ -21,15 +19,7 @@ mod fixtures {
         let object = read_object_compressed(&bytes[..], ParserContext::None)
             .expect("should be able to read loose blob object");
 
-        let Object::Blob(blob) = &object else {
-            panic!("expected Object::Blob, got {object:?}");
-        };
-
-        assert_eq!(blob.0.len(), 151);
-        assert_eq!(
-            object.hash().unwrap().to_string(),
-            "be27a74ddcc0445b1710e25dd8df96fad679a10d"
-        );
+        insta::assert_debug_snapshot!(object);
     }
 
     #[test]
@@ -38,21 +28,7 @@ mod fixtures {
         let object = read_object_compressed(&bytes[..], ParserContext::None)
             .expect("should be able to read loose tree object");
 
-        let Object::Tree(tree) = &object else {
-            panic!("expected Object::Tree, got {object:?}");
-        };
-
-        assert_eq!(tree.entries.len(), 1);
-        assert_eq!(
-            tree.entries.first_key_value(),
-            Some((
-                &"README.md\0".parse().unwrap(),
-                &TreeEntry::new(
-                    0o100644,
-                    "be27a74ddcc0445b1710e25dd8df96fad679a10d".parse().unwrap()
-                )
-            ))
-        );
+        insta::assert_debug_snapshot!(object);
     }
 
     #[test]
@@ -61,19 +37,7 @@ mod fixtures {
         let object = read_object_compressed(&bytes[..], ParserContext::None)
             .expect("should be able to read loose commit object");
 
-        let Object::Commit(commit) = &object else {
-            panic!("expected Object::Commit, got {object:?}");
-        };
-
-        assert_eq!(
-            commit.tree.to_string(),
-            "7bfeab1d89aa800dff6acaae16b3433e7df44fa6"
-        );
-        assert_eq!(commit.author.0.name.to_string(), "alex");
-        assert_eq!(commit.author.0.email, "alex.podikoglou@gmail.com");
-        assert_eq!(commit.committer.0.name.to_string(), "alex");
-        assert_eq!(commit.committer.0.email, "alex.podikoglou@gmail.com");
-        assert_eq!(commit.description, "add readme\n");
+        insta::assert_debug_snapshot!(object);
     }
 
     #[test]
@@ -82,23 +46,7 @@ mod fixtures {
         let object = read_object_compressed(&bytes[..], ParserContext::None)
             .expect("should be able to read loose commit object");
 
-        let Object::Commit(commit) = &object else {
-            panic!("expected Object::Commit, got {object:?}");
-        };
-
-        assert_eq!(
-            commit.tree.to_string(),
-            "f1596e78773e04b539660b10d75c02928ff38703"
-        );
-        assert_eq!(
-            commit.parents,
-            vec!["497b458b242ad074b046386ec56b9f19361b2691".parse().unwrap()]
-        );
-        assert_eq!(commit.author.0.name.to_string(), "alex");
-        assert_eq!(commit.author.0.email, "alex.podikoglou@gmail.com");
-        assert_eq!(commit.committer.0.name.to_string(), "alex");
-        assert_eq!(commit.committer.0.email, "alex.podikoglou@gmail.com");
-        assert_eq!(commit.description, "7133\n");
+        insta::assert_debug_snapshot!(object);
     }
 
     #[test]
@@ -107,26 +55,7 @@ mod fixtures {
         let object = read_object_compressed(&bytes[..], ParserContext::None)
             .expect("should be able to read loose commit object");
 
-        let Object::Commit(commit) = &object else {
-            panic!("expected Object::Commit, got {object:?}");
-        };
-
-        assert_eq!(
-            commit.tree.to_string(),
-            "45bf6921d3d209c3ca2623277bc41868908c6831"
-        );
-        assert_eq!(
-            commit.parents,
-            vec![
-                "a3dbc49f01da99433914156f54c847c162256cc0".parse().unwrap(),
-                "3e66aa515edae750fc16edabea2291a458069db0".parse().unwrap(),
-            ]
-        );
-        assert_eq!(commit.author.0.name.to_string(), "alex");
-        assert_eq!(commit.author.0.email, "alex.podikoglou@gmail.com");
-        assert_eq!(commit.committer.0.name.to_string(), "alex");
-        assert_eq!(commit.committer.0.email, "alex.podikoglou@gmail.com");
-        assert_eq!(commit.description, "Merge branch 'feature'\n");
+        insta::assert_debug_snapshot!(object);
     }
 
     #[test]
@@ -135,30 +64,7 @@ mod fixtures {
         let object = read_object_compressed(&bytes[..], ParserContext::None)
             .expect("should be able to read loose commit object");
 
-        let Object::Commit(commit) = &object else {
-            panic!("expected Object::Commit, got {object:?}");
-        };
-
-        assert_eq!(
-            commit.tree.to_string(),
-            "d6de8cca32ce6db2c44e2f16fac72ed5d7f6ec2a"
-        );
-        assert_eq!(
-            commit.parents,
-            vec![
-                "759c3dfd40f9d4833b86ca587f1789b4c10772e9".parse().unwrap(),
-                "33ba4daaf56cdd499f4cb8960eb0020db7619616".parse().unwrap(),
-            ]
-        );
-        assert_eq!(commit.author.0.name.to_string(), "Laurens Kuiper");
-        assert_eq!(commit.author.0.email, "laurens@ducklabs.com");
-        assert_eq!(commit.committer.0.name.to_string(), "GitHub");
-        assert_eq!(commit.committer.0.email, "noreply@github.com");
-        assert!(commit.gpg_signature().is_some());
-        assert_eq!(
-            commit.description,
-            "`COPY` with `ORDER_BY` without `PARTITION_BY` (#24525)\n\nI didn't get around to doing this, but it was surprisingly a very small\nchange.\n\nCC @Tmonster\n"
-        );
+        insta::assert_debug_snapshot!(object);
     }
 
     #[test]
@@ -167,33 +73,7 @@ mod fixtures {
         let object = read_object_compressed(&bytes[..], ParserContext::None)
             .expect("should be able to read loose commit object");
 
-        let Object::Commit(commit) = &object else {
-            panic!("expected Object::Commit, got {object:?}");
-        };
-
-        assert_eq!(
-            commit.tree.to_string(),
-            "512310236d7623ac3a86fc96c24b94280b44bb41"
-        );
-        assert_eq!(
-            commit.parents,
-            vec!["18b593788d6ebd548bcf55b18cc8f3e15d5fb4c3".parse().unwrap()]
-        );
-        assert_eq!(commit.author.0.name.to_string(), "Nicholas Junge");
-        assert_eq!(commit.author.0.email, "nicho.junge@gmail.com");
-        assert_eq!(commit.committer.0.name.to_string(), "Nicholas Junge");
-        assert_eq!(commit.committer.0.email, "nicho.junge@gmail.com");
-        assert_eq!(
-            commit.extra,
-            vec![(
-                "change-id".to_string(),
-                "xnxouqnvmpzvuvkotwynowookslovtno".to_string()
-            )]
-        );
-        assert_eq!(
-            commit.description,
-            "CMake: Set the extension base directory to the duckdb module dir\n\nDuckDB's extension-patch step hardcodes `${CMAKE_SOURCE_DIR}`, which only equals the\nsubmodule root in a standalone build. When DuckDB is pulled in via `add_subdirectory`,\nit resolves to the parent project's root, which causes the patch script and patch-dir\nlookups to happen in the wrong place.\n\nI ran into this because I'm vendoring duckDB as a submodule for a Python bindings project,\nand statically link extensions from the submodule checkout in the build process.\n"
-        );
+        insta::assert_debug_snapshot!(object);
     }
 
     #[test]
@@ -202,26 +82,7 @@ mod fixtures {
         let object = read_object_compressed(&bytes[..], ParserContext::None)
             .expect("should be able to read loose commit object");
 
-        let Object::Commit(commit) = &object else {
-            panic!("expected Object::Commit, got {object:?}");
-        };
-
-        assert_eq!(
-            commit.tree.to_string(),
-            "bf2c4695aac832581edbce6bf3e303db98181a71"
-        );
-        assert_eq!(
-            commit.parents,
-            vec!["09e2d957342607904124ebab892be70b0ecf9a10".parse().unwrap()]
-        );
-        assert_eq!(commit.author.0.name.to_string(), "Virgiel");
-        assert_eq!(commit.author.0.email, "");
-        assert_eq!(commit.committer.0.name.to_string(), "Virgiel");
-        assert_eq!(commit.committer.0.email, "Virgiel@users.noreply.github.com");
-        assert_eq!(
-            commit.description,
-            "duckdb_interrupt & duckdb_query_progress\n"
-        );
+        insta::assert_debug_snapshot!(object);
     }
 
     #[test]
@@ -230,34 +91,7 @@ mod fixtures {
         let object = read_object_compressed(&bytes[..], ParserContext::None)
             .expect("should be able to read loose commit object");
 
-        let Object::Commit(commit) = &object else {
-            panic!("expected Object::Commit, got {object:?}");
-        };
-
-        assert_eq!(
-            commit.tree.to_string(),
-            "ea00c1817f48a071f0ce201cd12eee8713b73e08"
-        );
-        assert_eq!(
-            commit.parents,
-            vec!["e6e58f91d29e4660bcdf09a2bb901a5abe261573".parse().unwrap()]
-        );
-        assert_eq!(commit.author.0.name.to_string(), "Marc Jakobi");
-        assert_eq!(commit.author.0.email, "marc.jakobi@tiko.energy");
-        assert_eq!(commit.committer.0.name.to_string(), "Marc Jakobi");
-        assert_eq!(commit.committer.0.email, "marc.jakobi@tiko.energy");
-        assert_eq!(
-            commit.extra,
-            vec![
-                (
-                    "change-id".to_string(),
-                    "ltllyyqoltutvomyxlpvwuoqyrulnqsk".to_string()
-                ),
-                ("gpgsig".to_string(), "-----BEGIN PGP SIGNATURE-----\n\niHUEABYKAB0WIQSqZBv8LWPkpwq7yJ6mJwKyJtsKIgUCaKNXbQAKCRCmJwKyJtsK\nIkh/AP0QtdF+4X9AF8VRHGRApDJDLvGVeUrvnvcpGH3NCjVz7AD/b2yDvWxPLlut\nwFxNfprJxFErMEH4G//z59GgDU8kMgs=\n=oj+d\n-----END PGP SIGNATURE-----".to_string()),
-            ]
-        );
-        assert!(commit.gpg_signature().is_some());
-        assert_eq!(commit.description, "feat: lazy-load indexing\n");
+        insta::assert_debug_snapshot!(object);
     }
 
     #[test]
@@ -266,20 +100,7 @@ mod fixtures {
         let object = read_object_compressed(&bytes[..], ParserContext::None)
             .expect("should be able to read loose commit object");
 
-        let Object::Commit(commit) = &object else {
-            panic!("expected Object::Commit, got {object:?}");
-        };
-
-        assert_eq!(
-            commit.tree.to_string(),
-            "073c0d6b8bd2feb5b287d88211a772f186951266"
-        );
-        assert_eq!(
-            commit.parents,
-            vec!["9062d888aa448318e38792b6879a795dd10adda4".parse().unwrap()]
-        );
-        assert_eq!(commit.committer.0.name.to_string(), "Andi Kleen");
-        assert_eq!(commit.committer.0.email, "andi@basil.nowhere.org");
+        insta::assert_debug_snapshot!(object);
     }
 
     #[test]
@@ -288,29 +109,7 @@ mod fixtures {
         let object = read_object_compressed(&bytes[..], ParserContext::None)
             .expect("should be able to read loose commit object");
 
-        let Object::Commit(commit) = &object else {
-            panic!("expected Object::Commit, got {object:?}");
-        };
-
-        assert_eq!(
-            commit.tree.to_string(),
-            "5efa09ed89088363d6b1ea1d3c76bad1eeccc5b8"
-        );
-        assert_eq!(
-            commit.parents,
-            vec![
-                "5ea6f2c33f0c8b126136dbf1776ffbc444772cd7".parse().unwrap(),
-                "c16ef1ceedff27c1b452724ca7f89b729651098f".parse().unwrap(),
-            ]
-        );
-        assert_eq!(commit.author.0.name.to_string(), "");
-        assert_eq!(commit.author.0.email, "jgarzik@pretzel.yyz.us");
-        assert_eq!(commit.committer.0.name.to_string(), "Jeff Garzik");
-        assert_eq!(commit.committer.0.email, "jgarzik@pobox.com");
-        assert_eq!(
-            commit.description,
-            "Automatic merge of /spare/repo/netdev-2.6 branch ns83820\n"
-        );
+        insta::assert_debug_snapshot!(object);
     }
 
     #[test]
@@ -319,20 +118,7 @@ mod fixtures {
         let object = read_object_compressed(&bytes[..], ParserContext::None)
             .expect("should be able to read loose commit object");
 
-        let Object::Commit(commit) = &object else {
-            panic!("expected Object::Commit, got {object:?}");
-        };
-
-        assert_eq!(
-            commit.tree.to_string(),
-            "921f686860e918a01c3d3fb6cd106ba82bf4ace6"
-        );
-        assert_eq!(
-            commit.parents,
-            vec!["264166e604a7e14c278e31cadd1afb06a7d51a11".parse().unwrap()]
-        );
-        assert_eq!(commit.committer.0.name.to_string(), "Dave Jones");
-        assert_eq!(commit.committer.0.email, "davej@redhat.com");
+        insta::assert_debug_snapshot!(object);
     }
 
     #[test]
@@ -341,25 +127,7 @@ mod fixtures {
         let object = read_object_compressed(&bytes[..], ParserContext::None)
             .expect("should be able to read loose tag object");
 
-        let Object::Tag(tag) = &object else {
-            panic!("expected Object::Tag, got {object:?}");
-        };
-
-        assert_eq!(
-            tag.target.0.to_string(),
-            "ab2b0330d1eb193e5e339c94197998e9baaa8846"
-        );
-        assert_eq!(tag.target.1, ObjectType::Commit);
-        assert_eq!(tag.name, "v0.0.1");
-        assert_eq!(tag.description, "0.0.1! :D\n");
-
-        assert_eq!(
-            tag.tagger.as_ref().map(|(identity, _)| identity),
-            Some(&Identity::new(
-                Name::try_new("alex".into()).unwrap(),
-                Email::new("alex.podikoglou@gmail.com".into())
-            ))
-        );
+        insta::assert_debug_snapshot!(object);
     }
 
     #[test]
@@ -368,24 +136,7 @@ mod fixtures {
         let object = read_object_compressed(&bytes[..], ParserContext::None)
             .expect("should be able to read loose tag object");
 
-        let Object::Tag(tag) = &object else {
-            panic!("expected Object::Tag, got {object:?}");
-        };
-
-        assert_eq!(
-            tag.target.0.to_string(),
-            "ab2b0330d1eb193e5e339c94197998e9baaa8846"
-        );
-        assert_eq!(tag.target.1, ObjectType::Commit);
-        assert_eq!(tag.name, "\r");
-        assert_eq!(tag.description, "0.0.1! :D\n");
-        assert_eq!(
-            tag.tagger.as_ref().map(|(identity, _)| identity),
-            Some(&Identity::new(
-                Name::try_new("alex".into()).unwrap(),
-                Email::new("alex.podikoglou@gmail.com".into())
-            ))
-        );
+        insta::assert_debug_snapshot!(object);
     }
 
     #[test]
@@ -394,21 +145,7 @@ mod fixtures {
         let object = read_object_compressed(&bytes[..], ParserContext::None)
             .expect("should be able to read loose tag object");
 
-        let Object::Tag(tag) = &object else {
-            panic!("expected Object::Tag, got {object:?}");
-        };
-
-        assert_eq!(
-            tag.target.0.to_string(),
-            "2a24ab628aa7b190be32f63dfb6d96f3fb61580a"
-        );
-        assert_eq!(tag.target.1, ObjectType::Commit);
-        assert_eq!(tag.name, "v2.6.12-rc5");
-        assert_eq!(
-            tag.description,
-            "Linux-2.6.12-rc5 release\n-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1.2.4 (GNU/Linux)\n\niD8DBQBCk/HHF3YsRnbiHLsRArQsAJ97eO9U7ZKRxOJO84l9AcALAKvJfwCgsGt0\ndVOL/gCk7M2QYRr8RNxLSmI=\n=vOPg\n-----END PGP SIGNATURE-----\n"
-        );
-        assert_eq!(tag.tagger, None);
+        insta::assert_debug_snapshot!(object);
     }
 }
 

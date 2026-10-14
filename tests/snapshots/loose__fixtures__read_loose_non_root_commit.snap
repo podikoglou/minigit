@@ -1,0 +1,40 @@
+---
+source: tests/loose.rs
+expression: object
+---
+Commit(
+    Commit {
+        tree: f1596e78773e04b539660b10d75c02928ff38703,
+        parents: [
+            497b458b242ad074b046386ec56b9f19361b2691,
+        ],
+        author: (
+            Identity {
+                name: Name(
+                    "alex",
+                ),
+                email: Email(
+                    "alex.podikoglou@gmail.com",
+                ),
+            },
+            Timestamp(
+                2026-09-14T15:46:51+03:00,
+            ),
+        ),
+        committer: (
+            Identity {
+                name: Name(
+                    "alex",
+                ),
+                email: Email(
+                    "alex.podikoglou@gmail.com",
+                ),
+            },
+            Timestamp(
+                2026-09-14T15:46:51+03:00,
+            ),
+        ),
+        extra: [],
+        description: "7133\n",
+    },
+)

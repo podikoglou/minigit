@@ -4,7 +4,7 @@ use hex::FromHexError;
 use thiserror::Error;
 
 /// Context for parsing used in the error.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ParserContext {
     /// We are parsing something from a file.
     File(PathBuf),

@@ -1,9 +1,4 @@
-use std::{
-    fs,
-    io::Read,
-    path::PathBuf,
-    rc::Rc,
-};
+use std::{fs, io::Read, path::PathBuf, rc::Rc};
 
 use crate::{
     MinigitError,

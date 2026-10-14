@@ -3,11 +3,7 @@ use std::env;
 use argh::FromArgs;
 use bstr::ByteSlice;
 use itertools::Either;
-use minigit::{
-    MinigitError, Repo,
-    object::hash::HashPrefix,
-    storage::object::ObjectsBucket,
-};
+use minigit::{MinigitError, Repo, object::hash::HashPrefix, storage::object::ObjectsBucket};
 use strum::IntoDiscriminant;
 
 #[derive(FromArgs, PartialEq, Debug)]

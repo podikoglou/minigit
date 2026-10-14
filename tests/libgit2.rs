@@ -228,8 +228,7 @@ fn trees_match() {
                 "tree lengths match"
             );
 
-            for (oracle_entry, minigit_entry) in
-                oracle_tree.iter().zip(minigit_tree.entries.iter())
+            for (oracle_entry, minigit_entry) in oracle_tree.iter().zip(minigit_tree.entries.iter())
             {
                 assert_eq!(
                     minigit_entry.0.as_str(),

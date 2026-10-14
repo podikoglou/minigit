@@ -8,10 +8,7 @@ use minigit::{
 };
 
 mod fixtures {
-    use minigit::{
-        error::ParserContext,
-        storage::object::loose::read_object_compressed,
-    };
+    use minigit::{error::ParserContext, storage::object::loose::read_object_compressed};
 
     #[test]
     fn read_loose_blob() {
@@ -176,11 +173,11 @@ mod roundtrip {
         use minigit::object::commit::CommitProperty;
         use minigit::object::hash::ObjectHash;
         use minigit::object::tag::Tag;
-        use std::collections::BTreeMap;
         use minigit::object::tree::Tree;
         use minigit::object::tree::TreeEntry;
         use minigit::object::tree::TreeKey;
         use minigit::time::Timestamp;
+        use std::collections::BTreeMap;
         use strum::VariantArray;
 
         #[hegel::composite]

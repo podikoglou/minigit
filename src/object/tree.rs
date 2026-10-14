@@ -179,10 +179,16 @@ mod tests {
         // "foo/" vs "foo-", and '/' (0x2F) > '-' (0x2D).
         let dir_foo: TreeKey = TreeKey::new("foo\0".parse().unwrap(), 0o40000);
         let file_foo_bar: TreeKey = TreeKey::new("foo-bar\0".parse().unwrap(), 0o100644);
-        assert!(dir_foo > file_foo_bar, "directory 'foo' should sort after 'foo-bar'");
+        assert!(
+            dir_foo > file_foo_bar,
+            "directory 'foo' should sort after 'foo-bar'"
+        );
 
         // A plain file "foo" should sort BEFORE "foo-bar" (normal lex order).
         let file_foo: TreeKey = TreeKey::new("foo\0".parse().unwrap(), 0o100644);
-        assert!(file_foo < file_foo_bar, "file 'foo' should sort before 'foo-bar'");
+        assert!(
+            file_foo < file_foo_bar,
+            "file 'foo' should sort before 'foo-bar'"
+        );
     }
 }

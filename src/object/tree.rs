@@ -82,7 +82,7 @@ pub struct Tree {
     /// A [`BTreeMap`] is used instead of a [`std::collections::HashMap`], because iteration order is
     /// deterministic, and that's desirable here, since ideally we'd like the program to be able to
     /// parse an object and print it back out, without anything changing.
-    pub entries: BTreeMap<FileName, TreeEntry>,
+    pub entries: BTreeMap<TreeKey, TreeEntry>,
 }
 
 impl Tree {
@@ -110,7 +110,7 @@ pub fn parse_tree(input: &mut Stream<'_>) -> ModalResult<Tree> {
         .map(|entries: Vec<(u16, FileName, ObjectHash)>| {
             entries
                 .into_iter()
-                .map(|(mode, name, hash)| (TreeKey::new(name, mode), TreeEntry::new(mode, hash)))
+                .map(|(mode, name, hash)| (TreeKey::new(name, mode), TreeEntry::new(hash)))
                 .collect::<BTreeMap<TreeKey, TreeEntry>>()
         })
         .context(StrContext::Label("tree object"))
@@ -120,24 +120,22 @@ pub fn parse_tree(input: &mut Stream<'_>) -> ModalResult<Tree> {
 
 /// An entry inside a [Tree].
 ///
-/// This doesn't include the name of the file, because it's the key of the key of the
-/// [`Tree::entries`] map.
+/// The name and mode live in [`TreeKey`]; this holds only the object hash.
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct TreeEntry {
-    pub mode: u16,
     pub object: ObjectHash,
 }
 
 impl TreeEntry {
     #[must_use]
-    pub fn new(mode: u16, object: ObjectHash) -> Self {
-        Self { mode, object }
+    pub fn new(object: ObjectHash) -> Self {
+        Self { object }
     }
 }
 
 impl WriteLoose for (&TreeKey, &TreeEntry) {
     fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
-        write!(writer, "{:o} {}\0", self.1.mode, self.0.name)?;
+        write!(writer, "{:o} {}\0", self.0.mode, self.0.name)?;
 
         let hash_s = Into::<Array<u8, U20>>::into(self.1.object.clone());
         writer.write_all(hash_s.as_slice())?;

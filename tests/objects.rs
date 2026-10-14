@@ -4,7 +4,7 @@ mod common;
 
 #[test]
 fn objects_iter() {
-    let (repo, _dir) = include_repo!("fixtures/repo-1.tar");
+    let (repo, _dir) = include_repo!("fixtures/repos/repo-1.tar");
 
     let objects = repo
         .store
@@ -16,7 +16,7 @@ fn objects_iter() {
 
 #[test]
 fn store_object_retrieval() {
-    let (repo, _dir) = include_repo!("fixtures/repo-5.tar");
+    let (repo, _dir) = include_repo!("fixtures/repos/repo-5.tar");
 
     // loose object
     let loose_hash: ObjectHash = "ddc67c9b017423980bd3e82879ada0e43a71b8ba"

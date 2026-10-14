@@ -566,14 +566,21 @@ fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<RawObject> {
     // keep in mind the fact that this size is the size of the decompressed data
     // rather than the compressed data
     let mut buf = vec![0; header.length as usize];
-    let mut decoder = ZlibDecoder::new(&input[..]);
 
-    decoder
-        .read_exact(&mut buf)
-        .map_err(|_| ErrMode::Cut(ContextError::new()))?;
+    if header.length == 0 {
+        // fixed-sized zlib header + trailer
+        // not sure why but it's not cosnsumed with the below code
+        take(8usize).parse_next(input)?;
+    } else {
+        let mut decoder = ZlibDecoder::new(&input[..]);
 
-    // consume the amount of bytes that the decoder read, advancing the `input` slice
-    take(decoder.total_in() as usize).parse_next(input)?;
+        decoder
+            .read_exact(&mut buf)
+            .map_err(|_| ErrMode::Cut(ContextError::new()))?;
+
+        // consume the amount of bytes that the decoder read, advancing the `input` slice
+        take(decoder.total_in() as usize).parse_next(input)?;
+    }
 
     let r#type = match header.r#type {
         PackedObjectType::Commit => ObjectType::Commit,

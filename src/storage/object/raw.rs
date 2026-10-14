@@ -1,5 +1,6 @@
 use std::{fmt::Debug, io::Write};
 
+use flate2::{Compression, write::ZlibEncoder};
 use humansize::{DECIMAL, format_size};
 use sha1::{Digest, Sha1};
 use winnow::Parser;
@@ -12,6 +13,7 @@ use crate::{
         tag::parse_tag, tree::parse_tree,
     },
     parsing::Stream,
+    storage::object::loose::WriteLoose,
 };
 
 /// An object that has not been parsed yet.
@@ -50,10 +52,24 @@ impl RawObject {
 
     /// Computes the hash of the object.
     pub fn hash(&self) -> Result<ObjectHash, MinigitError> {
-        let mut buf = Vec::new();
+        let mut buf = Vec::new(); // TODO: capacity
 
+        self.write_loose(&mut buf)?;
+
+        Ok(Sha1::digest(buf).into())
+    }
+
+    pub fn write_loose_compressed<W: Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+        let mut zlib_writer = ZlibEncoder::new(writer, Compression::default());
+
+        self.write_loose(&mut zlib_writer)
+    }
+}
+
+impl WriteLoose for RawObject {
+    fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
         write!(
-            buf,
+            writer,
             "{} {}\0",
             match self.r#type {
                 ObjectType::Blob => "blob",
@@ -64,9 +80,9 @@ impl RawObject {
             self.bytes.len()
         )?;
 
-        buf.write_all(&self.bytes)?;
+        writer.write_all(&self.bytes)?;
 
-        Ok(Sha1::digest(buf).into())
+        Ok(())
     }
 }
 

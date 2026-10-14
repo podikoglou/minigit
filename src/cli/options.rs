@@ -4,6 +4,7 @@ use minigit::MinigitError;
 use crate::cli::commands::{
     hash_object::HashObjectCommand, ls_buckets::LsBucketsCommand, ls_objects::LsObjectsCommand,
     parse_object::ParseObjectCommand, parse_pack::ParsePackCommand,
+    unpack_objects::UnpackObjectsCommand,
 };
 
 /// The stupid implementation of the stupid content tracker.
@@ -21,6 +22,7 @@ pub enum Subcommand {
     LsObjects(LsObjectsCommand),
     ParseObject(ParseObjectCommand),
     ParsePack(ParsePackCommand),
+    UnpackObjects(UnpackObjectsCommand),
 }
 
 impl Args {
@@ -31,6 +33,7 @@ impl Args {
             Subcommand::LsObjects(cmd) => cmd.run(),
             Subcommand::ParseObject(cmd) => cmd.run(),
             Subcommand::ParsePack(cmd) => cmd.run(),
+            Subcommand::UnpackObjects(cmd) => cmd.run(),
         }
     }
 }

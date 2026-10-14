@@ -1,5 +1,3 @@
-use minigit::Repo;
-
 mod common;
 
 #[test]

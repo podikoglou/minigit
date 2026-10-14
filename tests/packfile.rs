@@ -1,7 +1,6 @@
 mod common;
 
 use fallible_iterator::FallibleIterator;
-use minigit::Repo;
 
 #[test]
 fn store_packs_listing() {

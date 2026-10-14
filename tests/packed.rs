@@ -4,7 +4,6 @@ use std::fs::File;
 use fallible_iterator::FallibleIterator;
 use memmap2::Mmap;
 use minigit::{
-    Repo,
     object::{ObjectType, hash::ObjectHash},
     parsing::Stream,
     storage::object::{

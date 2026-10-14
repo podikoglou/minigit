@@ -1,4 +1,4 @@
-use minigit::{Repo, object::hash::ObjectHash};
+use minigit::object::hash::ObjectHash;
 
 mod common;
 

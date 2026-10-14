@@ -14,7 +14,7 @@ macro_rules! include_repo {
         archive.unpack(&dir).unwrap();
 
         (
-            Repo::open(dir.path()).expect("should be able to open repo"),
+            minigit::Repo::open(dir.path()).expect("should be able to open repo"),
             dir,
         )
     }};

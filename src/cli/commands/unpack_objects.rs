@@ -34,7 +34,7 @@ impl UnpackObjectsCommand {
         for packed_obj in pack.objects() {
             let raw_obj = pack.resolve(packed_obj)?;
 
-            if let Err(err) = repo.store.write_loose_object_raw(raw_obj) {
+            if let Err(err) = repo.store.write_loose_object(raw_obj) {
                 match err {
                     MinigitError::ObjectExists => {
                         // we ignore objects that already exist

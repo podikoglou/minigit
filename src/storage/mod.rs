@@ -14,7 +14,7 @@ use crate::{
         Object,
         hash::{HashPrefix, ObjectHash},
     },
-    storage::object::{LazyObject, ObjectsBucket, RawObject, loose::WriteLoose, packed::Packfile},
+    storage::object::{LazyObject, ObjectsBucket, RawObject, packed::Packfile},
 };
 
 pub mod object;
@@ -142,27 +142,8 @@ impl Store {
         LazyObject::loose(path).into_object()
     }
 
-    /// Writes an object to the loose object database.
-    pub fn write_loose_object(&self, object: Object) -> Result<(), MinigitError> {
-        let hash = object.hash()?;
-        let prefix = hash.prefix();
-
-        let bucket_path = self.objects_path().join(prefix.to_string());
-
-        if !bucket_path.exists() {
-            fs::create_dir_all(&bucket_path)?;
-        }
-
-        let object_path = bucket_path.join(&hash.to_string()[2..]);
-
-        let object_file = File::create_new(object_path).map_err(|_| MinigitError::ObjectExists)?;
-        let mut writer = BufWriter::new(object_file);
-
-        object.write_loose_compressed(&mut writer)
-    }
-
     /// Writes a [RawObject] to the loose object database.
-    pub fn write_loose_object_raw(&self, object: RawObject) -> Result<(), MinigitError> {
+    pub fn write_loose_object(&self, object: RawObject) -> Result<(), MinigitError> {
         let hash = object.hash()?;
         let prefix = hash.prefix();
 

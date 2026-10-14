@@ -10,6 +10,7 @@ pub mod idx;
 
 use std::{fs::File, io::Read, path::PathBuf, rc::Rc};
 
+use fallible_iterator::FallibleIterator;
 use flate2::read::ZlibDecoder;
 use memmap2::Mmap;
 use strum::FromRepr;
@@ -75,6 +76,7 @@ impl Packfile {
 
         Objects {
             amount: self.objects_count as usize,
+            context: ParserContext::File(self.path().to_owned()),
             read: 0,
             buf,
         }
@@ -180,6 +182,9 @@ pub struct Objects<'a> {
     /// `amount` objects.
     amount: usize,
 
+    /// The parser context, used for error reporting.
+    context: ParserContext,
+
     /// A slice of the packfile's contents, starting from the first object.
     buf: Stream<'a>,
 
@@ -187,19 +192,22 @@ pub struct Objects<'a> {
     read: usize,
 }
 
-impl Iterator for Objects<'_> {
+impl FallibleIterator for Objects<'_> {
     type Item = PackedObject;
+    type Error = MinigitError;
 
-    fn next(&mut self) -> Option<Self::Item> {
+    fn next(&mut self) -> Result<Option<PackedObject>, MinigitError> {
         if self.read >= self.amount {
-            return None;
+            return Ok(None);
         }
 
-        let object = object.parse_next(&mut self.buf);
+        let object = object
+            .parse_next(&mut self.buf)
+            .map_err(|err| MinigitError::ParserError(err.to_string(), self.context.to_owned()))?;
 
         self.read += 1;
 
-        object.ok()
+        Ok(Some(object))
     }
 }
 

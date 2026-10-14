@@ -1,5 +1,6 @@
 mod common;
 
+use fallible_iterator::FallibleIterator;
 use minigit::Repo;
 
 #[test]
@@ -11,5 +12,10 @@ fn store_packs_listing() {
     assert_eq!(packs.len(), 1);
 
     let pack = packs.first().unwrap();
-    assert_eq!(pack.objects().count(), 3);
+    assert_eq!(
+        pack.objects()
+            .count()
+            .expect("should be able to iterate through all objects"),
+        3
+    );
 }

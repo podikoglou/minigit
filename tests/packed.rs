@@ -1,6 +1,7 @@
 use std::assert_matches;
 use std::fs::File;
 
+use fallible_iterator::FallibleIterator;
 use memmap2::Mmap;
 use minigit::{
     Repo,
@@ -349,7 +350,9 @@ fn objects_iterator() {
     let objects = packfile.objects();
 
     assert_eq!(
-        objects.count(),
+        objects
+            .count()
+            .expect("should be able to iterate over all objects"),
         packfile.objects_count as usize,
         "read objects should match packfile header's object count"
     );

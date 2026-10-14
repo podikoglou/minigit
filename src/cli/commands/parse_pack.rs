@@ -1,10 +1,8 @@
 use std::path::PathBuf;
 
 use argh::FromArgs;
-use minigit::{
-    MinigitError,
-    storage::object::packed::Packfile,
-};
+use fallible_iterator::FallibleIterator;
+use minigit::{MinigitError, storage::object::packed::Packfile};
 
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "parse-pack")]
@@ -29,7 +27,9 @@ impl ParsePackCommand {
 
         let pack = Packfile::open(pack_path, idx_path)?;
 
-        for object in pack.objects() {
+        for object in pack.objects().iterator() {
+            let object = object?;
+
             println!("{object:#?}");
         }
 

@@ -34,7 +34,15 @@ impl UnpackObjectsCommand {
         for lazy_obj in pack.lazy_objects() {
             let obj = lazy_obj.into_object()?;
 
-            repo.store.write_loose_object(obj)?;
+            if let Err(err) = repo.store.write_loose_object(obj) {
+                match err {
+                    MinigitError::ObjectExists => {
+                        // we ignore objects that already exist
+                    }
+
+                    other => return Err(other),
+                }
+            }
             bar.inc(1);
         }
 

@@ -14,7 +14,9 @@ use crate::{
     storage::object::loose::WriteLoose,
 };
 
-/// The sort key for a [`Tree`] entry, implementing Git's tree-sort order.
+/// The key for a [`Tree`] entry.
+///
+/// # Sorting
 ///
 /// Git compares tree entry names by appending a virtual `'/'` to any entry
 /// whose mode is a directory (`040000`). This means a directory called `foo`
@@ -23,6 +25,8 @@ use crate::{
 ///
 /// The algorithm: compare byte-by-byte up to the shorter name, then treat the
 /// "next byte" as `'/'` for directories and `'\0'` for everything else.
+///
+/// This is implemented in the [`Ord`] implementation.
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct TreeKey {
     pub name: FileName,

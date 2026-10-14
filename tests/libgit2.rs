@@ -27,7 +27,7 @@ fn git2_object_type_to_object_type(obj_type: Git2ObjectType) -> Option<MinigitOb
 }
 
 #[test]
-fn objects_hashes() {
+fn raw_objects_match() {
     for repo_dir in REPOS_DIR.files() {
         let (minigit_repo, _dir) = unpack_repo(repo_dir.contents());
         let (oracle_repo, _dir) = unpack_git2_repo(repo_dir.contents());

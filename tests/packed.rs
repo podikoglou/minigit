@@ -10,7 +10,7 @@ use minigit::{
     storage::object::{
         RawObject,
         packed::{
-            self, BaseObject, CopyInstruction, Delta, Instruction,
+            self,
             PackedObject::{self},
             Packfile,
             idx::PackIndex,
@@ -40,59 +40,15 @@ fn undeltified_packfile_parse() {
 
     assert_eq!(header.objects, 3, "should have three objects");
 
-    // object 1
-    {
-        let object = packed::object
-            .parse_next(&mut slice)
-            .expect("should be able to parse object");
+    let objects: Vec<_> = (0..header.objects)
+        .map(|_| {
+            packed::object
+                .parse_next(&mut slice)
+                .expect("should be able to parse object")
+        })
+        .collect();
 
-        assert_matches!(
-            object,
-            PackedObject::Undeltified(
-                _,
-                RawObject {
-                    r#type: ObjectType::Commit,
-                    ..
-                }
-            )
-        );
-    }
-
-    // object 2
-    {
-        let object = packed::object
-            .parse_next(&mut slice)
-            .expect("should be able to parse object");
-
-        assert_matches!(
-            object,
-            PackedObject::Undeltified(
-                _,
-                RawObject {
-                    r#type: ObjectType::Blob,
-                    ..
-                }
-            )
-        );
-    }
-
-    // object 3
-    {
-        let object = packed::object
-            .parse_next(&mut slice)
-            .expect("should be able to parse object");
-
-        assert_matches!(
-            object,
-            PackedObject::Undeltified(
-                _,
-                RawObject {
-                    r#type: ObjectType::Tree,
-                    ..
-                }
-            )
-        );
-    }
+    insta::assert_debug_snapshot!(objects);
 }
 
 #[test]
@@ -114,228 +70,17 @@ fn deltified_packfile_parse() {
 
     assert_eq!(header.objects, 12, "should have 12 objects");
 
-    // object 1
-    {
-        let object = packed::object
-            .parse_next(&mut slice)
-            .expect("should be able to parse object");
-
-        assert_matches!(
-            object,
-            PackedObject::Undeltified(
-                _,
-                RawObject {
-                    r#type: ObjectType::Commit,
-                    ..
-                }
-            )
-        );
-    }
-
-    // object 2
-    {
-        let object = packed::object
-            .parse_next(&mut slice)
-            .expect("should be able to parse object");
-
-        assert_matches!(
-            object,
-            PackedObject::Undeltified(
-                _,
-                RawObject {
-                    r#type: ObjectType::Commit,
-                    ..
-                }
-            )
-        );
-    }
-
-    // object 3
-    {
-        let object = packed::object
-            .parse_next(&mut slice)
-            .expect("should be able to parse object");
-
-        assert_matches!(
-            object,
-            PackedObject::Undeltified(
-                _,
-                RawObject {
-                    r#type: ObjectType::Commit,
-                    ..
-                }
-            )
-        );
-    }
-
-    // object 4
-    {
-        let object = packed::object
-            .parse_next(&mut slice)
-            .expect("should be able to parse object");
-
-        assert_matches!(
-            object,
-            PackedObject::Undeltified(
-                _,
-                RawObject {
-                    r#type: ObjectType::Commit,
-                    ..
-                }
-            )
-        );
-    }
-
-    // object 5
-    {
-        let object = packed::object
-            .parse_next(&mut slice)
-            .expect("should be able to parse object");
-
-        assert_matches!(
-            object,
-            PackedObject::Undeltified(
-                _,
-                RawObject {
-                    r#type: ObjectType::Blob,
-                    ..
-                }
-            )
-        );
-    }
-
-    // object 6
-    {
-        let object = packed::object
-            .parse_next(&mut slice)
-            .expect("should be able to parse object");
-
-        assert_matches!(
-            object,
-            PackedObject::Undeltified(
-                _,
-                RawObject {
-                    r#type: ObjectType::Blob,
-                    ..
-                }
-            )
-        );
-    }
-
-    // object 7
-    {
-        let object = packed::object
-            .parse_next(&mut slice)
-            .expect("should be able to parse object");
-
-        assert_matches!(
-            object,
-            PackedObject::Undeltified(
-                _,
-                RawObject {
-                    r#type: ObjectType::Tree,
-                    ..
-                }
-            )
-        );
-    }
-
-    // object 8
-    {
-        let object = packed::object
-            .parse_next(&mut slice)
-            .expect("should be able to parse object");
-
-        assert_matches!(
-            object,
-            PackedObject::Undeltified(
-                _,
-                RawObject {
-                    r#type: ObjectType::Tree,
-                    ..
-                }
-            )
-        );
-    }
-
-    // object 9 (deltified)
-    {
-        let object = packed::object
-            .parse_next(&mut slice)
-            .expect("should be able to parse object");
-
-        assert_eq!(
-            object,
-            PackedObject::Deltified {
-                offset: 870,
-                base: BaseObject::Ofs(870 - 264),
-                delta: Delta {
-                    base_object_size: 177,
-                    deltified_object_size: 154,
-                    instructions: vec![Instruction::Copy(CopyInstruction {
-                        offset: 0,
-                        size: 154,
-                    })],
-                },
-            }
-        );
-    }
-
-    // object 10
-    {
-        let object = packed::object
-            .parse_next(&mut slice)
-            .expect("should be able to parse object");
-
-        assert_matches!(
-            object,
-            PackedObject::Undeltified(
-                _,
-                RawObject {
-                    r#type: ObjectType::Tree,
-                    ..
-                }
-            )
-        );
-    }
-
-    // object 11
-    {
-        let object = packed::object
-            .parse_next(&mut slice)
-            .expect("should be able to parse object");
-
-        assert_matches!(
-            object,
-            PackedObject::Undeltified(
-                _,
-                RawObject {
-                    r#type: ObjectType::Blob,
-                    ..
-                }
-            )
-        );
-    }
-
-    // object 12
-    {
-        let object = packed::object
-            .parse_next(&mut slice)
-            .expect("should be able to parse object");
-
-        assert_matches!(
-            object,
-            PackedObject::Undeltified(
-                _,
-                RawObject {
-                    r#type: ObjectType::Tree,
-                    ..
-                }
-            )
-        );
-    }
+    let objects: Vec<_> = (0..header.objects)
+        .map(|_| {
+            packed::object
+                .parse_next(&mut slice)
+                .expect("should be able to parse object")
+        })
+        .collect();
 
     assert_eq!(slice.len(), 20, "packfile should end with 20-byte checksum");
+
+    insta::assert_debug_snapshot!(objects);
 }
 
 #[test]

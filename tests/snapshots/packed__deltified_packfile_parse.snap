@@ -1,0 +1,68 @@
+---
+source: tests/packed.rs
+expression: objects
+---
+[
+    Undeltified(
+        12,
+        RawObject(Commit, 235 B),
+    ),
+    Undeltified(
+        172,
+        RawObject(Commit, 234 B),
+    ),
+    Undeltified(
+        333,
+        RawObject(Commit, 225 B),
+    ),
+    Undeltified(
+        486,
+        RawObject(Commit, 169 B),
+    ),
+    Undeltified(
+        606,
+        RawObject(Blob, 177 B),
+    ),
+    Undeltified(
+        681,
+        RawObject(Blob, 23 B),
+    ),
+    Undeltified(
+        714,
+        RawObject(Tree, 72 B),
+    ),
+    Undeltified(
+        792,
+        RawObject(Tree, 72 B),
+    ),
+    Deltified {
+        offset: 870,
+        base: Ofs(
+            606,
+        ),
+        delta: Delta {
+            base_object_size: 177,
+            deltified_object_size: 154,
+            instructions: [
+                Copy(
+                    CopyInstruction {
+                        offset: 0,
+                        size: 154,
+                    },
+                ),
+            ],
+        },
+    },
+    Undeltified(
+        887,
+        RawObject(Tree, 72 B),
+    ),
+    Undeltified(
+        966,
+        RawObject(Blob, 39 B),
+    ),
+    Undeltified(
+        1015,
+        RawObject(Tree, 36 B),
+    ),
+]

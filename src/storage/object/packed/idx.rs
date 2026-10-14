@@ -122,10 +122,12 @@ impl PackIndex {
     pub fn lookup(&self, hash: ObjectHash) -> Option<usize> {
         let prefix = Into::<u8>::into(hash.prefix()) as usize;
 
-        let bounds = (prefix.saturating_sub(1), prefix);
-
-        let a = self.fanout_table[bounds.0] as usize;
-        let b = self.fanout_table[bounds.1] as usize;
+        let a = if prefix == 0 {
+            0
+        } else {
+            self.fanout_table[prefix - 1] as usize
+        };
+        let b = self.fanout_table[prefix] as usize;
 
         // amount of objects in the "bucket" we are searching in
         let objects = b - a;

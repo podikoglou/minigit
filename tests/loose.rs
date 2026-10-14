@@ -176,8 +176,10 @@ mod roundtrip {
         use minigit::object::commit::CommitProperty;
         use minigit::object::hash::ObjectHash;
         use minigit::object::tag::Tag;
+        use std::collections::BTreeMap;
         use minigit::object::tree::Tree;
         use minigit::object::tree::TreeEntry;
+        use minigit::object::tree::TreeKey;
         use minigit::time::Timestamp;
         use strum::VariantArray;
 
@@ -197,10 +199,9 @@ mod roundtrip {
 
         #[hegel::composite]
         pub fn tree_entry(tc: &TestCase) -> TreeEntry {
-            let mode: u16 = tc.draw(gs::integers());
             let hash = tc.draw(generators::hash().print_as_debug());
 
-            TreeEntry { mode, object: hash }
+            TreeEntry { object: hash }
         }
 
         #[hegel::composite]
@@ -213,7 +214,16 @@ mod roundtrip {
 
             let value = generators::tree_entry().print_as_debug();
 
-            tc.draw(gs::btree_maps(key, value).map(Tree::new).print_as_debug())
+            tc.draw(
+                gs::btree_maps(key, value)
+                    .map(|map: BTreeMap<FileName, TreeEntry>| {
+                        map.into_iter()
+                            .map(|(name, entry)| (TreeKey::new(name, 0o100644), entry))
+                            .collect::<BTreeMap<TreeKey, TreeEntry>>()
+                    })
+                    .map(Tree::new)
+                    .print_as_debug(),
+            )
         }
 
         #[hegel::composite]

@@ -1,5 +1,6 @@
-use std::io::Write;
+use std::{fmt::Debug, io::Write};
 
+use humansize::{DECIMAL, format_size};
 use sha1::{Digest, Sha1};
 use winnow::Parser;
 
@@ -19,7 +20,7 @@ use crate::{
 /// that it is a valid object.
 ///
 /// At any given time it can be turned into a real [Object] using [`Self::into_object`].
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(PartialEq, Eq, Clone)]
 pub struct RawObject {
     pub r#type: ObjectType,
     pub bytes: Vec<u8>,
@@ -66,5 +67,16 @@ impl RawObject {
         buf.write_all(&self.bytes)?;
 
         Ok(Sha1::digest(buf).into())
+    }
+}
+
+impl Debug for RawObject {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "RawObject({:?}, {})",
+            self.r#type,
+            format_size(self.bytes.len(), DECIMAL)
+        )
     }
 }

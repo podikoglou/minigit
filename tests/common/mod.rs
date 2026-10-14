@@ -12,11 +12,23 @@ pub fn unpack_repo(bytes: &[u8]) -> (minigit::Repo, tempfile::TempDir) {
     )
 }
 
+#[allow(dead_code)]
+pub fn unpack_git2_repo(bytes: &[u8]) -> (git2::Repository, tempfile::TempDir) {
+    let dir = tempfile::tempdir().unwrap();
+
+    let cursor = std::io::Cursor::new(bytes);
+    let mut archive = tar::Archive::new(cursor);
+    archive.unpack(&dir).unwrap();
+
+    (
+        git2::Repository::open(dir.path()).expect("should be able to open repo"),
+        dir,
+    )
+}
+
 #[macro_export]
 macro_rules! include_repo {
-    ($path:literal) => {{
-        $crate::common::unpack_repo(include_bytes!($path))
-    }};
+    ($path:literal) => {{ $crate::common::unpack_repo(include_bytes!($path)) }};
 }
 
 #[macro_export]

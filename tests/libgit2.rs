@@ -238,7 +238,7 @@ fn trees_match() {
                 );
 
                 assert_eq!(
-                    minigit_entry.1.mode as i32,
+                    minigit_entry.0.mode as i32,
                     oracle_entry.filemode(),
                     "filemode mathces"
                 );

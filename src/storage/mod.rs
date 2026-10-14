@@ -155,11 +155,7 @@ impl Store {
 
         let object_path = bucket_path.join(&hash.to_string()[2..]);
 
-        if object_path.exists() {
-            return Err(MinigitError::ObjectExists);
-        }
-
-        let object_file = File::open(object_path)?;
+        let object_file = File::create_new(object_path)?;
         let mut writer = BufWriter::new(object_file);
 
         object.write_loose_compressed(&mut writer)

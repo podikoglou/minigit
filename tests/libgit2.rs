@@ -12,6 +12,7 @@ use minigit::{
     error::ParserContext,
     identity::{Email, Identity, Name},
     object::{Object, ObjectType as MinigitObjectType, hash::ObjectHash},
+    storage::object::loose::WriteLoose,
 };
 use std::str::FromStr;
 
@@ -362,6 +363,260 @@ fn tags_match() {
                     minigit_tag.tagger.map(|x| x.0),
                     oracle_tag.tagger().map(signature_to_identity),
                     "taggers match"
+                );
+
+                true
+            })
+            .expect("foreach should work");
+    }
+}
+
+#[test]
+fn commits_reserialization_match() {
+    for repo_dir in REPOS_DIR.files() {
+        let (minigit_repo, _dir) = unpack_repo(repo_dir.contents());
+        let (oracle_repo, _dir) = unpack_git2_repo(repo_dir.contents());
+
+        let oracle_odb = oracle_repo.odb().expect("should be able to open odb");
+        let minigit_store = minigit_repo.store;
+
+        oracle_odb
+            .foreach(|oid| {
+                let oid = oid.to_owned();
+                let hash = oid_to_hash(&oid);
+
+                let minigit_raw_obj = minigit_store
+                    .raw_object(hash)
+                    .expect("minigit should load the object");
+
+                let minigit_obj = minigit_raw_obj
+                    .into_object(ParserContext::None)
+                    .expect("minigit should parse the object");
+
+                let Object::Commit(minigit_commit) = minigit_obj else {
+                    return true;
+                };
+
+                let oracle_odb_obj = oracle_odb
+                    .read(oid)
+                    .expect("libgit2 should load the object");
+
+                let oracle_obj = oracle_repo
+                    .find_object(oid, Some(oracle_odb_obj.kind()))
+                    .expect("libgit2 should find the object");
+
+                let Some(oracle_commit) = oracle_obj.as_commit() else {
+                    return true;
+                };
+
+                let parents: Vec<_> = oracle_commit.parents().collect();
+                let parent_refs: Vec<&Commit> = parents.iter().collect();
+                let tree = oracle_commit.tree().expect("commit tree");
+                let libgit2_buf = oracle_repo
+                    .commit_create_buffer(
+                        &oracle_commit.author(),
+                        &oracle_commit.committer(),
+                        oracle_commit.message_raw().unwrap(),
+                        &tree,
+                        &parent_refs,
+                    )
+                    .expect("libgit2 should serialize commit");
+
+                let mut minigit_bytes = Vec::new();
+                minigit_commit
+                    .write_loose(&mut minigit_bytes)
+                    .expect("minigit should serialize commit");
+
+                assert_eq!(
+                    minigit_bytes.as_slice(),
+                    &libgit2_buf[..],
+                    "serialized commit bytes match"
+                );
+
+                true
+            })
+            .expect("foreach should work");
+    }
+}
+
+#[test]
+fn trees_reserialization_match() {
+    for repo_dir in REPOS_DIR.files() {
+        let (minigit_repo, _dir) = unpack_repo(repo_dir.contents());
+        let (oracle_repo, _dir) = unpack_git2_repo(repo_dir.contents());
+
+        let oracle_odb = oracle_repo.odb().expect("should be able to open odb");
+        let minigit_store = minigit_repo.store;
+
+        oracle_odb
+            .foreach(|oid| {
+                let oid = oid.to_owned();
+                let hash = oid_to_hash(&oid);
+
+                let minigit_raw_obj = minigit_store
+                    .raw_object(hash)
+                    .expect("minigit should load the object");
+
+                let minigit_obj = minigit_raw_obj
+                    .into_object(ParserContext::None)
+                    .expect("minigit should parse the object");
+
+                let Object::Tree(minigit_tree) = minigit_obj else {
+                    return true;
+                };
+
+                let oracle_odb_obj = oracle_odb
+                    .read(oid)
+                    .expect("libgit2 should load the object");
+
+                let oracle_obj = oracle_repo
+                    .find_object(oid, Some(oracle_odb_obj.kind()))
+                    .expect("libgit2 should find the object");
+
+                let Some(oracle_tree) = oracle_obj.as_tree() else {
+                    return true;
+                };
+
+                let builder = oracle_repo
+                    .treebuilder(Some(oracle_tree))
+                    .expect("treebuilder");
+                let new_tree_oid = builder.write().expect("treebuilder write");
+                let libgit2_tree_obj = oracle_odb.read(new_tree_oid).expect("read tree");
+
+                let mut minigit_bytes = Vec::new();
+                minigit_tree
+                    .write_loose(&mut minigit_bytes)
+                    .expect("minigit should serialize tree");
+
+                assert_eq!(
+                    minigit_bytes,
+                    libgit2_tree_obj.data(),
+                    "serialized tree bytes match"
+                );
+
+                true
+            })
+            .expect("foreach should work");
+    }
+}
+
+#[test]
+fn blobs_reserialization_match() {
+    for repo_dir in REPOS_DIR.files() {
+        let (minigit_repo, _dir) = unpack_repo(repo_dir.contents());
+        let (oracle_repo, _dir) = unpack_git2_repo(repo_dir.contents());
+
+        let oracle_odb = oracle_repo.odb().expect("should be able to open odb");
+        let minigit_store = minigit_repo.store;
+
+        oracle_odb
+            .foreach(|oid| {
+                let oid = oid.to_owned();
+                let hash = oid_to_hash(&oid);
+
+                let minigit_raw_obj = minigit_store
+                    .raw_object(hash)
+                    .expect("minigit should load the object");
+
+                let minigit_obj = minigit_raw_obj
+                    .into_object(ParserContext::None)
+                    .expect("minigit should parse the object");
+
+                let Object::Blob(minigit_blob) = minigit_obj else {
+                    return true;
+                };
+
+                let oracle_odb_obj = oracle_odb
+                    .read(oid)
+                    .expect("libgit2 should load the object");
+
+                let oracle_obj = oracle_repo
+                    .find_object(oid, Some(oracle_odb_obj.kind()))
+                    .expect("libgit2 should find the object");
+
+                let Some(oracle_blob) = oracle_obj.as_blob() else {
+                    return true;
+                };
+
+                let new_blob_oid = oracle_repo.blob(oracle_blob.content()).expect("write blob");
+                let libgit2_blob_obj = oracle_odb.read(new_blob_oid).expect("read blob");
+
+                let mut minigit_bytes = Vec::new();
+                minigit_blob
+                    .write_loose(&mut minigit_bytes)
+                    .expect("minigit should serialize blob");
+
+                assert_eq!(
+                    minigit_bytes,
+                    libgit2_blob_obj.data(),
+                    "serialized blob bytes match"
+                );
+
+                true
+            })
+            .expect("foreach should work");
+    }
+}
+
+#[test]
+fn tags_reserialization_match() {
+    for repo_dir in REPOS_DIR.files() {
+        let (minigit_repo, _dir) = unpack_repo(repo_dir.contents());
+        let (oracle_repo, _dir) = unpack_git2_repo(repo_dir.contents());
+
+        let oracle_odb = oracle_repo.odb().expect("should be able to open odb");
+        let minigit_store = minigit_repo.store;
+
+        oracle_odb
+            .foreach(|oid| {
+                let oid = oid.to_owned();
+                let hash = oid_to_hash(&oid);
+
+                let minigit_raw_obj = minigit_store
+                    .raw_object(hash)
+                    .expect("minigit should load the object");
+
+                let minigit_obj = minigit_raw_obj
+                    .into_object(ParserContext::None)
+                    .expect("minigit should parse the object");
+
+                let Object::Tag(minigit_tag) = minigit_obj else {
+                    return true;
+                };
+
+                let oracle_odb_obj = oracle_odb
+                    .read(oid)
+                    .expect("libgit2 should load the object");
+
+                let oracle_obj = oracle_repo
+                    .find_object(oid, Some(oracle_odb_obj.kind()))
+                    .expect("libgit2 should find the object");
+
+                let Some(oracle_tag) = oracle_obj.as_tag() else {
+                    return true;
+                };
+
+                let target = oracle_tag.target().expect("tag target");
+                let tagger = oracle_tag.tagger().expect("tagger");
+                let new_tag_oid = oracle_repo
+                    .tag_annotation_create(
+                        oracle_tag.name().unwrap(),
+                        &target,
+                        &tagger,
+                        oracle_tag.message().unwrap().unwrap_or_default(),
+                    )
+                    .expect("tag_annotation_create");
+                let libgit2_tag_obj = oracle_odb.read(new_tag_oid).expect("read tag");
+
+                let mut minigit_bytes = Vec::new();
+                minigit_tag
+                    .write_loose(&mut minigit_bytes)
+                    .expect("minigit should serialize tag");
+
+                assert_eq!(
+                    minigit_bytes,
+                    libgit2_tag_obj.data(),
+                    "serialized tag bytes match"
                 );
 
                 true

@@ -1,0 +1,29 @@
+---
+source: tests/loose.rs
+expression: object
+---
+Tag(
+    Tag {
+        target: (
+            ab2b0330d1eb193e5e339c94197998e9baaa8846,
+            Commit,
+        ),
+        name: "v0.0.1",
+        tagger: Some(
+            (
+                Identity {
+                    name: Name(
+                        "alex",
+                    ),
+                    email: Email(
+                        "alex.podikoglou@gmail.com",
+                    ),
+                },
+                Timestamp(
+                    2026-09-16T12:59:05+03:00,
+                ),
+            ),
+        ),
+        description: "0.0.1! :D\n",
+    },
+)

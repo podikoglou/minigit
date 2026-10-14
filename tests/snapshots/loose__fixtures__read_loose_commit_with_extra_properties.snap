@@ -1,0 +1,45 @@
+---
+source: tests/loose.rs
+expression: object
+---
+Commit(
+    Commit {
+        tree: 512310236d7623ac3a86fc96c24b94280b44bb41,
+        parents: [
+            18b593788d6ebd548bcf55b18cc8f3e15d5fb4c3,
+        ],
+        author: (
+            Identity {
+                name: Name(
+                    "Nicholas Junge",
+                ),
+                email: Email(
+                    "nicho.junge@gmail.com",
+                ),
+            },
+            Timestamp(
+                2026-06-17T11:36:54+02:00,
+            ),
+        ),
+        committer: (
+            Identity {
+                name: Name(
+                    "Nicholas Junge",
+                ),
+                email: Email(
+                    "nicho.junge@gmail.com",
+                ),
+            },
+            Timestamp(
+                2026-06-17T11:36:58+02:00,
+            ),
+        ),
+        extra: [
+            (
+                "change-id",
+                "xnxouqnvmpzvuvkotwynowookslovtno",
+            ),
+        ],
+        description: "CMake: Set the extension base directory to the duckdb module dir\n\nDuckDB\'s extension-patch step hardcodes `${CMAKE_SOURCE_DIR}`, which only equals the\nsubmodule root in a standalone build. When DuckDB is pulled in via `add_subdirectory`,\nit resolves to the parent project\'s root, which causes the patch script and patch-dir\nlookups to happen in the wrong place.\n\nI ran into this because I\'m vendoring duckDB as a submodule for a Python bindings project,\nand statically link extensions from the submodule checkout in the build process.\n",
+    },
+)

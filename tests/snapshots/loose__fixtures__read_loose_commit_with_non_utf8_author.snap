@@ -1,0 +1,40 @@
+---
+source: tests/loose.rs
+expression: object
+---
+Commit(
+    Commit {
+        tree: 073c0d6b8bd2feb5b287d88211a772f186951266,
+        parents: [
+            9062d888aa448318e38792b6879a795dd10adda4,
+        ],
+        author: (
+            Identity {
+                name: Name(
+                    "Fernando Luis [** ISO-8859-1 charset **] V\xe1zquezCao",
+                ),
+                email: Email(
+                    "fernando@oss.ntt.co.jp",
+                ),
+            },
+            Timestamp(
+                2007-05-02T19:27:18+02:00,
+            ),
+        ),
+        committer: (
+            Identity {
+                name: Name(
+                    "Andi Kleen",
+                ),
+                email: Email(
+                    "andi@basil.nowhere.org",
+                ),
+            },
+            Timestamp(
+                2007-05-02T19:27:18+02:00,
+            ),
+        ),
+        extra: [],
+        description: "[PATCH] i386: Use safe_apic_wait_icr_idle in safe_apic_wait_icr_idle - i386\n\nUse safe_apic_wait_icr_idle to check ICR idle bit if the vector is\nNMI_VECTOR to avoid potential hangups in the event of crash when kdump\ntries to stop the other CPUs.\n\nSigned-off-by: Fernando Luis Vazquez Cao <fernando@oss.ntt.co.jp>\nSigned-off-by: Andi Kleen <ak@suse.de>\n",
+    },
+)

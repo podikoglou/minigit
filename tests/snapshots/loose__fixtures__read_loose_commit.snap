@@ -1,0 +1,38 @@
+---
+source: tests/loose.rs
+expression: object
+---
+Commit(
+    Commit {
+        tree: 7bfeab1d89aa800dff6acaae16b3433e7df44fa6,
+        parents: [],
+        author: (
+            Identity {
+                name: Name(
+                    "alex",
+                ),
+                email: Email(
+                    "alex.podikoglou@gmail.com",
+                ),
+            },
+            Timestamp(
+                2026-09-10T19:19:54+03:00,
+            ),
+        ),
+        committer: (
+            Identity {
+                name: Name(
+                    "alex",
+                ),
+                email: Email(
+                    "alex.podikoglou@gmail.com",
+                ),
+            },
+            Timestamp(
+                2026-09-10T19:19:54+03:00,
+            ),
+        ),
+        extra: [],
+        description: "add readme\n",
+    },
+)

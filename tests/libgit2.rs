@@ -14,8 +14,8 @@ fn oid_to_hash(oid: &Oid) -> ObjectHash {
 
 #[test]
 fn repo_5() {
-    let (minigit_repo, _dir) = include_repo!("fixtures/repo-5.tar");
-    let (oracle_repo, _dir) = include_repo_git2!("fixtures/repo-5.tar");
+    let (minigit_repo, _dir) = include_repo!("fixtures/repos/repo-5.tar");
+    let (oracle_repo, _dir) = include_repo_git2!("fixtures/repos/repo-5.tar");
 
     let oracle_odb = oracle_repo.odb().expect("should be able to open odb");
     let minigit_store = minigit_repo.store;

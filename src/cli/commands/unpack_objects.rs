@@ -1,6 +1,7 @@
 use std::{env, path::PathBuf, rc::Rc};
 
 use argh::FromArgs;
+use indicatif::ProgressBar;
 use minigit::{MinigitError, Repo, storage::object::packed::Packfile};
 
 #[derive(FromArgs, PartialEq, Debug)]
@@ -28,11 +29,16 @@ impl UnpackObjectsCommand {
 
         let pack = Rc::new(Packfile::open(pack_path, idx_path)?);
 
+        let bar = ProgressBar::new(pack.objects_count as u64);
+
         for lazy_obj in pack.lazy_objects() {
             let obj = lazy_obj.into_object()?;
 
             repo.store.write_loose_object(obj)?;
+            bar.inc(1);
         }
+
+        bar.finish();
 
         Ok(())
     }

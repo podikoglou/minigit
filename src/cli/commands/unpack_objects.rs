@@ -1,6 +1,7 @@
 use std::{env, path::PathBuf, rc::Rc};
 
 use argh::FromArgs;
+use fallible_iterator::FallibleIterator;
 use indicatif::ProgressBar;
 use minigit::{MinigitError, Repo, storage::object::packed::Packfile};
 
@@ -31,7 +32,8 @@ impl UnpackObjectsCommand {
 
         let bar = ProgressBar::new(pack.objects_count as u64);
 
-        for packed_obj in pack.objects() {
+        for packed_obj in pack.objects().iterator() {
+            let packed_obj = packed_obj?;
             let raw_obj = pack.resolve(packed_obj)?;
 
             if let Err(err) = repo.store.write_loose_object(raw_obj) {

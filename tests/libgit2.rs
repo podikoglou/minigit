@@ -149,27 +149,15 @@ fn commits_match() {
                 );
 
                 assert_eq!(
-                    minigit_commit.author.0.name.to_str().unwrap(),
-                    oracle_commit.author().name().unwrap(),
-                    "author names match"
+                    minigit_commit.author.0,
+                    signature_to_identity(oracle_commit.author()),
+                    "authors match"
                 );
 
                 assert_eq!(
-                    minigit_commit.author.0.email.to_str().unwrap(),
-                    oracle_commit.author().email().unwrap(),
-                    "author emails match"
-                );
-
-                assert_eq!(
-                    minigit_commit.committer.0.name.to_str().unwrap(),
-                    oracle_commit.committer().name().unwrap(),
-                    "committer names match"
-                );
-
-                assert_eq!(
-                    minigit_commit.committer.0.email.to_str().unwrap(),
-                    oracle_commit.committer().email().unwrap(),
-                    "committer emails match"
+                    minigit_commit.committer.0,
+                    signature_to_identity(oracle_commit.committer()),
+                    "commiters match"
                 );
 
                 assert_eq!(

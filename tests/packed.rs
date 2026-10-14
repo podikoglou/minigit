@@ -22,7 +22,7 @@ mod common;
 
 #[test]
 fn undeltified_packfile_parse() {
-    let (_, dir) = include_repo!("fixtures/repo-5.tar");
+    let (_, dir) = include_repo!("fixtures/repos/repo-5.tar");
 
     let path = dir
         .path()
@@ -52,7 +52,7 @@ fn undeltified_packfile_parse() {
 
 #[test]
 fn deltified_packfile_parse() {
-    let (_, dir) = include_repo!("fixtures/repo-6.tar");
+    let (_, dir) = include_repo!("fixtures/repos/repo-6.tar");
 
     let path = dir
         .path()
@@ -84,7 +84,7 @@ fn deltified_packfile_parse() {
 
 #[test]
 fn objects_iterator() {
-    let (_, dir) = include_repo!("fixtures/repo-6.tar");
+    let (_, dir) = include_repo!("fixtures/repos/repo-6.tar");
 
     let path = dir
         .path()
@@ -104,7 +104,7 @@ fn objects_iterator() {
 
 #[test]
 fn indexed_objects_query() {
-    let (_, dir) = include_repo!("fixtures/repo-6.tar");
+    let (_, dir) = include_repo!("fixtures/repos/repo-6.tar");
 
     let pack_path = dir
         .path()
@@ -139,7 +139,7 @@ fn indexed_objects_query() {
 
 #[test]
 fn idx_read() {
-    let (_, dir) = include_repo!("fixtures/repo-5.tar");
+    let (_, dir) = include_repo!("fixtures/repos/repo-5.tar");
 
     let path = dir
         .path()
@@ -217,7 +217,7 @@ fn idx_read() {
 
 #[test]
 fn resolve_deltified_object_copy_size_zero() {
-    let (_, dir) = include_repo!("fixtures/repo-7.tar");
+    let (_, dir) = include_repo!("fixtures/repos/repo-7.tar");
 
     let pack_path = dir
         .path()
@@ -251,7 +251,7 @@ fn resolve_deltified_object_copy_size_zero() {
 
 #[test]
 fn resolve_deltified_object_by_id_copy_size_zero() {
-    let (_, dir) = include_repo!("fixtures/repo-7.tar");
+    let (_, dir) = include_repo!("fixtures/repos/repo-7.tar");
 
     let pack_path = dir
         .path()

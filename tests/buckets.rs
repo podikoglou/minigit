@@ -2,7 +2,7 @@ mod common;
 
 #[test]
 fn bucket_contains_expected_objects() {
-    let (repo, _dir) = include_repo!("fixtures/repo-1.tar");
+    let (repo, _dir) = include_repo!("fixtures/repos/repo-1.tar");
 
     let buckets = repo
         .store

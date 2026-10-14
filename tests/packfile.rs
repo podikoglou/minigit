@@ -4,7 +4,7 @@ use fallible_iterator::FallibleIterator;
 
 #[test]
 fn store_packs_listing() {
-    let (repo, _dir) = include_repo!("fixtures/repo-5.tar");
+    let (repo, _dir) = include_repo!("fixtures/repos/repo-5.tar");
 
     let packs = repo.store.packs().expect("should be able to list packs");
 

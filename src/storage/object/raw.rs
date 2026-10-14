@@ -1,5 +1,6 @@
 use std::{fmt::Debug, io::Write};
 
+use flate2::{Compression, write::ZlibEncoder};
 use humansize::{DECIMAL, format_size};
 use sha1::{Digest, Sha1};
 use winnow::Parser;
@@ -56,6 +57,12 @@ impl RawObject {
         self.write_loose(&mut buf)?;
 
         Ok(Sha1::digest(buf).into())
+    }
+
+    pub fn write_loose_compressed<W: Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+        let mut zlib_writer = ZlibEncoder::new(writer, Compression::default());
+
+        self.write_loose(&mut zlib_writer)
     }
 }
 

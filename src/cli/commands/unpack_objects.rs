@@ -31,10 +31,10 @@ impl UnpackObjectsCommand {
 
         let bar = ProgressBar::new(pack.objects_count as u64);
 
-        for lazy_obj in pack.lazy_objects() {
-            let obj = lazy_obj.into_object()?;
+        for packed_obj in pack.objects() {
+            let raw_obj = pack.resolve(packed_obj)?;
 
-            if let Err(err) = repo.store.write_loose_object(obj) {
+            if let Err(err) = repo.store.write_loose_object_raw(raw_obj) {
                 match err {
                     MinigitError::ObjectExists => {
                         // we ignore objects that already exist

@@ -122,6 +122,24 @@ impl Store {
             .chain(objects))
     }
 
+    /// Gets a [RawObject] by its [ObjectHash].
+    pub fn raw_object(&self, hash: ObjectHash) -> Result<RawObject, MinigitError> {
+        // search in packfiles
+        for pack in self.packs()? {
+            if let Ok(packed) = pack.read_object_by_id(hash.clone()) {
+                return pack.resolve(packed);
+            }
+        }
+
+        // search in loose objects
+        let path = self
+            .objects_path()
+            .join(hash.prefix().to_string())
+            .join(&hash.to_string()[2..]); // <-- TODO: this could be a function of `ObjectHash`
+
+        LazyObject::loose(path).into_raw()
+    }
+
     /// Gets a [LazyObject] by its [ObjectHash].
     pub fn object(&self, hash: ObjectHash) -> Result<Object, MinigitError> {
         // search in packfiles

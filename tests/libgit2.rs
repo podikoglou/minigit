@@ -258,3 +258,53 @@ fn trees_match() {
             .expect("foreach should work");
     }
 }
+
+#[test]
+fn blobs_match() {
+    for repo_dir in REPOS_DIR.files() {
+        let (minigit_repo, _dir) = unpack_repo(repo_dir.contents());
+        let (oracle_repo, _dir) = unpack_git2_repo(repo_dir.contents());
+
+        let oracle_odb = oracle_repo.odb().expect("should be able to open odb");
+        let minigit_store = minigit_repo.store;
+
+        oracle_odb
+            .foreach(|oid| {
+                let oid = oid.to_owned();
+
+                // minigit object
+                let hash = oid_to_hash(&oid);
+
+                let minigit_raw_obj = minigit_store
+                    .raw_object(hash)
+                    .expect("minigit should load the object");
+
+                let minigit_obj = minigit_raw_obj
+                    .into_object(ParserContext::None)
+                    .expect("should be able to parse the bject");
+
+                let Object::Blob(minigit_blob) = minigit_obj else {
+                    return true;
+                };
+
+                // oracle object
+                let oracle_odb_obj = oracle_odb
+                    .read(oid)
+                    .expect("libgit2 should load the object");
+
+                let oracle_obj = oracle_repo
+                    .find_object(oid, Some(oracle_odb_obj.kind()))
+                    .expect("libgit2 should be able to find the object");
+
+                let Some(oracle_blob) = oracle_obj.as_blob() else {
+                    return true;
+                };
+
+                assert_eq!(minigit_blob.0.len(), oracle_blob.size(), "sizes match");
+                assert_eq!(minigit_blob.0, oracle_blob.content(), "contents match");
+
+                true
+            })
+            .expect("foreach should work");
+    }
+}

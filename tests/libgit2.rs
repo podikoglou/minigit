@@ -5,7 +5,6 @@
 //! passing, if you would run this with `-- --nocapture`, it would show errors. This should be kept
 //! in mind when running this suite.
 
-use bstr::ByteSlice;
 use git2::{
     Commit,
     ObjectType::{self as Git2ObjectType},
@@ -53,7 +52,8 @@ fn collect_oids(odb: &Odb<'_>) -> Vec<Oid> {
     odb.foreach(|oid| {
         oids.push(oid.to_owned());
         true
-    });
+    })
+    .expect("should be able to iterate over OIDs");
 
     oids
 }

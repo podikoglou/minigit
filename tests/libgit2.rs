@@ -1,5 +1,9 @@
 //! This test suite tests `minigit` against `libgit2` which is used as an oracle and considered to
 //! be a correct implementation.
+//!
+//! NOTE: Because of the way the `git2` crate works, it often happens that while tests may be
+//! passing, if you would run this with `-- --nocapture`, it would show errors. This should be kept
+//! in mind when running this suite.
 
 use bstr::ByteSlice;
 use git2::{

@@ -27,15 +27,15 @@ pub struct Ref {
     pub pointer: ObjectHash,
 }
 
-/// An unresolved ref pointing to an object.
+/// An ref with a pointer which has not been resolved yet.
 ///
-/// There are two possible cases for lazy refs:
+/// There are two possible cases for unresolved refs:
 /// - the `pointer` is already a hash (but still requires resolving to be turned to a [`Ref`])
 /// - the `pointer` is the name of another ref, which must be resolved
 ///
 /// These are resolved through [`crate::storage::Store`]
 #[derive(Debug, PartialEq, Eq)]
-pub struct LazyRef {
+pub struct UnresolvedRef {
     path: PathBuf,
 
     /// The path relative to .git/, like refs/heads/main
@@ -44,7 +44,7 @@ pub struct LazyRef {
     pub pointer: RefPointer,
 }
 
-impl LazyRef {
+impl UnresolvedRef {
     pub fn new(path: PathBuf, pointer: RefPointer) -> Self {
         // figure out the path of the rev relative to .git
         // like refs/heads/main
@@ -85,7 +85,7 @@ impl LazyRef {
         // TODO: how do we pass some ParserContext?
         let pointer = RefPointer::from_str(contents_str.trim())?;
 
-        Ok(LazyRef::new(path.as_ref().to_path_buf(), pointer))
+        Ok(UnresolvedRef::new(path.as_ref().to_path_buf(), pointer))
     }
 }
 

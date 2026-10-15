@@ -1,0 +1,23 @@
+---
+source: tests/refs.rs
+assertion_line: 10
+expression: refs
+---
+[
+    Ok(
+        LazyRef {
+            path: "/tmp/.tmpGIMPxC/.git/refs/heads/feature",
+            pointer: Object(
+                3e66aa515edae750fc16edabea2291a458069db0,
+            ),
+        },
+    ),
+    Ok(
+        LazyRef {
+            path: "/tmp/.tmpGIMPxC/.git/refs/heads/main",
+            pointer: Object(
+                61d5cf2c92d28f042275da58239417db20c5c3da,
+            ),
+        },
+    ),
+]

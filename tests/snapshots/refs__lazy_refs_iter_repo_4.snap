@@ -1,0 +1,22 @@
+---
+source: tests/refs.rs
+expression: refs
+---
+[
+    Ok(
+        (
+            "refs/tags/v0.0.1",
+            Object(
+                b7dd2f5a2ad589dd96bee9cf21e59e8249da5f29,
+            ),
+        ),
+    ),
+    Ok(
+        (
+            "refs/heads/main",
+            Object(
+                ab2b0330d1eb193e5e339c94197998e9baaa8846,
+            ),
+        ),
+    ),
+]

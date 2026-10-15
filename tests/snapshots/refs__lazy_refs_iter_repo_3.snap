@@ -1,0 +1,22 @@
+---
+source: tests/refs.rs
+expression: refs
+---
+[
+    Ok(
+        (
+            "refs/heads/feature",
+            Object(
+                3e66aa515edae750fc16edabea2291a458069db0,
+            ),
+        ),
+    ),
+    Ok(
+        (
+            "refs/heads/main",
+            Object(
+                61d5cf2c92d28f042275da58239417db20c5c3da,
+            ),
+        ),
+    ),
+]

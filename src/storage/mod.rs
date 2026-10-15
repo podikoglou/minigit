@@ -6,6 +6,7 @@ use std::{
 };
 
 use itertools::Itertools;
+use walkdir::WalkDir;
 
 use crate::{
     MinigitError,
@@ -14,7 +15,10 @@ use crate::{
         Object,
         hash::{HashPrefix, ObjectHash},
     },
-    storage::object::{LazyObject, ObjectsBucket, RawObject, packed::Packfile},
+    storage::{
+        object::{LazyObject, ObjectsBucket, RawObject, packed::Packfile},
+        reference::LazyRef,
+    },
 };
 
 pub mod object;
@@ -56,6 +60,11 @@ impl Store {
     #[must_use]
     pub fn packs_path(&self) -> PathBuf {
         self.objects_path().join("pack/")
+    }
+
+    #[must_use]
+    pub fn refs_path(&self) -> PathBuf {
+        self.path.join("refs/")
     }
 
     /// Returns all buckets (directories named after the prefix of a hash) under `.git/objects/`.
@@ -198,5 +207,18 @@ impl Store {
         let mut writer = BufWriter::new(object_file);
 
         object.write_loose_compressed(&mut writer)
+    }
+
+    /// Returns an iterator over the [LazyRef]s in the repository.
+    pub fn refs(&self) -> impl Iterator<Item = Result<LazyRef, MinigitError>> {
+        WalkDir::new(self.refs_path())
+            .into_iter()
+            .filter_map(|entry| match entry {
+                Ok(entry) if entry.file_type().is_file() => Some(LazyRef::open(entry.path())),
+
+                Ok(_) => None,
+
+                Err(err) => Some(Err(MinigitError::IO(err.into()))),
+            })
     }
 }

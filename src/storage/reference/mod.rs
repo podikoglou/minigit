@@ -36,7 +36,7 @@ pub struct Ref {
 /// These are resolved through [`crate::storage::Store`]
 #[derive(Debug, PartialEq, Eq)]
 pub struct LazyRef {
-    pub path: PathBuf,
+    path: PathBuf,
 
     /// The path relative to .git/, like refs/heads/main
     pub name: String,

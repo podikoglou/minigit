@@ -18,6 +18,7 @@ use crate::{
 };
 
 pub mod object;
+pub mod reference;
 
 #[derive(Debug)]
 pub struct Store {

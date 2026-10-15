@@ -2,7 +2,7 @@
 
 use std::{
     fs,
-    path::{Path, PathBuf},
+    path::{Component, Path, PathBuf},
     str::FromStr,
 };
 
@@ -37,12 +37,38 @@ pub struct Ref {
 #[derive(Debug, PartialEq, Eq)]
 pub struct LazyRef {
     pub path: PathBuf,
+
+    /// The path relative to .git/, like refs/heads/main
+    pub name: String,
+
     pub pointer: RefPointer,
 }
 
 impl LazyRef {
     pub fn new(path: PathBuf, pointer: RefPointer) -> Self {
-        Self { path, pointer }
+        // figure out the path of the rev relative to .git
+        // like refs/heads/main
+        //
+        // this is of course quite ugly, hopefully there's a better way to do this
+        let components: Vec<Component> = path
+            .components()
+            .rev()
+            .take_while(|x| x.as_os_str() != ".git")
+            .collect();
+
+        let name: String = components
+            .into_iter()
+            .rev()
+            .map(|x| x.as_os_str())
+            .map(|x| x.to_string_lossy())
+            .collect::<Vec<_>>()
+            .join("/");
+
+        Self {
+            path,
+            name,
+            pointer,
+        }
     }
 
     /// Opens and parses (but does not resolve) a ref file.

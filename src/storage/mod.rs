@@ -190,7 +190,7 @@ impl Store {
     }
 
     /// Returns an iterator over the [LazyRef]s in the repository.
-    pub fn refs(&self) -> impl Iterator<Item = Result<LazyRef, MinigitError>> {
+    pub fn lazy_refs(&self) -> impl Iterator<Item = Result<LazyRef, MinigitError>> {
         WalkDir::new(self.refs_path())
             .into_iter()
             .filter_map(|entry| match entry {

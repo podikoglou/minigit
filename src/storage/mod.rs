@@ -17,7 +17,7 @@ use crate::{
     },
     storage::{
         object::{LazyObject, ObjectsBucket, RawObject, packed::Packfile},
-        reference::LazyRef,
+        reference::{LazyRef, Ref, RefPointer},
     },
 };
 
@@ -220,5 +220,13 @@ impl Store {
 
                 Err(err) => Some(Err(MinigitError::IO(err.into()))),
             })
+    }
+
+    /// Resolves a [RefPointer] into an [ObjectHash].
+    pub fn resolve_ref_pointer(&self, pointer: RefPointer) -> Result<ObjectHash, MinigitError> {
+        match pointer {
+            RefPointer::Object(hash) => Ok(hash),
+            RefPointer::Ref(path) => self.resolve_ref_pointer(LazyRef::open(path)?.pointer),
+        }
     }
 }

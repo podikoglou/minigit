@@ -1,7 +1,12 @@
 //! This module deals with the storage and parsing of refs (`.git/refs`)
 
-use std::{path::PathBuf, str::FromStr};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    str::FromStr,
+};
 
+use bstr::ByteSlice;
 use winnow::{
     ModalResult, Parser,
     combinator::{alt, preceded},
@@ -9,7 +14,8 @@ use winnow::{
 };
 
 use crate::{
-    MinigitError, error,
+    MinigitError,
+    error::{self, ParserContext},
     object::hash::{ObjectHash, parse_object_hash_str},
     parsing::Stream,
 };
@@ -32,6 +38,29 @@ pub struct Ref {
 pub struct LazyRef {
     pub path: PathBuf,
     pub pointer: RefPointer,
+}
+
+impl LazyRef {
+    pub fn new(path: PathBuf, pointer: RefPointer) -> Self {
+        Self { path, pointer }
+    }
+
+    /// Opens and parses (but does not resolve) a ref file.
+    pub fn open(path: impl AsRef<Path>) -> Result<Self, MinigitError> {
+        let contents = fs::read(&path)?;
+
+        let contents_str = contents.to_str().map_err(|err| {
+            MinigitError::ParserError(
+                err.to_string(),
+                ParserContext::File(path.as_ref().to_path_buf()),
+            )
+        })?;
+
+        // TODO: how do we pass some ParserContext?
+        let pointer = RefPointer::from_str(contents_str.trim())?;
+
+        Ok(LazyRef::new(path.as_ref().to_path_buf(), pointer))
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]

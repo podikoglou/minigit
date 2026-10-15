@@ -17,7 +17,7 @@ use crate::{
     },
     storage::{
         object::{LazyObject, ObjectsBucket, RawObject, packed::Packfile},
-        reference::{LazyRef, Ref, RefPointer},
+        reference::{Ref, RefPointer, UnresolvedRef},
     },
 };
 
@@ -189,12 +189,12 @@ impl Store {
         object.write_loose_compressed(&mut writer)
     }
 
-    /// Returns an iterator over the [LazyRef]s in the repository.
-    pub fn lazy_refs(&self) -> impl Iterator<Item = Result<LazyRef, MinigitError>> {
+    /// Returns an iterator over the [UnresolvedRef]s in the repository.
+    pub fn unresolved_refs(&self) -> impl Iterator<Item = Result<UnresolvedRef, MinigitError>> {
         WalkDir::new(self.refs_path())
             .into_iter()
             .filter_map(|entry| match entry {
-                Ok(entry) if entry.file_type().is_file() => Some(LazyRef::open(entry.path())),
+                Ok(entry) if entry.file_type().is_file() => Some(UnresolvedRef::open(entry.path())),
 
                 Ok(_) => None,
 
@@ -206,7 +206,7 @@ impl Store {
     pub fn resolve_ref_pointer(&self, pointer: RefPointer) -> Result<ObjectHash, MinigitError> {
         match pointer {
             RefPointer::Object(hash) => Ok(hash),
-            RefPointer::Ref(path) => self.resolve_ref_pointer(LazyRef::open(path)?.pointer),
+            RefPointer::Ref(path) => self.resolve_ref_pointer(UnresolvedRef::open(path)?.pointer),
         }
     }
 }

@@ -5,6 +5,7 @@ use winnow::{
     ModalResult, Parser,
     ascii::{newline, till_line_ending},
     combinator::{opt, seq},
+    error::StrContext,
     token::take,
 };
 
@@ -58,6 +59,7 @@ impl RefsDb {
     }
 }
 
+#[derive(Debug)]
 pub struct RefsDbEntry {
     /// A hash that points to an object, oftentimes a tag.
     pub hash: ObjectHash,
@@ -76,16 +78,17 @@ impl RefsDbEntry {
 
 fn parse_header(input: &mut Stream<'_>) -> ModalResult<()> {
     "# pack-refs with: peeled fully-peeled sorted\n"
+        .context(StrContext::Label("packed-refs header"))
         .void()
         .parse_next(input)
 }
 
 fn parse_entry(input: &mut Stream<'_>) -> ModalResult<RefsDbEntry> {
     seq! {RefsDbEntry {
-        hash: parse_object_hash_str,
+        hash: parse_object_hash_str.context(StrContext::Label("pointer hash")),
         _: " ",
-        name: till_line_ending.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
-        peeled_hash: opt(seq!(_: "^", parse_object_hash_str, _: newline).map(|x| x.0))
+        name: till_line_ending.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned).context(StrContext::Label("ref name")),
+        peeled_hash: opt(seq!(_: "^", parse_object_hash_str, _: newline).map(|x| x.0)).context(StrContext::Label("peeled pointer hash")),
     }}
     .parse_next(input)
 }

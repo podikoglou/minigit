@@ -1,3 +1,5 @@
+use insta::assert_debug_snapshot;
+
 mod common;
 
 // #[test]
@@ -23,3 +25,16 @@ mod common;
 //
 //     insta::assert_debug_snapshot!(refs);
 // }
+
+#[test]
+fn ref_db_lookup() {
+    let (repo, _dir) = include_repo!("fixtures/repos/repo-9.tar");
+
+    let db = repo
+        .store
+        .ref_db()
+        .expect("should be able to open packed-refs");
+
+    assert_debug_snapshot!(db.lookup("refs/tags/v6.5.17"));
+    assert_debug_snapshot!(db.lookup("refs/heads/main"));
+}

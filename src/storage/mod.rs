@@ -17,7 +17,7 @@ use crate::{
     },
     storage::{
         object::{LazyObject, ObjectsBucket, RawObject, packed::Packfile},
-        reference::{Ref, RefPointer, UnresolvedRef},
+        reference::{Ref, RefPointer, UnresolvedRef, db::RefsDb},
     },
 };
 
@@ -54,6 +54,11 @@ impl Store {
     #[must_use]
     pub fn refs_path(&self) -> PathBuf {
         self.path.join("refs/")
+    }
+
+    #[must_use]
+    pub fn packed_refs_path(&self) -> PathBuf {
+        self.path.join("packed-refs")
     }
 
     /// Returns all buckets (directories named after the prefix of a hash) under `.git/objects/`.
@@ -187,6 +192,12 @@ impl Store {
         let mut writer = BufWriter::new(object_file);
 
         object.write_loose_compressed(&mut writer)
+    }
+
+    /// Opens the `packed-refs` database
+    pub fn ref_db(&self) -> Result<Rc<RefsDb>, MinigitError> {
+        // TODO: open it once!
+        RefsDb::open(self.packed_refs_path()).map(Rc::new)
     }
 
     /// Returns an iterator over the [UnresolvedRef]s in the repository.

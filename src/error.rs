@@ -33,6 +33,9 @@ pub enum MinigitError {
     #[error("Object already exists")]
     ObjectExists,
 
+    #[error("Ref not found")]
+    RefNotFound,
+
     // Ideally, we'd take advantage of winnow's `ParseError`, but it contains a lifetime and we'd need
     // to make this type something like `MinigitError<'a>`, which means we'd need to specify the
     // lifetime every time we use it.

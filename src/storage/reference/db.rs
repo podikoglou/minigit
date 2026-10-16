@@ -1,9 +1,19 @@
-use std::{fs::File, path::PathBuf};
+use std::{fs::File, path::PathBuf, str::FromStr};
 
 use memmap2::Mmap;
-use winnow::{ModalResult, Parser};
+use winnow::{
+    ModalResult, Parser,
+    ascii::{newline, till_line_ending},
+    combinator::{opt, seq},
+    token::take,
+};
 
-use crate::{MinigitError, error::ParserContext, object::hash::ObjectHash, parsing::Stream};
+use crate::{
+    MinigitError,
+    error::ParserContext,
+    object::hash::{ObjectHash, parse_object_hash_str},
+    parsing::Stream,
+};
 
 /// Provides a view over a `packed-refs` database file
 pub struct RefsDb {
@@ -26,8 +36,41 @@ impl RefsDb {
     }
 
     /// Looks up a ref's unpeeled hash
-    pub fn lookup(&self, name: &str) -> Option<ObjectHash> {
-        todo!()
+    pub fn lookup(&self, name: &str) -> Result<RefsDbEntry, MinigitError> {
+        // This is of couse an inefficient implementation. This does no binary search whatsoever,
+        // despite the file being sorted.
+        //
+        // TODO: implement this using binary search
+
+        let mut stream = Stream::new(&self.mmap);
+
+        while !stream.is_empty() {
+            let entry = parse_entry
+                .parse_next(&mut stream)
+                .map_err(|err| MinigitError::ParserError(err.to_string(), ParserContext::None))?;
+
+            if entry.name == name {
+                return Ok(entry);
+            }
+        }
+
+        Err(MinigitError::RefNotFound)
+    }
+}
+
+pub struct RefsDbEntry {
+    /// A hash that points to an object, oftentimes a tag.
+    pub hash: ObjectHash,
+
+    pub name: String,
+
+    /// A hash that points directly to the commit object.
+    pub peeled_hash: Option<ObjectHash>,
+}
+
+impl RefsDbEntry {
+    pub fn is_peeled(&self) -> bool {
+        self.peeled_hash.is_some()
     }
 }
 
@@ -35,4 +78,14 @@ fn parse_header(input: &mut Stream<'_>) -> ModalResult<()> {
     "# pack-refs with: peeled fully-peeled sorted\n"
         .void()
         .parse_next(input)
+}
+
+fn parse_entry(input: &mut Stream<'_>) -> ModalResult<RefsDbEntry> {
+    seq! {RefsDbEntry {
+        hash: parse_object_hash_str,
+        _: " ",
+        name: till_line_ending.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
+        peeled_hash: opt(seq!(_: "^", parse_object_hash_str, _: newline).map(|x| x.0))
+    }}
+    .parse_next(input)
 }

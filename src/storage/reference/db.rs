@@ -3,8 +3,8 @@ use std::{fs::File, path::PathBuf, str::FromStr};
 use memmap2::Mmap;
 use winnow::{
     ModalResult, Parser,
-    ascii::{newline, till_line_ending},
-    combinator::{opt, seq},
+    ascii::{newline, space0, till_line_ending},
+    combinator::{alt, opt, preceded, repeat, seq},
     error::StrContext,
     token::take,
 };
@@ -76,10 +76,37 @@ impl RefsDbEntry {
     }
 }
 
-fn parse_header(input: &mut Stream<'_>) -> ModalResult<()> {
-    "# pack-refs with: peeled fully-peeled sorted\n"
+#[derive(Debug, PartialEq, Eq, Default, Clone, Copy)]
+pub struct Flags {
+    pub peeled: bool,
+    pub fully_peeled: bool,
+    pub sorted: bool,
+}
+
+fn flags(input: &mut Stream<'_>) -> ModalResult<Flags> {
+    let mut flags = Flags::default();
+    let parsed: Vec<&[u8]> = repeat(
+        0..,
+        preceded(space0, alt(("peeled", "fully-peeled", "sorted"))),
+    )
+    .parse_next(input)?;
+    let _ = space0.parse_next(input)?;
+
+    for f in parsed {
+        match f {
+            b"peeled" => flags.peeled = true,
+            b"fully-peeled" => flags.fully_peeled = true,
+            b"sorted" => flags.sorted = true,
+            _ => {}
+        }
+    }
+
+    Ok(flags)
+}
+
+fn parse_header(input: &mut Stream<'_>) -> ModalResult<Flags> {
+    preceded("# pack-refs with:", flags)
         .context(StrContext::Label("packed-refs header"))
-        .void()
         .parse_next(input)
 }
 
@@ -91,4 +118,30 @@ fn parse_entry(input: &mut Stream<'_>) -> ModalResult<RefsDbEntry> {
         peeled_hash: opt(seq!(_: "^", parse_object_hash_str, _: newline).map(|x| x.0)).context(StrContext::Label("peeled pointer hash")),
     }}
     .parse_next(input)
+}
+
+#[cfg(test)]
+mod tests {
+    use insta::assert_debug_snapshot;
+    use winnow::Parser;
+
+    use crate::{parsing::Stream, storage::reference::db::parse_header};
+
+    #[test]
+    fn parses_header_flags() {
+        assert_debug_snapshot!(parse_header.parse_peek(Stream::new(b"# pack-refs with:")));
+        assert_debug_snapshot!(parse_header.parse_peek(Stream::new(b"# pack-refs with: ")));
+        assert_debug_snapshot!(parse_header.parse_peek(Stream::new(b"# pack-refs with: peeled")));
+        assert_debug_snapshot!(parse_header.parse_peek(Stream::new(b"# pack-refs with:  peeled")));
+        assert_debug_snapshot!(
+            parse_header.parse_peek(Stream::new(b"# pack-refs with: fully-peeled"))
+        );
+        assert_debug_snapshot!(parse_header.parse_peek(Stream::new(b"# pack-refs with: sorted")));
+        assert_debug_snapshot!(
+            parse_header.parse_peek(Stream::new(b"# pack-refs with: sorted fully-peeled peeled"))
+        );
+        assert_debug_snapshot!(
+            parse_header.parse_peek(Stream::new(b"# pack-refs with: fully-peeled sorted"))
+        );
+    }
 }

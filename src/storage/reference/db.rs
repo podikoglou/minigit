@@ -4,7 +4,7 @@ use memmap2::Mmap;
 use winnow::{
     ModalResult, Parser,
     ascii::{newline, space0, till_line_ending},
-    combinator::{alt, opt, preceded, repeat, seq},
+    combinator::{alt, opt, preceded, repeat, seq, terminated},
     error::StrContext,
     token::take,
 };
@@ -44,6 +44,10 @@ impl RefsDb {
         // TODO: implement this using binary search
 
         let mut stream = Stream::new(&self.mmap);
+
+        terminated(parse_header, opt(newline))
+            .parse_next(&mut stream)
+            .map_err(|err| MinigitError::ParserError(err.to_string(), ParserContext::None))?;
 
         while !stream.is_empty() {
             let entry = parse_entry

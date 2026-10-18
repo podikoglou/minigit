@@ -114,7 +114,7 @@ fn parse_entry(input: &mut Stream<'_>) -> ModalResult<RefsDbEntry> {
     seq! {RefsDbEntry {
         hash: parse_object_hash_str.context(StrContext::Label("pointer hash")),
         _: " ",
-        name: till_line_ending.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned).context(StrContext::Label("ref name")),
+        name: terminated(till_line_ending, opt(newline)).map(str::from_utf8).verify_map(Result::ok).map(str::to_owned).context(StrContext::Label("ref name")),
         peeled_hash: opt(seq!(_: "^", parse_object_hash_str, _: newline).map(|x| x.0)).context(StrContext::Label("peeled pointer hash")),
     }}
     .parse_next(input)

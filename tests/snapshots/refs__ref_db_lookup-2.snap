@@ -1,0 +1,7 @@
+---
+source: tests/refs.rs
+expression: "db.lookup(\"refs/heads/main\")"
+---
+Err(
+    RefNotFound,
+)

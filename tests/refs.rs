@@ -54,4 +54,12 @@ fn store_reference_packed() {
     assert_debug_snapshot!(repo.store.reference("refs/tags/v6.5.17".into()));
 }
 
+#[test]
+fn store_reference_shadowing() {
+    let (repo, _dir) = include_repo!("fixtures/repos/repo-5.tar");
+
+    assert_debug_snapshot!(repo.store.reference("refs/heads/main".into()));
+}
+
+
 

@@ -47,3 +47,11 @@ fn store_reference_loose() {
     assert_debug_snapshot!(repo.store.reference("refs/heads/feature".into()));
 }
 
+#[test]
+fn store_reference_packed() {
+    let (repo, _dir) = include_repo!("fixtures/repos/repo-9.tar");
+
+    assert_debug_snapshot!(repo.store.reference("refs/tags/v6.5.17".into()));
+}
+
+

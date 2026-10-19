@@ -38,6 +38,39 @@ pub struct Ref {
 }
 
 impl Ref {
+    pub fn open_loose(path: impl AsRef<Path>) -> Result<Ref, MinigitError> {
+        let path = path.as_ref();
+
+        let contents = fs::read(path)?;
+
+        let pointer = parse_ref_pointer
+            .parse(Stream::new(&contents))
+            .map_err(|err| {
+                MinigitError::ParserError(err.to_string(), error::ParserContext::None)
+            })?;
+
+        // extract name like .refs/heads/main or HEAD
+        let components: Vec<Component> = path
+            .components()
+            .rev()
+            .take_while(|x| x.as_os_str() != ".git")
+            .collect();
+
+        let name: String = components
+            .into_iter()
+            .rev()
+            .map(|x| x.as_os_str())
+            .map(|x| x.to_string_lossy())
+            .collect::<Vec<_>>()
+            .join("/");
+
+        Ok(Ref {
+            name,
+            pointer,
+            peeled: None,
+        })
+    }
+
     pub fn is_peeled(&self) -> bool {
         self.peeled.is_some()
     }

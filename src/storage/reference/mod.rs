@@ -20,6 +20,20 @@ use crate::{
     parsing::Stream,
 };
 
+pub mod db;
+
+/// A ref which has not been loaded yet.
+///
+/// This is simply a description of how to load the ref. This exists to unify
+/// - loose refs (under `.git/refs`)
+/// - packed refs (inside `.git/packed-refs`)
+///
+/// Such a ref can be resolved to a [Ref] using from [`crate::storage::Store`]
+pub enum LazyRef {
+    Loose(PathBuf),
+    Packed(usize),
+}
+
 /// A resolved ref pointing to an object.
 #[derive(Debug, PartialEq, Eq)]
 pub struct Ref {

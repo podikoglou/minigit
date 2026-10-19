@@ -14,7 +14,7 @@ use crate::{
     error::ParserContext,
     object::hash::{ObjectHash, parse_object_hash_str},
     parsing::Stream,
-    storage::reference::RefName,
+    storage::reference::{Ref, RefName, RefPointer},
 };
 
 /// Provides a view over a `packed-refs` database file
@@ -121,12 +121,12 @@ fn parse_header(input: &mut Stream<'_>) -> ModalResult<Flags> {
         .parse_next(input)
 }
 
-fn parse_entry(input: &mut Stream<'_>) -> ModalResult<RefsDbEntry> {
-    seq! {RefsDbEntry {
-        hash: parse_object_hash_str.context(StrContext::Label("pointer hash")),
+fn parse_entry(input: &mut Stream<'_>) -> ModalResult<Ref> {
+    seq! {Ref {
+        pointer: parse_object_hash_str.context(StrContext::Label("pointer hash")).map(RefPointer::Hash),
         _: " ",
         name: terminated(till_line_ending, opt(newline)).map(str::from_utf8).verify_map(Result::ok).map(str::to_owned).context(StrContext::Label("ref name")),
-        peeled_hash: opt(seq!(_: "^", parse_object_hash_str, _: newline).map(|x| x.0)).context(StrContext::Label("peeled pointer hash")),
+        peeled: opt(seq!(_: "^", parse_object_hash_str, _: newline).map(|x| x.0)).context(StrContext::Label("peeled pointer hash")),
     }}
     .parse_next(input)
 }

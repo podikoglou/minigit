@@ -1,0 +1,13 @@
+---
+source: tests/refs.rs
+expression: "repo.store.reference(\"HEAD\".into())"
+---
+Ok(
+    Ref {
+        name: "HEAD",
+        pointer: Symbolic(
+            "refs/heads/branch_9_bk40\n",
+        ),
+        peeled: None,
+    },
+)

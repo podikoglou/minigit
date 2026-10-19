@@ -99,3 +99,23 @@ pub fn parse_ref_pointer(input: &mut Stream<'_>) -> ModalResult<RefPointer> {
     ))
     .parse_next(input)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_ref_pointer_hash_with_newline() {
+        let input = b"61d5cf2c92d28f042275da58239417db20c5c3da\n";
+        let pointer = parse_ref_pointer.parse(Stream::new(input));
+        assert!(pointer.is_ok(), "expected Ok, got {:?}", pointer);
+    }
+
+    #[test]
+    fn parses_ref_pointer_symbolic_without_newline() {
+        let input = b"ref: refs/heads/main\n";
+        let pointer = parse_ref_pointer.parse(Stream::new(input)).unwrap();
+        assert_eq!(pointer, RefPointer::Symbolic("refs/heads/main".into()));
+    }
+}
+

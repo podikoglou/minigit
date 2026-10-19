@@ -44,7 +44,7 @@ impl RefsDb {
     }
 
     /// Looks up a ref's unpeeled hash
-    pub fn lookup(&self, name: &RefName) -> Result<RefsDbEntry, MinigitError> {
+    pub fn lookup(&self, name: &RefName) -> Result<Ref, MinigitError> {
         // This is of couse an inefficient implementation. This does no binary search whatsoever,
         // despite the file being sorted.
         //
@@ -67,23 +67,6 @@ impl RefsDb {
         }
 
         Err(MinigitError::RefNotFound)
-    }
-}
-
-#[derive(Debug)]
-pub struct RefsDbEntry {
-    /// A hash that points to an object, oftentimes a tag.
-    pub hash: ObjectHash,
-
-    pub name: String,
-
-    /// A hash that points directly to the commit object.
-    pub peeled_hash: Option<ObjectHash>,
-}
-
-impl RefsDbEntry {
-    pub fn is_peeled(&self) -> bool {
-        self.peeled_hash.is_some()
     }
 }
 

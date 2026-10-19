@@ -38,3 +38,12 @@ fn ref_db_lookup() {
     assert_debug_snapshot!(db.lookup("refs/tags/v6.5.17"));
     assert_debug_snapshot!(db.lookup("refs/heads/main"));
 }
+
+#[test]
+fn store_reference_loose() {
+    let (repo, _dir) = include_repo!("fixtures/repos/repo-3.tar");
+
+    assert_debug_snapshot!(repo.store.reference("refs/heads/main".into()));
+    assert_debug_snapshot!(repo.store.reference("refs/heads/feature".into()));
+}
+

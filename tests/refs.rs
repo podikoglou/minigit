@@ -70,6 +70,16 @@ fn store_reference_symbolic() {
     assert_debug_snapshot!(repo.store.reference("refs/heads/sym_2_iqi5".into()));
 }
 
+#[test]
+fn store_reference_missing() {
+    let (repo_packed, _dir) = include_repo!("fixtures/repos/repo-9.tar");
+    assert_debug_snapshot!(repo_packed.store.reference("refs/heads/ghost".into()));
+
+    let (repo_loose_only, _dir) = include_repo!("fixtures/repos/repo-3.tar");
+    assert_debug_snapshot!(repo_loose_only.store.reference("refs/heads/ghost".into()));
+}
+
+
 
 
 

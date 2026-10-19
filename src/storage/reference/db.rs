@@ -20,6 +20,7 @@ use crate::{
 /// Provides a view over a `packed-refs` database file
 pub struct RefsDb {
     pub path: PathBuf,
+    pub flags: Flags,
     file: File,
     mmap: Mmap,
 }
@@ -30,11 +31,16 @@ impl RefsDb {
         let file = File::open(&path)?;
         let mmap = unsafe { Mmap::map(&file) }?;
 
-        parse_header
+        let flags = parse_header
             .parse_next(&mut Stream::new(&mmap))
             .map_err(|err| MinigitError::ParserError(err.to_string(), ParserContext::None))?;
 
-        Ok(Self { path, file, mmap })
+        Ok(Self {
+            path,
+            flags,
+            file,
+            mmap,
+        })
     }
 
     /// Looks up a ref's unpeeled hash

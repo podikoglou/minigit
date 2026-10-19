@@ -61,5 +61,15 @@ fn store_reference_shadowing() {
     assert_debug_snapshot!(repo.store.reference("refs/heads/main".into()));
 }
 
+#[test]
+fn store_reference_symbolic() {
+    let (repo, _dir) = include_repo!("fixtures/repos/repo-9.tar");
+
+    assert_debug_snapshot!(repo.store.reference("HEAD".into()));
+    assert_debug_snapshot!(repo.store.reference("refs/heads/sym_1_7yjy".into()));
+    assert_debug_snapshot!(repo.store.reference("refs/heads/sym_2_iqi5".into()));
+}
+
+
 
 

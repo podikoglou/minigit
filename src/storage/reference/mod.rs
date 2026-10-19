@@ -15,98 +15,32 @@ use winnow::{
 
 use crate::{
     MinigitError,
-    error::{self, ParserContext},
+    error::{self},
     object::hash::{ObjectHash, parse_object_hash_str},
     parsing::Stream,
 };
 
 pub mod db;
 
-/// A ref which has not been loaded yet.
-///
-/// This is simply a description of how to load the ref. This exists to unify
-/// - loose refs (under `.git/refs`)
-/// - packed refs (inside `.git/packed-refs`)
-///
-/// Such a ref can be resolved to a [Ref] using from [`crate::storage::Store`]
-pub enum LazyRef {
-    Loose(PathBuf),
-    Packed(usize),
-}
-
-/// A resolved ref pointing to an object.
-#[derive(Debug, PartialEq, Eq)]
-pub struct Ref {
-    pub path: PathBuf,
-    pub pointer: ObjectHash,
-}
-
-/// An ref with a pointer which has not been resolved yet.
-///
-/// There are two possible cases for unresolved refs:
-/// - the `pointer` is already a hash (but still requires resolving to be turned to a [`Ref`])
-/// - the `pointer` is the name of another ref, which must be resolved
-///
-/// These are resolved through [`crate::storage::Store`]
-#[derive(Debug, PartialEq, Eq)]
-pub struct UnresolvedRef {
-    path: PathBuf,
-
-    /// The path relative to .git/, like refs/heads/main
-    pub name: String,
-
-    pub pointer: RefPointer,
-}
-
-impl UnresolvedRef {
-    pub fn new(path: PathBuf, pointer: RefPointer) -> Self {
-        // figure out the path of the rev relative to .git
-        // like refs/heads/main
-        //
-        // this is of course quite ugly, hopefully there's a better way to do this
-        let components: Vec<Component> = path
-            .components()
-            .rev()
-            .take_while(|x| x.as_os_str() != ".git")
-            .collect();
-
-        let name: String = components
-            .into_iter()
-            .rev()
-            .map(|x| x.as_os_str())
-            .map(|x| x.to_string_lossy())
-            .collect::<Vec<_>>()
-            .join("/");
-
-        Self {
-            path,
-            name,
-            pointer,
-        }
-    }
-
-    /// Opens and parses (but does not resolve) a ref file.
-    pub fn open(path: impl AsRef<Path>) -> Result<Self, MinigitError> {
-        let contents = fs::read(&path)?;
-
-        let contents_str = contents.to_str().map_err(|err| {
-            MinigitError::ParserError(
-                err.to_string(),
-                ParserContext::File(path.as_ref().to_path_buf()),
-            )
-        })?;
-
-        // TODO: how do we pass some ParserContext?
-        let pointer = RefPointer::from_str(contents_str.trim())?;
-
-        Ok(UnresolvedRef::new(path.as_ref().to_path_buf(), pointer))
-    }
-}
+pub type RefName = String;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum RefPointer {
-    Object(ObjectHash),
-    Ref(PathBuf),
+    Hash(ObjectHash),
+    Symbolic(RefName),
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct Ref {
+    pub name: RefName,
+    pub pointer: RefPointer,
+    pub peeled: Option<ObjectHash>,
+}
+
+impl Ref {
+    pub fn is_peeled(&self) -> bool {
+        self.peeled.is_some()
+    }
 }
 
 impl FromStr for RefPointer {
@@ -121,11 +55,14 @@ impl FromStr for RefPointer {
 
 pub fn parse_ref_pointer(input: &mut Stream<'_>) -> ModalResult<RefPointer> {
     alt((
-        parse_object_hash_str.map(RefPointer::Object),
-        preceded("ref: ", rest.map(str::from_utf8).verify_map(Result::ok))
-            .map(PathBuf::from_str)
-            .verify_map(Result::ok)
-            .map(RefPointer::Ref),
+        parse_object_hash_str.map(RefPointer::Hash),
+        preceded(
+            "ref: ",
+            rest.map(str::from_utf8)
+                .verify_map(Result::ok)
+                .map(str::to_owned),
+        )
+        .map(RefPointer::Symbolic),
     ))
     .parse_next(input)
 }

@@ -14,6 +14,7 @@ use crate::{
     error::ParserContext,
     object::hash::{ObjectHash, parse_object_hash_str},
     parsing::Stream,
+    storage::reference::RefName,
 };
 
 /// Provides a view over a `packed-refs` database file
@@ -37,7 +38,7 @@ impl RefsDb {
     }
 
     /// Looks up a ref's unpeeled hash
-    pub fn lookup(&self, name: &str) -> Result<RefsDbEntry, MinigitError> {
+    pub fn lookup(&self, name: &RefName) -> Result<RefsDbEntry, MinigitError> {
         // This is of couse an inefficient implementation. This does no binary search whatsoever,
         // despite the file being sorted.
         //
@@ -54,7 +55,7 @@ impl RefsDb {
                 .parse_next(&mut stream)
                 .map_err(|err| MinigitError::ParserError(err.to_string(), ParserContext::None))?;
 
-            if entry.name == name {
+            if &entry.name == name {
                 return Ok(entry);
             }
         }

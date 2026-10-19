@@ -10,7 +10,7 @@ use bstr::ByteSlice;
 use winnow::{
     ModalResult, Parser,
     ascii::newline,
-    combinator::{alt, preceded, terminated},
+    combinator::{alt, opt, preceded, terminated},
     token::rest,
 };
 
@@ -88,7 +88,7 @@ impl FromStr for RefPointer {
 }
 
 pub fn parse_loose_ref_file(input: &mut Stream<'_>) -> ModalResult<RefPointer> {
-    terminated(parse_ref_pointer, newline).parse_next(input)
+    terminated(parse_ref_pointer, opt(newline)).parse_next(input)
 }
 
 pub fn parse_ref_pointer(input: &mut Stream<'_>) -> ModalResult<RefPointer> {

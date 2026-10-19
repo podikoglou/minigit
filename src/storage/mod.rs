@@ -17,7 +17,7 @@ use crate::{
     },
     storage::{
         object::{LazyObject, ObjectsBucket, RawObject, packed::Packfile},
-        reference::{Ref, RefPointer, UnresolvedRef, db::RefsDb},
+        reference::{Ref, RefName, RefPointer, db::RefsDb},
     },
 };
 
@@ -65,6 +65,11 @@ impl Store {
     #[must_use]
     pub fn refs_path(&self) -> PathBuf {
         self.path.join("refs/")
+    }
+
+    #[must_use]
+    pub fn ref_path(&self, name: &String) -> PathBuf {
+        self.path.join(name)
     }
 
     #[must_use]
@@ -220,24 +225,42 @@ impl Store {
         RefsDb::open(self.packed_refs_path()).map(Rc::new)
     }
 
-    /// Returns an iterator over the [UnresolvedRef]s in the repository.
-    pub fn unresolved_refs(&self) -> impl Iterator<Item = Result<UnresolvedRef, MinigitError>> {
-        WalkDir::new(self.refs_path())
-            .into_iter()
-            .filter_map(|entry| match entry {
-                Ok(entry) if entry.file_type().is_file() => Some(UnresolvedRef::open(entry.path())),
-
-                Ok(_) => None,
-
-                Err(err) => Some(Err(MinigitError::IO(err.into()))),
-            })
-    }
-
-    /// Resolves a [RefPointer] into an [ObjectHash].
-    pub fn resolve_ref_pointer(&self, pointer: RefPointer) -> Result<ObjectHash, MinigitError> {
-        match pointer {
-            RefPointer::Object(hash) => Ok(hash),
-            RefPointer::Ref(path) => self.resolve_ref_pointer(UnresolvedRef::open(path)?.pointer),
+    /// Finds a [Ref] in the repository.
+    ///
+    /// Note that this function does not guarantee that the returned ref is peeled.
+    pub fn reference(&self, name: RefName) -> Result<Ref, MinigitError> {
+        // try to read as loose
+        //
+        // NOTE: this will be unpeeled!
+        let path = self.ref_path(&name);
+        if path.exists() {
+            return Ref::open_loose(path);
         }
+
+        // try to read packed
+        let ref_db = self.ref_db()?;
+
+        ref_db.lookup(&name)
     }
+
+    // /// Returns an iterator over the [UnresolvedRef]s in the repository.
+    // pub fn unresolved_refs(&self) -> impl Iterator<Item = Result<UnresolvedRef, MinigitError>> {
+    //     WalkDir::new(self.refs_path())
+    //         .into_iter()
+    //         .filter_map(|entry| match entry {
+    //             Ok(entry) if entry.file_type().is_file() => Some(UnresolvedRef::open(entry.path())),
+    //
+    //             Ok(_) => None,
+    //
+    //             Err(err) => Some(Err(MinigitError::IO(err.into()))),
+    //         })
+    // }
+    //
+    // /// Resolves a [RefPointer] into an [ObjectHash].
+    // pub fn resolve_ref_pointer(&self, pointer: RefPointer) -> Result<ObjectHash, MinigitError> {
+    //     match pointer {
+    //         RefPointer::Object(hash) => Ok(hash),
+    //         RefPointer::Ref(path) => self.resolve_ref_pointer(UnresolvedRef::open(path)?.pointer),
+    //     }
+    // }
 }

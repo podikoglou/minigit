@@ -2,16 +2,14 @@
 
 use std::{
     fs,
-    path::{Component, Path, PathBuf},
+    path::{Component, Path},
     str::FromStr,
 };
 
-use bstr::ByteSlice;
 use winnow::{
     ModalResult, Parser,
     ascii::{newline, till_line_ending},
     combinator::{alt, opt, preceded, terminated},
-    token::rest,
 };
 
 use crate::{

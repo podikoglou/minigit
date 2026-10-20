@@ -6,7 +6,6 @@ use std::{
 };
 
 use itertools::Itertools;
-use walkdir::WalkDir;
 
 use crate::{
     MinigitError,
@@ -17,7 +16,7 @@ use crate::{
     },
     storage::{
         object::{LazyObject, ObjectsBucket, RawObject, packed::Packfile},
-        reference::{Ref, RefName, RefPointer, db::RefsDb},
+        reference::{Ref, RefName, db::RefsDb},
     },
 };
 

@@ -1,4 +1,4 @@
-use std::{fs::File, path::PathBuf, str::FromStr};
+use std::{fs::File, path::PathBuf};
 
 use memmap2::Mmap;
 use winnow::{
@@ -6,13 +6,12 @@ use winnow::{
     ascii::{newline, space0, till_line_ending},
     combinator::{alt, opt, preceded, repeat, seq, terminated},
     error::StrContext,
-    token::take,
 };
 
 use crate::{
     MinigitError,
     error::ParserContext,
-    object::hash::{ObjectHash, parse_object_hash_str},
+    object::hash::parse_object_hash_str,
     parsing::Stream,
     storage::reference::{Ref, RefPointer},
 };

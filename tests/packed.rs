@@ -90,7 +90,8 @@ fn objects_iterator() {
         .path()
         .join(".git/objects/pack/pack-c7e64c7164f8f92168a1ce0953f0716848c2c32c.pack");
 
-    let packfile = Packfile::open(path, None).expect("should be able to open packfile");
+    let packfile = Packfile::open(path.clone(), path.with_extension("idx"))
+        .expect("should be able to open packfile");
     let objects = packfile.objects();
 
     assert_eq!(
@@ -110,12 +111,8 @@ fn indexed_objects_query() {
         .path()
         .join(".git/objects/pack/pack-c7e64c7164f8f92168a1ce0953f0716848c2c32c.pack");
 
-    let idx_path = dir
-        .path()
-        .join(".git/objects/pack/pack-c7e64c7164f8f92168a1ce0953f0716848c2c32c.idx");
-
-    let packfile =
-        Packfile::open(pack_path, Some(idx_path)).expect("should be able to open packfile");
+    let packfile = Packfile::open(pack_path.clone(), pack_path.with_extension("idx"))
+        .expect("should be able to open packfile");
 
     let obj = packfile
         .read_object_by_id(
@@ -223,12 +220,8 @@ fn resolve_deltified_object_copy_size_zero() {
         .path()
         .join(".git/objects/pack/pack-c810c1b92e401673d07ba82467562a599f53e298.pack");
 
-    let idx_path = dir
-        .path()
-        .join(".git/objects/pack/pack-c810c1b92e401673d07ba82467562a599f53e298.idx");
-
-    let packfile =
-        Packfile::open(pack_path, Some(idx_path)).expect("should be able to open packfile");
+    let packfile = Packfile::open(pack_path.clone(), pack_path.with_extension("idx"))
+        .expect("should be able to open packfile");
 
     let hash: ObjectHash = "db8b4b08da60fba8e2b5edab88f9cbaa01972293"
         .parse()
@@ -257,12 +250,8 @@ fn resolve_deltified_object_by_id_copy_size_zero() {
         .path()
         .join(".git/objects/pack/pack-c810c1b92e401673d07ba82467562a599f53e298.pack");
 
-    let idx_path = dir
-        .path()
-        .join(".git/objects/pack/pack-c810c1b92e401673d07ba82467562a599f53e298.idx");
-
-    let packfile =
-        Packfile::open(pack_path, Some(idx_path)).expect("should be able to open packfile");
+    let packfile = Packfile::open(pack_path.clone(), pack_path.with_extension("idx"))
+        .expect("should be able to open packfile");
 
     let hash: ObjectHash = "db8b4b08da60fba8e2b5edab88f9cbaa01972293"
         .parse()

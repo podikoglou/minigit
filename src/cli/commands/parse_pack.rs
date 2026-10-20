@@ -17,13 +17,7 @@ impl ParsePackCommand {
         let Self { file } = self;
 
         let pack_path = PathBuf::from(file);
-
         let idx_path = pack_path.with_extension("idx");
-        let idx_path = if idx_path.exists() {
-            Some(idx_path)
-        } else {
-            None
-        };
 
         let pack = Packfile::open(pack_path, idx_path)?;
 

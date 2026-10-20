@@ -42,6 +42,10 @@ pub enum MinigitError {
     #[error("Invalid pack index")]
     InvalidPackIndex,
 
+    /// Not to be confused with InvalidPackIndex
+    #[error("Pack not indexed")]
+    PackNotIndexed,
+
     #[error("Hex decoding error: {0}")]
     HexDecodingError(#[from] FromHexError),
 }

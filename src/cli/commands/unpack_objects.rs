@@ -20,13 +20,7 @@ impl UnpackObjectsCommand {
         let repo = Repo::open(env::current_dir()?)?;
 
         let pack_path = PathBuf::from(file);
-
         let idx_path = pack_path.with_extension("idx");
-        let idx_path = if idx_path.exists() {
-            Some(idx_path)
-        } else {
-            None
-        };
 
         let pack = Rc::new(Packfile::open(pack_path, idx_path)?);
 

@@ -93,13 +93,14 @@ impl Store {
             if path.extension().and_then(|ext| ext.to_str()) == Some("pack") {
                 let idx_path = path.with_extension("idx");
 
-                let idx = if idx_path.exists() {
-                    Some(idx_path)
-                } else {
-                    None
-                };
+                if !idx_path.exists() {
+                    // TODO: is this what's best? should the whole function return an error just if
+                    // one doesn't have an index? perhaps the function should return a vec of
+                    // results?
+                    return Err(MinigitError::PackNotIndexed);
+                }
 
-                packs.push(Rc::new(Packfile::open(path, idx)?));
+                packs.push(Rc::new(Packfile::open(path, idx_path)?));
             }
         }
 

@@ -34,11 +34,14 @@ use crate::{
     storage::object::{LazyObject, RawObject, packed::idx::PackIndex},
 };
 
-/// Holds a handle to an memory-mapped packfile and optionally its index.
+/// Holds a handle to an memory-mapped packfile along with its [PackIndex].
+///
+/// It should be noted that this does not support indexless packfiles. For operations where they are
+/// required (which are very rare), one should prefer to use the parser manually.
 #[derive(Debug)]
 pub struct Packfile {
     pub pack: (PathBuf, Mmap),
-    pub idx: Option<PackIndex>,
+    pub idx: PackIndex,
 
     /// The amount of objects contained in the packfile.
     pub objects_count: u32,
@@ -47,7 +50,7 @@ pub struct Packfile {
 impl Packfile {
     /// Creates an instance of [Packfile]. This memory maps the pack and (if present) index file,
     /// and parses their headers.
-    pub fn open(pack_path: PathBuf, idx_path: Option<PathBuf>) -> Result<Self, MinigitError> {
+    pub fn open(pack_path: PathBuf, idx_path: PathBuf) -> Result<Self, MinigitError> {
         // open packfile
         let pack_file = File::open(&pack_path)?;
         let pack_buf = unsafe { Mmap::map(&pack_file) }?;
@@ -60,7 +63,7 @@ impl Packfile {
         })?;
 
         // if present, open idx
-        let idx = idx_path.and_then(|path| PackIndex::open(path).ok());
+        let idx = PackIndex::open(idx_path)?;
 
         Ok(Self {
             pack,
@@ -84,11 +87,10 @@ impl Packfile {
 
     /// Returns an iterator over the objects of the packfile as [LazyObject]s.
     pub fn lazy_objects(self: Rc<Self>) -> impl Iterator<Item = LazyObject> {
-        // TODO: indexless support!
-        let count = self.idx.as_ref().map_or(0, |idx| idx.len());
+        let count = self.idx.len();
 
         (0..count).map(move |i| {
-            let offset = self.idx.as_ref().unwrap().offset_at(i);
+            let offset = self.idx.offset_at(i);
             LazyObject::Packed(Rc::clone(&self), offset)
         })
     }
@@ -116,14 +118,9 @@ impl Packfile {
     ///
     /// This does not resolve the deltas.
     pub fn read_object_by_id(&self, hash: ObjectHash) -> Result<PackedObject, MinigitError> {
-        match &self.idx {
-            Some(idx) => {
-                let offset = idx.lookup(hash).ok_or(MinigitError::ObjectNotFound)?;
+        let offset = self.idx.lookup(hash).ok_or(MinigitError::ObjectNotFound)?;
 
-                self.read_object_at_offset(offset)
-            }
-            None => todo!("indexless lookup by object ID"),
-        }
+        self.read_object_at_offset(offset)
     }
 
     /// Resolves a [PackedObject] into a [RawObject], resolving the deltas if it is deltified.

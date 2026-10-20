@@ -44,7 +44,7 @@ impl Ref {
 
         let contents = fs::read(path)?;
 
-        let pointer = parse_loose_ref_file
+        let pointer = parse_ref_pointer
             .parse(Stream::new(&contents))
             .map_err(|err| {
                 MinigitError::ParserError(err.to_string(), error::ParserContext::None)
@@ -87,21 +87,20 @@ impl FromStr for RefPointer {
     }
 }
 
-pub fn parse_loose_ref_file(input: &mut Stream<'_>) -> ModalResult<RefPointer> {
-    terminated(parse_ref_pointer, opt(newline)).parse_next(input)
-}
-
 pub fn parse_ref_pointer(input: &mut Stream<'_>) -> ModalResult<RefPointer> {
-    alt((
-        parse_object_hash_str.map(RefPointer::Hash),
-        preceded(
-            "ref: ",
-            rest.map(str::from_utf8)
-                .verify_map(Result::ok)
-                .map(str::to_owned),
-        )
-        .map(RefPointer::Symbolic),
-    ))
+    terminated(
+        alt((
+            parse_object_hash_str.map(RefPointer::Hash),
+            preceded(
+                "ref: ",
+                rest.map(str::from_utf8)
+                    .verify_map(Result::ok)
+                    .map(str::to_owned),
+            )
+            .map(RefPointer::Symbolic),
+        )),
+        opt(newline),
+    )
     .parse_next(input)
 }
 

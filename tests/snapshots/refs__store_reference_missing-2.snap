@@ -1,0 +1,7 @@
+---
+source: tests/refs.rs
+expression: "repo_loose_only.store.reference(\"refs/heads/ghost\".into())"
+---
+Err(
+    RefNotFound,
+)

@@ -238,9 +238,13 @@ impl Store {
         }
 
         // try to read packed
-        let ref_db = self.ref_db()?;
+        // TODO: Is this good error handling? I don't like how we completely ignore the underlying
+        // error, but the truth is that, yes, indeed, the ref was not found, no matter why. Perhaps
+        // RefNotFound could contain Option<MinigitError> ?
 
-        ref_db.lookup(&name)
+        let ref_db = self.ref_db().map_err(|_| MinigitError::RefNotFound)?;
+
+        ref_db.lookup(&name).map_err(|_| MinigitError::RefNotFound)
     }
 
     // /// Returns an iterator over the [UnresolvedRef]s in the repository.

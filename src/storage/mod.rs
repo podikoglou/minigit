@@ -16,7 +16,7 @@ use crate::{
     },
     storage::{
         object::{LazyObject, ObjectsBucket, RawObject, packed::Packfile},
-        reference::{Ref, RefName, db::RefsDb},
+        reference::{Ref, RefName, RefPointer, db::RefsDb},
     },
 };
 
@@ -244,6 +244,17 @@ impl Store {
         let ref_db = self.ref_db().map_err(|_| MinigitError::RefNotFound)?;
 
         ref_db.lookup(&name).map_err(|_| MinigitError::RefNotFound)
+    }
+
+    pub fn resolve_reference(&self, pointer: &RefPointer) -> Result<ObjectHash, MinigitError> {
+        match pointer {
+            RefPointer::Hash(hash) => Ok(hash.to_owned()),
+            RefPointer::Symbolic(name) => {
+                let reference = self.reference(name.into())?;
+
+                self.resolve_reference(&reference.pointer)
+            }
+        }
     }
 
     // /// Returns an iterator over the [UnresolvedRef]s in the repository.

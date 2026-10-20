@@ -9,7 +9,7 @@ use std::{
 use bstr::ByteSlice;
 use winnow::{
     ModalResult, Parser,
-    ascii::newline,
+    ascii::{newline, till_line_ending},
     combinator::{alt, opt, preceded, terminated},
     token::rest,
 };
@@ -93,7 +93,8 @@ pub fn parse_ref_pointer(input: &mut Stream<'_>) -> ModalResult<RefPointer> {
             parse_object_hash_str.map(RefPointer::Hash),
             preceded(
                 "ref: ",
-                rest.map(str::from_utf8)
+                till_line_ending
+                    .map(str::from_utf8)
                     .verify_map(Result::ok)
                     .map(str::to_owned),
             )

@@ -6,7 +6,7 @@ Ok(
     Ref {
         name: "refs/heads/sym_2_iqi5",
         pointer: Symbolic(
-            "refs/heads/sym_1_7yjy\n",
+            "refs/heads/sym_1_7yjy",
         ),
         peeled: None,
     },

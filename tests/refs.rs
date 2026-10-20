@@ -78,8 +78,3 @@ fn store_reference_missing() {
     let (repo_loose_only, _dir) = include_repo!("fixtures/repos/repo-3.tar");
     assert_debug_snapshot!(repo_loose_only.store.reference("refs/heads/ghost".into()));
 }
-
-
-
-
-

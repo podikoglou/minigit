@@ -16,6 +16,7 @@ One of the following subcommands must be present:
     parse-object
     parse-pack
     unpack-objects
+    log
 ```
 
 

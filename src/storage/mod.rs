@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     fs::{self, File},
     io::BufWriter,
     path::PathBuf,
@@ -19,9 +20,12 @@ use crate::{
 
 pub mod object;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Store {
     pub path: PathBuf,
+
+    /// Mapping from pack name (such as 9b6ed366de8f29d9ebc6e1d44188de219a5ac3f3) to a [`Rc<Pack>`]
+    packs: HashMap<String, Rc<Packfile>>,
 }
 
 impl Store {
@@ -30,7 +34,16 @@ impl Store {
         let path = path.into();
 
         match fs::exists(&path) {
-            Ok(true) => Ok(Self { path }),
+            Ok(true) => {
+                let mut store = Self {
+                    path,
+                    ..Default::default()
+                };
+
+                store.refresh_packs()?;
+
+                Ok(store)
+            }
             Ok(false) => Err(MinigitError::NoGitDirectory),
             Err(err) => Err(err.into()),
         }
@@ -69,48 +82,56 @@ impl Store {
             .ok_or(MinigitError::BucketNotFound)
     }
 
-    /// Gets all the [Packfile]s in the store.
-    pub fn packs(&self) -> Result<Vec<Rc<Packfile>>, MinigitError> {
+    /// Refreshes the internal packfile listing
+    pub fn refresh_packs(&mut self) -> Result<(), MinigitError> {
         let pack_dir = self.packs_path();
 
-        if !pack_dir.exists() {
-            return Ok(Vec::new());
-        }
+        self.packs = if pack_dir.exists() {
+            fs::read_dir(pack_dir)?
+                .filter_map(|entry| {
+                    // it should be noted that this closure doesn't propagate any errors up; when an
+                    // error is encountered, it is simply ignored
+                    let path = entry.ok()?.path();
+                    let file_name = path.file_name()?.to_string_lossy();
 
-        let mut packs = Vec::new();
+                    // ensure in the form of "pack-<hash>.pack"
+                    if !file_name.starts_with("pack-") {
+                        return None;
+                    }
 
-        for entry in fs::read_dir(pack_dir)? {
-            let path = entry?.path();
+                    if !file_name.ends_with(".pack") {
+                        return None;
+                    }
 
-            let Some(file_name) = path.file_name().and_then(|name| name.to_str()) else {
-                continue;
-            };
+                    let idx_path = path.with_extension("idx");
 
-            if !file_name.starts_with("pack-") {
-                continue;
-            }
+                    // ensure respective .idx existts
+                    if !idx_path.exists() {
+                        return None;
+                    }
 
-            if path.extension().and_then(|ext| ext.to_str()) == Some("pack") {
-                let idx_path = path.with_extension("idx");
+                    // TODO: when do we ever handle such failures? this seems important
+                    let pack = Packfile::open(path, idx_path).ok()?;
 
-                if !idx_path.exists() {
-                    // TODO: is this what's best? should the whole function return an error just if
-                    // one doesn't have an index? perhaps the function should return a vec of
-                    // results?
-                    return Err(MinigitError::PackNotIndexed);
-                }
+                    Some((pack.name.clone(), Rc::new(pack)))
+                })
+                .collect::<HashMap<_, _>>()
+        } else {
+            HashMap::new()
+        };
 
-                packs.push(Rc::new(Packfile::open(path, idx_path)?));
-            }
-        }
+        Ok(())
+    }
 
-        Ok(packs)
+    /// Gets all the [Packfile]s in the store.
+    pub fn packs(&self) -> impl Iterator<Item = Rc<Packfile>> {
+        self.packs.values().map(|x| x.clone())
     }
 
     pub fn objects(
         &self,
     ) -> Result<impl Iterator<Item = Result<LazyObject, MinigitError>>, MinigitError> {
-        let packs = self.packs()?;
+        let packs = self.packs();
 
         let objects = packs.into_iter().flat_map(Packfile::lazy_objects).map(Ok);
 
@@ -126,7 +147,7 @@ impl Store {
     /// Gets a [RawObject] by its [ObjectHash].
     pub fn raw_object(&self, hash: ObjectHash) -> Result<RawObject, MinigitError> {
         // search in packfiles
-        for pack in self.packs()? {
+        for pack in self.packs() {
             if let Ok(packed) = pack.read_object_by_id(hash.clone()) {
                 return pack.resolve(packed);
             }
@@ -144,7 +165,7 @@ impl Store {
     /// Gets a [LazyObject] by its [ObjectHash].
     pub fn object(&self, hash: ObjectHash) -> Result<Object, MinigitError> {
         // search in packfiles
-        for pack in self.packs()? {
+        for pack in self.packs() {
             if let Ok(packed) = pack.read_object_by_id(hash.clone()) {
                 return pack
                     .resolve(packed)

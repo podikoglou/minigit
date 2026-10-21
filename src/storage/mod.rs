@@ -125,7 +125,7 @@ impl Store {
 
     /// Gets all the [Packfile]s in the store.
     pub fn packs(&self) -> impl Iterator<Item = Rc<Packfile>> {
-        self.packs.values().map(|x| x.clone())
+        self.packs.values().cloned()
     }
 
     pub fn objects(

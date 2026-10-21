@@ -10,7 +10,7 @@ use std::io::Write;
 use blob::Blob;
 use flate2::{Compression, write::ZlibEncoder};
 use sha1::{Digest, Sha1};
-use strum::{EnumDiscriminants, EnumIs, EnumString, IntoStaticStr, VariantArray};
+use strum::{EnumDiscriminants, EnumIs, EnumString, EnumTryAs, IntoStaticStr, VariantArray};
 use tree::Tree;
 use winnow::{
     ModalResult, Parser,
@@ -34,7 +34,7 @@ use crate::{
     storage::object::{LazyObject, loose::WriteLoose},
 };
 
-#[derive(Debug, PartialEq, Eq, Clone, EnumDiscriminants, EnumIs)]
+#[derive(Debug, PartialEq, Eq, Clone, EnumDiscriminants, EnumIs, EnumTryAs)]
 #[strum_discriminants(name(ObjectType))]
 #[strum_discriminants(derive(EnumString, IntoStaticStr, VariantArray))]
 #[strum_discriminants(strum(ascii_case_insensitive))]

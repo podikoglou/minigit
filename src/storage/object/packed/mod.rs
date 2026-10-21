@@ -45,6 +45,10 @@ pub struct Packfile {
 
     /// The amount of objects contained in the packfile.
     pub objects_count: u32,
+
+    /// The name of the packfile, excluding the "pack-" extension. This is generally a hash, but we
+    /// don't parse it or treat it as such at the moment.
+    pub name: String,
 }
 
 impl Packfile {
@@ -54,6 +58,14 @@ impl Packfile {
         // open packfile
         let pack_file = File::open(&pack_path)?;
         let pack_buf = unsafe { Mmap::map(&pack_file) }?;
+
+        // extract pack name
+        let stem = pack_path.file_stem().unwrap_or_default().to_string_lossy();
+
+        let name = stem
+            .strip_prefix("pack-")
+            .map(str::to_owned)
+            .unwrap_or_else(|| stem.to_string());
 
         let pack = (pack_path, pack_buf);
 
@@ -68,6 +80,7 @@ impl Packfile {
         Ok(Self {
             pack,
             idx,
+            name,
             objects_count: pack_header.objects,
         })
     }

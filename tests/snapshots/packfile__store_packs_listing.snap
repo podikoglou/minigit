@@ -1,0 +1,8 @@
+---
+source: tests/packfile.rs
+expression: "(&pack.name, &pack.objects_count)"
+---
+(
+    "a0ba98959a3d422d8bbe8e86f2cf62eb8f2b2df7",
+    3,
+)

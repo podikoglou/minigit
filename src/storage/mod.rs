@@ -1,5 +1,4 @@
 use std::{
-    collections::HashMap,
     fs::{self, File},
     io::BufWriter,
     path::PathBuf,
@@ -24,8 +23,7 @@ pub mod object;
 pub struct Store {
     pub path: PathBuf,
 
-    /// Mapping from pack name (such as 9b6ed366de8f29d9ebc6e1d44188de219a5ac3f3) to a [`Rc<Pack>`]
-    packs: HashMap<String, Rc<Packfile>>,
+    packs: Vec<Rc<Packfile>>,
 }
 
 impl Store {
@@ -113,11 +111,11 @@ impl Store {
                     // TODO: when do we ever handle such failures? this seems important
                     let pack = Packfile::open(path, idx_path).ok()?;
 
-                    Some((pack.name.clone(), Rc::new(pack)))
+                    Some(Rc::new(pack))
                 })
-                .collect::<HashMap<_, _>>()
+                .collect::<Vec<_>>()
         } else {
-            HashMap::new()
+            Vec::default()
         };
 
         Ok(())
@@ -125,7 +123,7 @@ impl Store {
 
     /// Gets all the [Packfile]s in the store.
     pub fn packs(&self) -> impl Iterator<Item = Rc<Packfile>> {
-        self.packs.values().cloned()
+        self.packs.iter().cloned()
     }
 
     pub fn objects(

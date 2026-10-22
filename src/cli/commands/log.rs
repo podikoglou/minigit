@@ -85,9 +85,26 @@ impl LogCommand {
                 visited.insert(parent_hash.clone());
             }
 
-            dbg!(commit.description);
+            show_commit(&commit, &hash);
         }
 
         Ok(())
     }
+}
+
+fn show_commit(
+    Commit {
+        tree,
+        parents,
+        author,
+        committer,
+        extra,
+        description,
+    }: &Commit,
+    hash: &ObjectHash,
+) {
+    println!("commit {hash}");
+    println!("Author: {}", author.0);
+    println!("Date:   {}", author.1.format("%a %b %d %T %z"));
+    println!("\n{description}");
 }

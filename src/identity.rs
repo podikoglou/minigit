@@ -2,7 +2,7 @@
 //!
 //! It offers newtypes such as [`Identity`], which is consisted of a [`Name`] and [`Email`].
 
-use std::io::Write;
+use std::{fmt::Display, io::Write};
 
 use bstr::BString;
 use nutype::nutype;
@@ -36,6 +36,14 @@ impl WriteLoose for Identity {
         writer.write_all(b">")?;
 
         Ok(())
+    }
+}
+
+impl Display for Identity {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let Identity { name, email } = self;
+
+        write!(f, "{name}, <{email}>")
     }
 }
 

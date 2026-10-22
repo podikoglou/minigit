@@ -6,6 +6,7 @@ use std::{
 };
 
 use argh::FromArgs;
+use bstr::{BStr, ByteSlice};
 use itertools::Either;
 use minigit::{
     MinigitError, Repo,
@@ -132,5 +133,13 @@ fn write_commit(
     writeln!(w, "commit {hash}")?;
     writeln!(w, "Author: {}", author.0)?;
     writeln!(w, "Date:   {}", author.1.format("%a %b %d %T %z"))?;
-    writeln!(w, "\n{description}")
+    writeln!(w)?;
+
+    for line in description.lines() {
+        writeln!(w, "    {}", line.as_bstr())?;
+    }
+
+    writeln!(w)?;
+
+    Ok(())
 }

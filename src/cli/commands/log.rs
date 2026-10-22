@@ -12,6 +12,7 @@ use minigit::{
     MinigitError, Repo,
     object::{commit::Commit, hash::ObjectHash},
 };
+use owo_colors::{OwoColorize as _, Stream};
 
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "log")]
@@ -57,12 +58,17 @@ impl LogCommand {
         let stdout = io::stdout();
         let mut out = if io::stdout().is_terminal() {
             let pipe = io::pipe()?;
-            let child = Command::new("less").stdin(pipe.0).spawn()?;
+            let child = Command::new("less")
+                .stdin(pipe.0)
+                .env("LESS", "FRX") // this makes less colorful, I am *not* sure why.
+                .spawn()?;
 
             Either::Left((pipe.1, child))
         } else {
             Either::Right(stdout.lock())
         };
+
+        owo_colors::set_override(out.is_left());
 
         let w: &mut dyn Write = match &mut out {
             Either::Left((w, _)) => w,
@@ -130,7 +136,12 @@ fn write_commit(
     }: &Commit,
     hash: &ObjectHash,
 ) -> io::Result<()> {
-    writeln!(w, "commit {hash}")?;
+    writeln!(
+        w,
+        "{}",
+        format!("commit {hash}").if_supports_color(Stream::Stdout, |x| x.yellow())
+    )?;
+
     writeln!(w, "Author: {}", author.0)?;
     writeln!(w, "Date:   {}", author.1.format("%a %b %d %T %z"))?;
     writeln!(w)?;

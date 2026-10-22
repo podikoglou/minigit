@@ -1,12 +1,15 @@
 use std::{
     collections::{BinaryHeap, HashSet},
     env,
+    io::{self, IsTerminal, Write},
+    process::Command,
 };
 
 use argh::FromArgs;
+use itertools::Either;
 use minigit::{
     MinigitError, Repo,
-    object::{Object, commit::Commit, hash::ObjectHash},
+    object::{commit::Commit, hash::ObjectHash},
 };
 
 #[derive(FromArgs, PartialEq, Debug)]
@@ -50,6 +53,21 @@ impl Into<QueueEntry> for (Box<Commit>, ObjectHash) {
 
 impl LogCommand {
     pub fn run(self) -> Result<(), MinigitError> {
+        let stdout = io::stdout();
+        let mut out = if io::stdout().is_terminal() {
+            let pipe = io::pipe()?;
+            let child = Command::new("less").stdin(pipe.0).spawn()?;
+
+            Either::Left((pipe.1, child))
+        } else {
+            Either::Right(stdout.lock())
+        };
+
+        let w: &mut dyn Write = match &mut out {
+            Either::Left((w, _)) => w,
+            Either::Right(w) => w,
+        };
+
         let repo = Repo::open(env::current_dir()?)?;
 
         let mut queue: BinaryHeap<QueueEntry> = BinaryHeap::default();
@@ -85,26 +103,34 @@ impl LogCommand {
                 visited.insert(parent_hash.clone());
             }
 
-            show_commit(&commit, &hash);
+            if let Err(err) = write_commit(w, &commit, &hash) {
+                if err.kind() == io::ErrorKind::BrokenPipe {
+                    break;
+                }
+                return Err(err.into());
+            }
+        }
+
+        if let Either::Left((writer, mut child)) = out {
+            drop(writer);
+            child.wait()?;
         }
 
         Ok(())
     }
 }
 
-fn show_commit(
+fn write_commit(
+    w: &mut (impl Write + ?Sized),
     Commit {
-        tree,
-        parents,
         author,
-        committer,
-        extra,
         description,
+        ..
     }: &Commit,
     hash: &ObjectHash,
-) {
-    println!("commit {hash}");
-    println!("Author: {}", author.0);
-    println!("Date:   {}", author.1.format("%a %b %d %T %z"));
-    println!("\n{description}");
+) -> io::Result<()> {
+    writeln!(w, "commit {hash}")?;
+    writeln!(w, "Author: {}", author.0)?;
+    writeln!(w, "Date:   {}", author.1.format("%a %b %d %T %z"))?;
+    writeln!(w, "\n{description}")
 }

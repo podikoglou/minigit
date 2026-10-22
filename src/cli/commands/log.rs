@@ -20,7 +20,7 @@ pub struct LogCommand {}
 ///
 /// NOTE: This could perhaps be moved somewhere else later or we may be able to achieve the same
 /// thing differently.
-struct QueueEntry(Box<Commit>);
+struct QueueEntry(Box<Commit>, ObjectHash);
 
 impl PartialEq for QueueEntry {
     fn eq(&self, other: &Self) -> bool {
@@ -42,9 +42,9 @@ impl Ord for QueueEntry {
     }
 }
 
-impl Into<QueueEntry> for Box<Commit> {
+impl Into<QueueEntry> for (Box<Commit>, ObjectHash) {
     fn into(self) -> QueueEntry {
-        QueueEntry(self)
+        QueueEntry(self.0, self.1)
     }
 }
 
@@ -59,15 +59,19 @@ impl LogCommand {
             .store
             .reference("HEAD".into())
             .and_then(|head| repo.store.resolve_reference(&head.pointer))
-            .and_then(|head| repo.store.object(head))
-            .and_then(|head| head.try_as_commit().ok_or(MinigitError::InvalidHead))
+            .and_then(|head| repo.store.object(head.clone()).map(|obj| (obj, head)))
+            .and_then(|(head, hash)| {
+                head.try_as_commit()
+                    .ok_or(MinigitError::InvalidHead)
+                    .map(|commit| (commit, hash))
+            })
             .map_err(|_| MinigitError::InvalidHead)?;
 
         queue.push(head.into());
 
         while !queue.is_empty() {
             // we just ensured it's not empty, so we can unwrap.
-            let QueueEntry(commit) = queue.pop().unwrap();
+            let QueueEntry(commit, hash) = queue.pop().unwrap();
 
             for parent_hash in &commit.parents {
                 if visited.contains(parent_hash) {
@@ -77,7 +81,7 @@ impl LogCommand {
                 let parent = repo.store.object(parent_hash.clone())?;
                 let parent = parent.try_as_commit().ok_or(MinigitError::UnexpectedType)?;
 
-                queue.push(parent.into());
+                queue.push((parent, parent_hash.clone()).into());
                 visited.insert(parent_hash.clone());
             }
 

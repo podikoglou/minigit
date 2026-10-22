@@ -58,20 +58,10 @@ impl LogCommand {
         let head = repo
             .store
             .reference("HEAD".into())
+            .and_then(|head| repo.store.resolve_reference(&head.pointer))
+            .and_then(|head| repo.store.object(head))
+            .and_then(|head| head.try_as_commit().ok_or(MinigitError::InvalidHead))
             .map_err(|_| MinigitError::InvalidHead)?;
-
-        let head = repo
-            .store
-            .resolve_reference(&head.pointer)
-            .map_err(|_| MinigitError::InvalidHead)?;
-
-        let head = repo
-            .store
-            .object(head)
-            .map_err(|_| MinigitError::InvalidHead)?;
-
-        // insert head to queue as the first element
-        let head = head.try_as_commit().ok_or(MinigitError::InvalidHead)?;
 
         queue.push(head.into());
 

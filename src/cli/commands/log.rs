@@ -25,7 +25,7 @@ pub struct LogCommand {}
 ///
 /// NOTE: This could perhaps be moved somewhere else later or we may be able to achieve the same
 /// thing differently.
-struct QueueEntry(Box<Commit>, ObjectHash);
+struct QueueEntry(Commit, ObjectHash);
 
 impl PartialEq for QueueEntry {
     fn eq(&self, other: &Self) -> bool {
@@ -47,7 +47,7 @@ impl Ord for QueueEntry {
     }
 }
 
-impl Into<QueueEntry> for (Box<Commit>, ObjectHash) {
+impl Into<QueueEntry> for (Commit, ObjectHash) {
     fn into(self) -> QueueEntry {
         QueueEntry(self.0, self.1)
     }
@@ -80,17 +80,7 @@ impl LogCommand {
         let mut queue: BinaryHeap<QueueEntry> = BinaryHeap::default();
         let mut visited: HashSet<ObjectHash> = HashSet::default();
 
-        let head = repo
-            .store
-            .reference("HEAD".into())
-            .and_then(|head| repo.store.resolve_reference(&head.pointer))
-            .and_then(|head| repo.store.object(head.clone()).map(|obj| (obj, head)))
-            .and_then(|(head, hash)| {
-                head.try_as_commit()
-                    .ok_or(MinigitError::InvalidHead)
-                    .map(|commit| (commit, hash))
-            })
-            .map_err(|_| MinigitError::InvalidHead)?;
+        let head = repo.store.head()?;
 
         queue.push(head.into());
 
@@ -104,7 +94,7 @@ impl LogCommand {
                 }
 
                 let parent = repo.store.object(parent_hash.clone())?;
-                let parent = parent.try_as_commit().ok_or(MinigitError::UnexpectedType)?;
+                let parent = *parent.try_as_commit().ok_or(MinigitError::UnexpectedType)?;
 
                 queue.push((parent, parent_hash.clone()).into());
                 visited.insert(parent_hash.clone());

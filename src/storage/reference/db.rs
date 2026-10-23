@@ -33,7 +33,9 @@ impl RefsDb {
 
         let flags = parse_header
             .parse_next(&mut Stream::new(&mmap))
-            .map_err(|err| MinigitError::ParserError(err.to_string(), ParserContext::None))?;
+            .map_err(|err| {
+                MinigitError::ParserError(err.to_string(), ParserContext::File(path.clone()))
+            })?;
 
         Ok(Self {
             path,
@@ -54,12 +56,14 @@ impl RefsDb {
 
         terminated(parse_header, opt(newline))
             .parse_next(&mut stream)
-            .map_err(|err| MinigitError::ParserError(err.to_string(), ParserContext::None))?;
+            .map_err(|err| {
+                MinigitError::ParserError(err.to_string(), ParserContext::File(self.path.clone()))
+            })?;
 
         while !stream.is_empty() {
-            let entry = parse_entry
-                .parse_next(&mut stream)
-                .map_err(|err| MinigitError::ParserError(err.to_string(), ParserContext::None))?;
+            let entry = parse_entry.parse_next(&mut stream).map_err(|err| {
+                MinigitError::ParserError(err.to_string(), ParserContext::File(self.path.clone()))
+            })?;
 
             if entry.name == name {
                 return Ok(entry);

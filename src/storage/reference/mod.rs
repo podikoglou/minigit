@@ -14,7 +14,7 @@ use winnow::{
 
 use crate::{
     MinigitError,
-    error::{self},
+    error::{self, ParserContext},
     object::hash::{ObjectHash, parse_object_hash_str},
     parsing::Stream,
 };
@@ -40,12 +40,12 @@ impl Ref {
     pub fn open_loose(path: impl AsRef<Path>) -> Result<Ref, MinigitError> {
         let path = path.as_ref();
 
-        let contents = fs::read(path)?;
+        let contents = fs::read(&path)?;
 
         let pointer = parse_ref_pointer
             .parse(Stream::new(&contents))
             .map_err(|err| {
-                MinigitError::ParserError(err.to_string(), error::ParserContext::None)
+                MinigitError::ParserError(err.to_string(), ParserContext::File(path.to_path_buf()))
             })?;
 
         // extract name like .refs/heads/main or HEAD
@@ -81,7 +81,7 @@ impl FromStr for RefPointer {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         parse_ref_pointer
             .parse(Stream::new(s.as_bytes()))
-            .map_err(|err| MinigitError::ParserError(err.to_string(), error::ParserContext::None))
+            .map_err(|err| MinigitError::ParserError(err.to_string(), ParserContext::None))
     }
 }
 

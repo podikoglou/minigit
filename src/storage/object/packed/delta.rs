@@ -81,8 +81,7 @@ pub fn instruction(input: &mut Stream<'_>) -> ModalResult<Instruction> {
 }
 
 fn insert_instruction(input: &mut Stream<'_>) -> ModalResult<InsertInstruction> {
-    let first_byte = any.verify(|byte| *byte < 128).parse_next(input)?;
-    let size = first_byte & 0b0111_1111;
+    let size = any.verify(|byte| *byte < 128).parse_next(input)?;
 
     take(size as usize)
         .map(|x: &[u8]| InsertInstruction(x.into()))

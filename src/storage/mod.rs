@@ -259,25 +259,4 @@ impl Store {
             }
         }
     }
-
-    // /// Returns an iterator over the [UnresolvedRef]s in the repository.
-    // pub fn unresolved_refs(&self) -> impl Iterator<Item = Result<UnresolvedRef, MinigitError>> {
-    //     WalkDir::new(self.refs_path())
-    //         .into_iter()
-    //         .filter_map(|entry| match entry {
-    //             Ok(entry) if entry.file_type().is_file() => Some(UnresolvedRef::open(entry.path())),
-    //
-    //             Ok(_) => None,
-    //
-    //             Err(err) => Some(Err(MinigitError::IO(err.into()))),
-    //         })
-    // }
-    //
-    // /// Resolves a [RefPointer] into an [ObjectHash].
-    // pub fn resolve_ref_pointer(&self, pointer: RefPointer) -> Result<ObjectHash, MinigitError> {
-    //     match pointer {
-    //         RefPointer::Object(hash) => Ok(hash),
-    //         RefPointer::Ref(path) => self.resolve_ref_pointer(UnresolvedRef::open(path)?.pointer),
-    //     }
-    // }
 }

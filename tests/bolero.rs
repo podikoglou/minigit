@@ -6,7 +6,10 @@ use minigit::{
     identity::parse_identity,
     object::{commit::parse_commit, parse_header, tag::parse_tag, tree::parse_tree},
     parsing::Stream,
-    storage::object::loose::{Encode, read_object, read_object_compressed},
+    storage::object::{
+        loose::{Encode, read_object, read_object_compressed},
+        packed::delta::insert_instruction,
+    },
     time::{Timestamp, parse_timestamp},
 };
 
@@ -126,5 +129,21 @@ fn fuzz_tree() {
     check!().for_each(|input: &[u8]| {
         let mut stream = Stream::new(input);
         let _ = parse_tree(&mut stream);
+    });
+}
+
+/// Fuzz the insert instruction parser and writer (roundtrip)
+#[test]
+fn fuzz_insert_instruction() {
+    check!().for_each(|input: &[u8]| {
+        let mut stream = Stream::new(input);
+
+        if let Ok(instruction) = insert_instruction(&mut stream) {
+            let mut buf = Vec::default();
+
+            let _ = instruction.encode(&mut buf);
+
+            assert_eq!(buf, input);
+        }
     });
 }

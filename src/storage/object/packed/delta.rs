@@ -6,9 +6,13 @@ use winnow::{
 };
 
 use crate::{
+    MinigitError,
     object::hash::parse_object_hash,
     parsing::Stream,
-    storage::object::packed::{BaseObject, PackedObjectType, offset, size},
+    storage::object::{
+        loose::Encode,
+        packed::{BaseObject, PackedObjectType, offset, size},
+    },
 };
 
 #[derive(Debug, PartialEq)]
@@ -19,6 +23,27 @@ pub enum Instruction {
 
 #[derive(Debug, PartialEq)]
 pub struct InsertInstruction(pub Vec<u8>);
+
+impl Encode for InsertInstruction {
+    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+        let len = self.0.len();
+
+        // if len is bigger than 128 (0b0000_0000), then we can't encode it, because the MSB should
+        // be 0 to signify that this is an insert instruction
+        //
+        // (if it is larger than 128 the data should be split in different instructions)
+        //
+        // TODO: don't check this here, enforce it during the creation of `InsertInstruction`
+        if len == 0 || len >= 128 {
+            return Err(MinigitError::InvalidInstruction);
+        }
+
+        writer.write_all(&[len as u8])?;
+        writer.write_all(&self.0)?;
+
+        Ok(())
+    }
+}
 
 #[derive(Debug, PartialEq)]
 pub struct CopyInstruction {
@@ -80,8 +105,10 @@ pub fn instruction(input: &mut Stream<'_>) -> ModalResult<Instruction> {
     .parse_next(input)
 }
 
-fn insert_instruction(input: &mut Stream<'_>) -> ModalResult<InsertInstruction> {
-    let size = any.verify(|byte| *byte < 128).parse_next(input)?;
+pub fn insert_instruction(input: &mut Stream<'_>) -> ModalResult<InsertInstruction> {
+    let size = any
+        .verify(|byte| (1..128).contains(byte))
+        .parse_next(input)?;
 
     take(size as usize)
         .map(|x: &[u8]| InsertInstruction(x.into()))

@@ -60,4 +60,7 @@ pub enum MinigitError {
 
     #[error("Hex decoding error: {0}")]
     HexDecodingError(#[from] FromHexError),
+
+    #[error("Invalid instruction")]
+    InvalidInstruction,
 }

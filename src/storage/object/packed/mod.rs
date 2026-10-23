@@ -6,7 +6,7 @@
 //!
 //! In particular, this deals with version 2 of the packfile format.
 
-mod delta;
+pub mod delta;
 pub mod idx;
 mod object;
 

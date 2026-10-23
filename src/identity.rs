@@ -43,7 +43,7 @@ impl Display for Identity {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let Identity { name, email } = self;
 
-        write!(f, "{name}, <{email}>")
+        write!(f, "{name} <{email}>")
     }
 }
 

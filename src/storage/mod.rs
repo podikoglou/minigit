@@ -236,7 +236,7 @@ impl Store {
         // NOTE: this will be unpeeled!
         let path = self.ref_path(&name);
         if path.exists() {
-            return Ref::open_loose(path);
+            return Ref::open_loose(path, name);
         }
 
         // try to read packed

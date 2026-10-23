@@ -37,7 +37,10 @@ pub struct Ref {
 }
 
 impl Ref {
-    pub fn open_loose(path: impl AsRef<Path>) -> Result<Ref, MinigitError> {
+    /// Opens a loose ref given its path, and given its name.
+    ///
+    /// No validation is done to ensure the name matches the path, so is trusted.
+    pub fn open_loose(path: impl AsRef<Path>, name: RefName) -> Result<Ref, MinigitError> {
         let path = path.as_ref();
 
         let contents = fs::read(&path)?;
@@ -47,21 +50,6 @@ impl Ref {
             .map_err(|err| {
                 MinigitError::ParserError(err.to_string(), ParserContext::File(path.to_path_buf()))
             })?;
-
-        // extract name like .refs/heads/main or HEAD
-        let components: Vec<Component> = path
-            .components()
-            .rev()
-            .take_while(|x| x.as_os_str() != ".git")
-            .collect();
-
-        let name: String = components
-            .into_iter()
-            .rev()
-            .map(|x| x.as_os_str())
-            .map(|x| x.to_string_lossy())
-            .collect::<Vec<_>>()
-            .join("/");
 
         Ok(Ref {
             name,

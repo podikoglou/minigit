@@ -2,8 +2,8 @@ use argh::FromArgs;
 use minigit::MinigitError;
 
 use crate::cli::commands::{
-    hash_object::HashObjectCommand, ls_buckets::LsBucketsCommand, ls_objects::LsObjectsCommand,
-    parse_object::ParseObjectCommand, parse_pack::ParsePackCommand,
+    hash_object::HashObjectCommand, log::LogCommand, ls_buckets::LsBucketsCommand,
+    ls_objects::LsObjectsCommand, parse_object::ParseObjectCommand, parse_pack::ParsePackCommand,
     unpack_objects::UnpackObjectsCommand,
 };
 
@@ -23,6 +23,7 @@ pub enum Subcommand {
     ParseObject(ParseObjectCommand),
     ParsePack(ParsePackCommand),
     UnpackObjects(UnpackObjectsCommand),
+    Log(LogCommand),
 }
 
 impl Args {
@@ -34,6 +35,7 @@ impl Args {
             Subcommand::ParseObject(cmd) => cmd.run(),
             Subcommand::ParsePack(cmd) => cmd.run(),
             Subcommand::UnpackObjects(cmd) => cmd.run(),
+            Subcommand::Log(cmd) => cmd.run(),
         }
     }
 }

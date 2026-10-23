@@ -16,7 +16,7 @@ use crate::{MinigitError, error::ParserContext, parsing::Stream};
 
 /// A hash that identifies an [`super::Object`]. It is a SHA1 hash of the header and
 /// contents of the object.
-#[derive(PartialEq, Eq, Clone, PartialOrd, Ord)]
+#[derive(PartialEq, Eq, Clone, PartialOrd, Ord, Hash)]
 pub struct ObjectHash(Array<u8, U20>);
 
 impl ObjectHash {

@@ -1,0 +1,14 @@
+---
+source: src/storage/reference/db.rs
+expression: "parse_header.parse_peek(Stream::new(b\"# pack-refs with:\"))"
+---
+Ok(
+    (
+        [],
+        Flags {
+            peeled: false,
+            fully_peeled: false,
+            sorted: false,
+        },
+    ),
+)

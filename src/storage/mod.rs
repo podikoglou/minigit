@@ -3,6 +3,7 @@ use std::{
     io::BufWriter,
     path::PathBuf,
     rc::Rc,
+    sync::OnceLock,
 };
 
 use itertools::Itertools;
@@ -12,18 +13,24 @@ use crate::{
     error::ParserContext,
     object::{
         Object,
+        commit::Commit,
         hash::{HashPrefix, ObjectHash},
     },
-    storage::object::{LazyObject, ObjectsBucket, RawObject, packed::Packfile},
+    storage::{
+        object::{LazyObject, ObjectsBucket, RawObject, packed::Packfile},
+        reference::{Ref, RefName, RefPointer, db::RefsDb},
+    },
 };
 
 pub mod object;
+pub mod reference;
 
 #[derive(Debug, Default)]
 pub struct Store {
     pub path: PathBuf,
 
     packs: Vec<Rc<Packfile>>,
+    refs_db: OnceLock<Rc<RefsDb>>,
 }
 
 impl Store {
@@ -55,6 +62,21 @@ impl Store {
     #[must_use]
     pub fn packs_path(&self) -> PathBuf {
         self.objects_path().join("pack/")
+    }
+
+    #[must_use]
+    pub fn refs_path(&self) -> PathBuf {
+        self.path.join("refs/")
+    }
+
+    #[must_use]
+    pub fn ref_path(&self, name: &String) -> PathBuf {
+        self.path.join(name)
+    }
+
+    #[must_use]
+    pub fn packed_refs_path(&self) -> PathBuf {
+        self.path.join("packed-refs")
     }
 
     /// Returns all buckets (directories named after the prefix of a hash) under `.git/objects/`.
@@ -197,5 +219,60 @@ impl Store {
         let mut writer = BufWriter::new(object_file);
 
         object.write_loose_compressed(&mut writer)
+    }
+
+    /// Gets a handle to the `packed-refs` database
+    pub fn ref_db(&self) -> Result<Rc<RefsDb>, MinigitError> {
+        self.refs_db
+            .get_or_try_init(|| RefsDb::open(self.packed_refs_path()).map(Rc::new))
+            .cloned()
+    }
+
+    /// Finds a [Ref] in the repository.
+    ///
+    /// Note that this function does not guarantee that the returned ref is peeled.
+    pub fn reference(&self, name: RefName) -> Result<Ref, MinigitError> {
+        // try to read as loose
+        //
+        // NOTE: this will be unpeeled!
+        let path = self.ref_path(&name);
+        if path.exists() {
+            return Ref::open_loose(path, name);
+        }
+
+        // try to read packed
+        // TODO: Is this good error handling? I don't like how we completely ignore the underlying
+        // error, but the truth is that, yes, indeed, the ref was not found, no matter why. Perhaps
+        // RefNotFound could contain Option<MinigitError> ?
+
+        let ref_db = self.ref_db().map_err(|_| MinigitError::RefNotFound)?;
+
+        ref_db.lookup(&name).map_err(|_| MinigitError::RefNotFound)
+    }
+
+    /// Recursively resolve a [RefPointer] to a the [ObjectHash] of the object it points to.
+    pub fn resolve_reference(&self, pointer: &RefPointer) -> Result<ObjectHash, MinigitError> {
+        match pointer {
+            RefPointer::Hash(hash) => Ok(hash.to_owned()),
+            RefPointer::Symbolic(name) => {
+                let reference = self.reference(name.into())?;
+
+                self.resolve_reference(&reference.pointer)
+            }
+        }
+    }
+
+    /// Gets the [ObjectHash] of the commit `HEAD` is pointing to.
+    /// Gets the [Commit] and [ObjectHash] (in a tuple) of the commit `HEAD` is pointing to.
+    pub fn head(&self) -> Result<(Commit, ObjectHash), MinigitError> {
+        self.reference("HEAD".into())
+            .and_then(|head| self.resolve_reference(&head.pointer))
+            .and_then(|hash| self.object(hash.clone()).map(|obj| (obj, hash)))
+            .and_then(|(object, hash)| {
+                object
+                    .try_as_commit()
+                    .ok_or(MinigitError::UnexpectedObjectType)
+                    .map(|commit| (*commit, hash))
+            })
     }
 }

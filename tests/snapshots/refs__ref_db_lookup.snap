@@ -1,0 +1,15 @@
+---
+source: tests/refs.rs
+expression: "db.lookup(\"refs/tags/v6.5.17\")"
+---
+Ok(
+    Ref {
+        name: "refs/tags/v6.5.17",
+        pointer: Hash(
+            2bd482abe1486c8a5b51c184a84e8120bf21b3d1,
+        ),
+        peeled: Some(
+            f6b5d317b067a0fd84ecd968000ea751950ff3d7,
+        ),
+    },
+)

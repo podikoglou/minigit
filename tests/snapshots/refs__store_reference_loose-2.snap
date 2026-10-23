@@ -1,0 +1,13 @@
+---
+source: tests/refs.rs
+expression: "repo.store.reference(\"refs/heads/feature\".into())"
+---
+Ok(
+    Ref {
+        name: "refs/heads/feature",
+        pointer: Hash(
+            3e66aa515edae750fc16edabea2291a458069db0,
+        ),
+        peeled: None,
+    },
+)

@@ -3,6 +3,7 @@ use std::{
     io::BufWriter,
     path::PathBuf,
     rc::Rc,
+    sync::OnceLock,
 };
 
 use itertools::Itertools;
@@ -28,6 +29,7 @@ pub struct Store {
     pub path: PathBuf,
 
     packs: Vec<Rc<Packfile>>,
+    refs_db: OnceLock<Rc<RefsDb>>,
 }
 
 impl Store {
@@ -220,8 +222,9 @@ impl Store {
 
     /// Opens the `packed-refs` database
     pub fn ref_db(&self) -> Result<Rc<RefsDb>, MinigitError> {
-        // TODO: open it once!
-        RefsDb::open(self.packed_refs_path()).map(Rc::new)
+        self.refs_db
+            .get_or_try_init(|| RefsDb::open(self.packed_refs_path()).map(Rc::new))
+            .cloned()
     }
 
     /// Finds a [Ref] in the repository.

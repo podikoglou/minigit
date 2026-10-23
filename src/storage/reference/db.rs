@@ -17,6 +17,7 @@ use crate::{
 };
 
 /// Provides a view over a `packed-refs` database file
+#[derive(Debug)]
 pub struct RefsDb {
     pub path: PathBuf,
     pub flags: Flags,

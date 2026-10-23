@@ -6,6 +6,7 @@
 //!
 //! In particular, this deals with version 2 of the packfile format.
 
+mod delta;
 pub mod idx;
 
 use std::{fs::File, io::Read, path::PathBuf, rc::Rc};
@@ -17,7 +18,7 @@ use strum::FromRepr;
 use winnow::{
     ModalResult, Parser,
     binary::be_u32,
-    combinator::{alt, repeat, seq},
+    combinator::{alt, seq},
     error::{ContextError, ErrMode, StrContext},
     stream::Location,
     token::{any, take},
@@ -26,12 +27,15 @@ use winnow::{
 use crate::{
     MinigitError,
     error::ParserContext,
-    object::{
-        ObjectType,
-        hash::{ObjectHash, parse_object_hash},
-    },
+    object::{ObjectType, hash::ObjectHash},
     parsing::Stream,
-    storage::object::{LazyObject, RawObject, packed::idx::PackIndex},
+    storage::object::{
+        LazyObject, RawObject,
+        packed::{
+            delta::{CopyInstruction, Delta, InsertInstruction, Instruction, base_object, delta},
+            idx::PackIndex,
+        },
+    },
 };
 
 /// Holds a handle to an memory-mapped packfile along with its [PackIndex].
@@ -280,28 +284,6 @@ impl PackedObject {
     }
 }
 
-#[derive(Debug, PartialEq)]
-pub enum Instruction {
-    Insert(InsertInstruction),
-    Copy(CopyInstruction),
-}
-
-#[derive(Debug, PartialEq)]
-pub struct InsertInstruction(pub Vec<u8>);
-
-#[derive(Debug, PartialEq)]
-pub struct CopyInstruction {
-    pub offset: u64,
-    pub size: u64,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct Delta {
-    pub base_object_size: u64,
-    pub deltified_object_size: u64,
-    pub instructions: Vec<Instruction>,
-}
-
 /// Parses the header of a packfile, returning the amount of objects contained in the packfile.
 pub fn header(input: &mut Stream<'_>) -> ModalResult<PackfileHeader> {
     seq! {PackfileHeader {
@@ -393,25 +375,6 @@ fn offset(input: &mut Stream<'_>) -> ModalResult<u64> {
     Ok(offset)
 }
 
-fn base_object(r#type: PackedObjectType) -> impl FnMut(&mut Stream<'_>) -> ModalResult<BaseObject> {
-    match r#type {
-        PackedObjectType::OfsDelta => |input: &mut Stream<'_>| {
-            offset
-                .map(BaseObject::Ofs)
-                .context(StrContext::Label("base object offset"))
-                .parse_next(input)
-        },
-        PackedObjectType::RefDelta => |input: &mut Stream<'_>| {
-            parse_object_hash
-                .map(BaseObject::Ref)
-                .context(StrContext::Label("base object name"))
-                .parse_next(input)
-        },
-
-        _ => unreachable!(),
-    }
-}
-
 /// Parses the header and data of a deltified object. Does not take care of resolving the deltas.
 fn deltified_object(input: &mut Stream<'_>) -> ModalResult<(BaseObject, Delta)> {
     let header = object_header
@@ -461,99 +424,6 @@ fn size(input: &mut Stream<'_>) -> ModalResult<u64> {
     }
 
     Ok(value)
-}
-
-fn delta(input: &mut Stream<'_>) -> ModalResult<Delta> {
-    let base_object_size = size
-        .context(StrContext::Label("base object size"))
-        .parse_next(input)?;
-
-    let deltified_object_size = size
-        .context(StrContext::Label("deltified object size"))
-        .parse_next(input)?;
-
-    let instructions = repeat(0.., instruction).parse_next(input)?;
-
-    Ok(Delta {
-        base_object_size,
-        deltified_object_size,
-        instructions,
-    })
-}
-
-fn instruction(input: &mut Stream<'_>) -> ModalResult<Instruction> {
-    alt((
-        insert_instruction.map(Instruction::Insert),
-        copy_instruction.map(Instruction::Copy),
-    ))
-    .parse_next(input)
-}
-
-fn insert_instruction(input: &mut Stream<'_>) -> ModalResult<InsertInstruction> {
-    let first_byte = any.verify(|byte| *byte < 128).parse_next(input)?;
-    let size = first_byte & 0b0111_1111;
-
-    take(size as usize)
-        .map(|x: &[u8]| InsertInstruction(x.into()))
-        .parse_next(input)
-}
-
-fn copy_instruction(input: &mut Stream<'_>) -> ModalResult<CopyInstruction> {
-    let first_byte = any.verify(|byte| *byte >= 128).parse_next(input)?;
-
-    let has_offset_1 = (first_byte & 0b0000_0001) != 0;
-    let has_offset_2 = (first_byte & 0b0000_0010) != 0;
-    let has_offset_3 = (first_byte & 0b0000_0100) != 0;
-    let has_offset_4 = (first_byte & 0b0000_1000) != 0;
-    let has_size_1 = (first_byte & 0b0001_0000) != 0;
-    let has_size_2 = (first_byte & 0b0010_0000) != 0;
-    let has_size_3 = (first_byte & 0b0100_0000) != 0;
-
-    let offset_1 = if has_offset_1 {
-        any.parse_next(input)? as u64
-    } else {
-        0
-    };
-
-    let offset_2 = if has_offset_2 {
-        any.parse_next(input)? as u64
-    } else {
-        0
-    };
-
-    let offset_3 = if has_offset_3 {
-        any.parse_next(input)? as u64
-    } else {
-        0
-    };
-
-    let offset_4 = if has_offset_4 {
-        any.parse_next(input)? as u64
-    } else {
-        0
-    };
-
-    let size_1 = if has_size_1 {
-        any.parse_next(input)? as u64
-    } else {
-        0
-    };
-    let size_2 = if has_size_2 {
-        any.parse_next(input)? as u64
-    } else {
-        0
-    };
-    let size_3 = if has_size_3 {
-        any.parse_next(input)? as u64
-    } else {
-        0
-    };
-
-    let offset = offset_1 | (offset_2 << 8) | (offset_3 << 16) | (offset_4 << 24);
-    let size = size_1 | (size_2 << 8) | (size_3 << 16);
-    let size = if size == 0 { 0x10000 } else { size };
-
-    Ok(CopyInstruction { offset, size })
 }
 
 /// Parses the header and data of an undeltified object. Also takes care of decompressing the data.

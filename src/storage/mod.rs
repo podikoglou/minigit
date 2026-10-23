@@ -13,6 +13,7 @@ use crate::{
     error::ParserContext,
     object::{
         Object,
+        commit::Commit,
         hash::{HashPrefix, ObjectHash},
     },
     storage::{
@@ -259,5 +260,19 @@ impl Store {
                 self.resolve_reference(&reference.pointer)
             }
         }
+    }
+
+    /// Gets the [ObjectHash] of the commit `HEAD` is pointing to.
+    /// Gets the [Commit] and [ObjectHash] (in a tuple) of the commit `HEAD` is pointing to.
+    pub fn head(&self) -> Result<(Commit, ObjectHash), MinigitError> {
+        self.reference("HEAD".into())
+            .and_then(|head| self.resolve_reference(&head.pointer))
+            .and_then(|hash| self.object(hash.clone()).map(|obj| (obj, hash)))
+            .and_then(|(object, hash)| {
+                object
+                    .try_as_commit()
+                    .ok_or(MinigitError::UnexpectedObjectType)
+                    .map(|commit| (*commit, hash))
+            })
     }
 }

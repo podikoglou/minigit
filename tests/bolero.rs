@@ -4,12 +4,7 @@ use minigit::{
     error::ParserContext,
     fs::parse_file_name,
     identity::parse_identity,
-    object::{
-        commit::parse_commit,
-        parse_header,
-        tag::parse_tag,
-        tree::parse_tree,
-    },
+    object::{commit::parse_commit, parse_header, tag::parse_tag, tree::parse_tree},
     parsing::Stream,
     storage::object::loose::{WriteLoose, read_object, read_object_compressed},
     time::{Timestamp, parse_timestamp},
@@ -77,7 +72,8 @@ fn prop_timestamp_roundtrip() {
                     let dt = dt.with_timezone(&offset);
                     if let Ok(ts) = Timestamp::try_new(dt) {
                         let sign = if h >= 0 { '+' } else { '-' };
-                        let formatted = format!("{} {}{:02}{:02}", ts.timestamp(), sign, h.abs(), m);
+                        let formatted =
+                            format!("{} {}{:02}{:02}", ts.timestamp(), sign, h.abs(), m);
                         let mut stream = Stream::new(formatted.as_bytes());
                         let parsed = parse_timestamp(&mut stream)
                             .expect("validly formatted timestamp should parse");

@@ -1,10 +1,6 @@
 //! This module deals with the storage and parsing of refs (`.git/refs`)
 
-use std::{
-    fs,
-    path::Path,
-    str::FromStr,
-};
+use std::{fs, path::Path, str::FromStr};
 
 use winnow::{
     ModalResult, Parser,

@@ -143,7 +143,7 @@ fn write_commit(
     )?;
 
     writeln!(w, "Author: {}", author.0)?;
-    writeln!(w, "Date:   {}", author.1.format("%a %b %d %T %z"))?;
+    writeln!(w, "Date:   {}", author.1.format("%a %b %d %T %Y %z"))?;
     writeln!(w)?;
 
     for line in description.lines() {

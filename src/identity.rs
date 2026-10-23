@@ -13,7 +13,7 @@ use winnow::{
     token::take_until,
 };
 
-use crate::{parsing::Stream, storage::object::loose::WriteLoose};
+use crate::{parsing::Stream, storage::object::loose::Encode};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Identity {
@@ -28,7 +28,7 @@ impl Identity {
     }
 }
 
-impl WriteLoose for Identity {
+impl Encode for Identity {
     fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
         writer.write_all(self.name.as_ref())?;
         writer.write_all(b" <")?;

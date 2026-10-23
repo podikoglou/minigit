@@ -15,7 +15,7 @@ use crate::{
         parse_object_type,
     },
     parsing::{Stream, property},
-    storage::object::loose::WriteLoose,
+    storage::object::loose::Encode,
     time::{Timestamp, parse_timestamp},
 };
 
@@ -55,7 +55,7 @@ impl Tag {
 /// The hash and type of an object a tag is pointing to.
 pub type TagTarget = (ObjectHash, ObjectType);
 
-impl WriteLoose for Tag {
+impl Encode for Tag {
     fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
         writeln!(writer, "object {}", self.target.0)?;
         writeln!(writer, "type {}", Into::<&'static str>::into(self.target.1))?;

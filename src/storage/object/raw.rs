@@ -13,7 +13,7 @@ use crate::{
         tag::parse_tag, tree::parse_tree,
     },
     parsing::Stream,
-    storage::object::loose::WriteLoose,
+    storage::object::loose::Encode,
 };
 
 /// An object that has not been parsed yet.
@@ -66,7 +66,7 @@ impl RawObject {
     }
 }
 
-impl WriteLoose for RawObject {
+impl Encode for RawObject {
     fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
         write!(
             writer,

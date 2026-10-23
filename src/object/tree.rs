@@ -11,7 +11,7 @@ use crate::{
     fs::{FileName, parse_file_name},
     object::hash::{ObjectHash, parse_object_hash},
     parsing::{Stream, mode},
-    storage::object::loose::WriteLoose,
+    storage::object::loose::Encode,
 };
 
 /// The key for a [`Tree`] entry.
@@ -96,7 +96,7 @@ impl Tree {
     }
 }
 
-impl WriteLoose for Tree {
+impl Encode for Tree {
     fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
         for entry in &self.entries {
             entry.write_loose(writer)?;
@@ -137,7 +137,7 @@ impl TreeEntry {
     }
 }
 
-impl WriteLoose for (&TreeKey, &TreeEntry) {
+impl Encode for (&TreeKey, &TreeEntry) {
     fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
         write!(writer, "{:o} {}\0", self.0.mode, self.0.name)?;
 

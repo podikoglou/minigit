@@ -2,7 +2,7 @@ use std::io::Write;
 
 use winnow::{ModalResult, Parser, error::StrContext, token::rest};
 
-use crate::{parsing::Stream, storage::object::loose::WriteLoose};
+use crate::{parsing::Stream, storage::object::loose::Encode};
 
 /// An blob: an object that simply contains some bytes.
 ///
@@ -17,7 +17,7 @@ impl Blob {
     }
 }
 
-impl WriteLoose for Blob {
+impl Encode for Blob {
     fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
         writer.write_all(&self.0)?;
         Ok(())

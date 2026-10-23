@@ -153,7 +153,7 @@ mod roundtrip {
     use minigit::error::ParserContext;
     use minigit::object::{Object, ObjectType, hash::ObjectHash, tag::Tag};
 
-    use minigit::storage::object::loose::WriteLoose;
+    use minigit::storage::object::loose::Encode;
     use minigit::storage::object::loose::read_object;
 
     mod generators {

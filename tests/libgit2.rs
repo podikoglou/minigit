@@ -15,7 +15,7 @@ use minigit::{
     error::ParserContext,
     identity::{Email, Identity, Name},
     object::{Object, ObjectType as MinigitObjectType, hash::ObjectHash},
-    storage::{object::loose::WriteLoose, reference::RefPointer},
+    storage::{object::loose::Encode, reference::RefPointer},
 };
 use std::str::FromStr;
 

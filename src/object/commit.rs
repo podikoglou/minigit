@@ -10,7 +10,7 @@ use crate::{
     identity::{Identity, parse_identity},
     object::hash::{ObjectHash, parse_object_hash_str},
     parsing::{Stream, extra_property, property},
-    storage::object::loose::WriteLoose,
+    storage::object::loose::Encode,
     time::{Timestamp, parse_timestamp},
 };
 use std::io::Write;
@@ -56,7 +56,7 @@ impl Commit {
     }
 }
 
-impl WriteLoose for Commit {
+impl Encode for Commit {
     fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
         write!(writer, "tree {}", self.tree)?;
         writeln!(writer)?;
@@ -101,7 +101,7 @@ pub fn parse_commit(input: &mut Stream<'_>) -> ModalResult<Commit> {
     .parse_next(input)
 }
 
-impl WriteLoose for (Identity, Timestamp) {
+impl Encode for (Identity, Timestamp) {
     fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
         self.0.write_loose(writer)?;
         write!(writer, " {}", self.1.format("%s %z"))?;
@@ -112,7 +112,7 @@ impl WriteLoose for (Identity, Timestamp) {
 
 pub type CommitProperty = (String, String);
 
-impl WriteLoose for &CommitProperty {
+impl Encode for &CommitProperty {
     fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
         // TODO: validation. neither should be empty
         // the below code assumes they aren't
@@ -148,7 +148,7 @@ mod tests {
     use crate::{
         identity::{Email, Identity, Name},
         object::{commit::Commit, hash::ObjectHash},
-        storage::object::loose::WriteLoose,
+        storage::object::loose::Encode,
         time::Timestamp,
     };
 

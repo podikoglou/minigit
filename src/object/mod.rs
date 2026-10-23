@@ -31,7 +31,7 @@ use crate::{
         tree::parse_tree,
     },
     parsing::Stream,
-    storage::object::{LazyObject, loose::WriteLoose},
+    storage::object::{LazyObject, loose::Encode},
 };
 
 #[derive(Debug, PartialEq, Eq, Clone, EnumDiscriminants, EnumIs, EnumTryAs)]
@@ -56,7 +56,7 @@ impl Object {
     }
 }
 
-impl WriteLoose for Object {
+impl Encode for Object {
     /// Writes the uncompressed object to a write.
     fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
         let mut buf: Vec<u8> = Vec::new();

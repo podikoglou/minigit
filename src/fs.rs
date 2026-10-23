@@ -1,7 +1,7 @@
 //! This module contains items that deal with file names.
 
 use crate::{
-    MinigitError, error::ParserContext, parsing::Stream, storage::object::loose::WriteLoose,
+    MinigitError, error::ParserContext, parsing::Stream, storage::object::loose::Encode,
 };
 use std::{fmt::Display, path::PathBuf, str::FromStr};
 use winnow::{ModalResult, Parser, combinator::terminated, token::take_until};
@@ -51,7 +51,7 @@ impl From<FileName> for PathBuf {
     }
 }
 
-impl WriteLoose for FileName {
+impl Encode for FileName {
     fn write_loose<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
         write!(writer, "{}", self.0)?;
 

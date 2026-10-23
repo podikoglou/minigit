@@ -6,7 +6,7 @@ use minigit::{
     identity::parse_identity,
     object::{commit::parse_commit, parse_header, tag::parse_tag, tree::parse_tree},
     parsing::Stream,
-    storage::object::loose::{WriteLoose, read_object, read_object_compressed},
+    storage::object::loose::{Encode, read_object, read_object_compressed},
     time::{Timestamp, parse_timestamp},
 };
 

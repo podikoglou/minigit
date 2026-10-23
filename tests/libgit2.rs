@@ -8,14 +8,14 @@
 use git2::{
     Commit,
     ObjectType::{self as Git2ObjectType},
-    Odb, Oid, Signature,
+    Odb, Oid, ReferenceType, Signature,
 };
 use include_dir::{Dir, include_dir};
 use minigit::{
     error::ParserContext,
     identity::{Email, Identity, Name},
     object::{Object, ObjectType as MinigitObjectType, hash::ObjectHash},
-    storage::object::loose::WriteLoose,
+    storage::{object::loose::WriteLoose, reference::RefPointer},
 };
 use std::str::FromStr;
 
@@ -586,5 +586,132 @@ fn tags_reserialization_match() {
                 "serialized tag bytes match"
             );
         }
+    }
+}
+
+#[test]
+fn refs_match() {
+    for repo_dir in REPOS_DIR.files() {
+        let (minigit_repo, _dir) = unpack_repo(repo_dir.contents());
+        let (oracle_repo, _dir) = unpack_git2_repo(repo_dir.contents());
+
+        let minigit_store = minigit_repo.store;
+        let oracle_refs = oracle_repo
+            .references()
+            .expect("libgit2 should list references");
+
+        for oracle_ref in oracle_refs {
+            let oracle_ref = oracle_ref.expect("valid reference");
+            let ref_name = oracle_ref.name().expect("utf-8 reference name");
+
+            let minigit_ref = minigit_store
+                .reference(ref_name.to_string())
+                .expect("minigit should load the reference");
+
+            assert_eq!(minigit_ref.name, ref_name, "reference names match");
+
+            match oracle_ref.kind() {
+                Some(ReferenceType::Direct) => {
+                    let oracle_target = oracle_ref.target().expect("direct ref should have target");
+                    assert_eq!(
+                        minigit_ref.pointer,
+                        RefPointer::Hash(oid_to_hash(&oracle_target)),
+                        "direct ref targets match"
+                    );
+                }
+                Some(ReferenceType::Symbolic) => {
+                    let oracle_target = oracle_ref
+                        .symbolic_target()
+                        .expect("valid symbolic target")
+                        .expect("symbolic ref should have target");
+                    assert_eq!(
+                        minigit_ref.pointer,
+                        RefPointer::Symbolic(oracle_target.to_string()),
+                        "symbolic ref targets match"
+                    );
+                }
+                None => unreachable!(),
+            }
+
+            let oracle_resolved = oracle_ref
+                .resolve()
+                .expect("libgit2 should resolve reference");
+            let oracle_resolved_oid = oracle_resolved
+                .target()
+                .expect("resolved ref should have target");
+
+            let minigit_resolved_hash = minigit_store
+                .resolve_reference(&minigit_ref.pointer)
+                .expect("minigit should resolve reference");
+
+            assert_eq!(
+                minigit_resolved_hash,
+                oid_to_hash(&oracle_resolved_oid),
+                "resolved reference hashes match"
+            );
+        }
+    }
+}
+
+#[test]
+fn head_matches() {
+    for repo_dir in REPOS_DIR.files() {
+        let (minigit_repo, _dir) = unpack_repo(repo_dir.contents());
+        let (oracle_repo, _dir) = unpack_git2_repo(repo_dir.contents());
+
+        let minigit_store = minigit_repo.store;
+
+        let (minigit_commit, minigit_head_hash) =
+            minigit_store.head().expect("minigit should resolve HEAD");
+
+        let oracle_head = oracle_repo.head().expect("libgit2 should find HEAD");
+        let oracle_commit = oracle_head
+            .peel_to_commit()
+            .expect("libgit2 should peel HEAD to commit");
+
+        assert_eq!(
+            minigit_head_hash,
+            oid_to_hash(&oracle_commit.id()),
+            "HEAD commit hashes match"
+        );
+
+        assert_eq!(
+            minigit_commit.tree,
+            oid_to_hash(&oracle_commit.tree_id()),
+            "HEAD commit tree matches"
+        );
+
+        assert_eq!(
+            minigit_commit.parents,
+            oracle_commit
+                .parent_ids()
+                .map(|oid| oid_to_hash(&oid))
+                .collect::<Vec<_>>(),
+            "HEAD commit parents match"
+        );
+
+        assert_eq!(
+            minigit_commit.author.0,
+            signature_to_identity(oracle_commit.author()),
+            "HEAD commit authors match"
+        );
+
+        assert_eq!(
+            minigit_commit.committer.0,
+            signature_to_identity(oracle_commit.committer()),
+            "HEAD commit committers match"
+        );
+
+        assert_eq!(
+            minigit_commit.author.1.timestamp(),
+            oracle_commit.time().seconds(),
+            "HEAD commit times match"
+        );
+
+        assert_eq!(
+            minigit_commit.description,
+            oracle_commit.message().unwrap(),
+            "HEAD commit messages match"
+        );
     }
 }

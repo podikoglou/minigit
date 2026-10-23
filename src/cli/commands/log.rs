@@ -6,7 +6,7 @@ use std::{
 };
 
 use argh::FromArgs;
-use bstr::{BStr, ByteSlice};
+use bstr::ByteSlice;
 use itertools::Either;
 use minigit::{
     MinigitError, Repo,
@@ -47,9 +47,9 @@ impl Ord for QueueEntry {
     }
 }
 
-impl Into<QueueEntry> for (Commit, ObjectHash) {
-    fn into(self) -> QueueEntry {
-        QueueEntry(self.0, self.1)
+impl From<(Commit, ObjectHash)> for QueueEntry {
+    fn from(val: (Commit, ObjectHash)) -> Self {
+        QueueEntry(val.0, val.1)
     }
 }
 

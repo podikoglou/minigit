@@ -2,7 +2,7 @@
 
 use std::{
     fs,
-    path::{Component, Path},
+    path::Path,
     str::FromStr,
 };
 
@@ -14,7 +14,7 @@ use winnow::{
 
 use crate::{
     MinigitError,
-    error::{self, ParserContext},
+    error::ParserContext,
     object::hash::{ObjectHash, parse_object_hash_str},
     parsing::Stream,
 };
@@ -43,7 +43,7 @@ impl Ref {
     pub fn open_loose(path: impl AsRef<Path>, name: RefName) -> Result<Ref, MinigitError> {
         let path = path.as_ref();
 
-        let contents = fs::read(&path)?;
+        let contents = fs::read(path)?;
 
         let pointer = parse_ref_pointer
             .parse(Stream::new(&contents))

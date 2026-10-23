@@ -220,7 +220,7 @@ impl Store {
         object.write_loose_compressed(&mut writer)
     }
 
-    /// Opens the `packed-refs` database
+    /// Gets a handle to the `packed-refs` database
     pub fn ref_db(&self) -> Result<Rc<RefsDb>, MinigitError> {
         self.refs_db
             .get_or_try_init(|| RefsDb::open(self.packed_refs_path()).map(Rc::new))
@@ -249,6 +249,7 @@ impl Store {
         ref_db.lookup(&name).map_err(|_| MinigitError::RefNotFound)
     }
 
+    /// Recursively resolve a [RefPointer] to a the [ObjectHash] of the object it points to.
     pub fn resolve_reference(&self, pointer: &RefPointer) -> Result<ObjectHash, MinigitError> {
         match pointer {
             RefPointer::Hash(hash) => Ok(hash.to_owned()),

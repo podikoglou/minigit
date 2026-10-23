@@ -57,7 +57,7 @@ impl Commit {
 }
 
 impl Encode for Commit {
-    fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
+    fn encode<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
         write!(writer, "tree {}", self.tree)?;
         writeln!(writer)?;
 
@@ -67,15 +67,15 @@ impl Encode for Commit {
         }
 
         write!(writer, "author ")?;
-        self.author.write_loose(writer)?;
+        self.author.encode(writer)?;
         writeln!(writer)?;
 
         write!(writer, "committer ")?;
-        self.committer.write_loose(writer)?;
+        self.committer.encode(writer)?;
         writeln!(writer)?;
 
         for property in &self.extra {
-            property.write_loose(writer)?;
+            property.encode(writer)?;
             writeln!(writer)?;
         }
 
@@ -102,8 +102,8 @@ pub fn parse_commit(input: &mut Stream<'_>) -> ModalResult<Commit> {
 }
 
 impl Encode for (Identity, Timestamp) {
-    fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
-        self.0.write_loose(writer)?;
+    fn encode<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
+        self.0.encode(writer)?;
         write!(writer, " {}", self.1.format("%s %z"))?;
 
         Ok(())
@@ -113,7 +113,7 @@ impl Encode for (Identity, Timestamp) {
 pub type CommitProperty = (String, String);
 
 impl Encode for &CommitProperty {
-    fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
+    fn encode<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
         // TODO: validation. neither should be empty
         // the below code assumes they aren't
 
@@ -178,7 +178,7 @@ mod tests {
 
         let mut buf = Vec::new();
 
-        commit.write_loose(&mut buf).unwrap();
+        commit.encode(&mut buf).unwrap();
 
         insta::assert_snapshot!(String::from_utf8(buf).unwrap(), @r#"
         tree 0000000000000000000000000000000000000000

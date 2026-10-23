@@ -203,7 +203,7 @@ impl Store {
     }
 
     /// Writes a [RawObject] to the loose object database.
-    pub fn write_loose_object(&self, object: RawObject) -> Result<(), MinigitError> {
+    pub fn encode_object(&self, object: RawObject) -> Result<(), MinigitError> {
         let hash = object.hash()?;
         let prefix = hash.prefix();
 
@@ -218,7 +218,7 @@ impl Store {
         let object_file = File::create_new(object_path).map_err(|_| MinigitError::ObjectExists)?;
         let mut writer = BufWriter::new(object_file);
 
-        object.write_loose_compressed(&mut writer)
+        object.encode_compressed(&mut writer)
     }
 
     /// Gets a handle to the `packed-refs` database

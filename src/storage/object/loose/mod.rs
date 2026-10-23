@@ -15,7 +15,7 @@ use std::io::{BufRead, Read, Write};
 /// The trait isn't unique to a specific format, but it must be the case that for this trait to be
 /// implemented for a type, there is only *one* way to encode a value of that type.
 pub trait Encode {
-    fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), MinigitError>;
+    fn encode<W: Write>(&self, writer: &mut W) -> Result<(), MinigitError>;
 }
 
 /// Reads and parses an [Object] from a [`Read`].

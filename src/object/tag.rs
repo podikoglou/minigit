@@ -56,14 +56,14 @@ impl Tag {
 pub type TagTarget = (ObjectHash, ObjectType);
 
 impl Encode for Tag {
-    fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
+    fn encode<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
         writeln!(writer, "object {}", self.target.0)?;
         writeln!(writer, "type {}", Into::<&'static str>::into(self.target.1))?;
         writeln!(writer, "tag {}", self.name)?;
 
         if let Some(tagger) = &self.tagger {
             write!(writer, "tagger ")?;
-            tagger.write_loose(writer)?;
+            tagger.encode(writer)?;
             writeln!(writer)?;
         }
 

@@ -406,7 +406,7 @@ fn commits_reserialization_match() {
 
             let mut minigit_bytes = Vec::new();
             minigit_commit
-                .write_loose(&mut minigit_bytes)
+                .encode(&mut minigit_bytes)
                 .expect("minigit should serialize commit");
 
             assert_eq!(
@@ -462,7 +462,7 @@ fn trees_reserialization_match() {
 
             let mut minigit_bytes = Vec::new();
             minigit_tree
-                .write_loose(&mut minigit_bytes)
+                .encode(&mut minigit_bytes)
                 .expect("minigit should serialize tree");
 
             assert_eq!(
@@ -515,7 +515,7 @@ fn blobs_reserialization_match() {
 
             let mut minigit_bytes = Vec::new();
             minigit_blob
-                .write_loose(&mut minigit_bytes)
+                .encode(&mut minigit_bytes)
                 .expect("minigit should serialize blob");
 
             assert_eq!(
@@ -577,7 +577,7 @@ fn tags_reserialization_match() {
 
             let mut minigit_bytes = Vec::new();
             minigit_tag
-                .write_loose(&mut minigit_bytes)
+                .encode(&mut minigit_bytes)
                 .expect("minigit should serialize tag");
 
             assert_eq!(

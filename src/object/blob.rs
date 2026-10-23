@@ -18,7 +18,7 @@ impl Blob {
 }
 
 impl Encode for Blob {
-    fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
+    fn encode<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
         writer.write_all(&self.0)?;
         Ok(())
     }

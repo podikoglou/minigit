@@ -67,7 +67,7 @@ impl ParseObjectCommand {
                     true => {
                         let mut stdout = io::stdout();
 
-                        object.write_loose_compressed(&mut stdout)?;
+                        object.encode_compressed(&mut stdout)?;
                     }
                     false => println!("{object:#?}"),
                 },

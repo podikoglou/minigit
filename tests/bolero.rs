@@ -18,7 +18,7 @@ fn fuzz_read_loose_object() {
     check!().for_each(|input: &[u8]| {
         if let Ok(object) = read_object(input, ParserContext::None) {
             let mut serialized = Vec::new();
-            if object.write_loose(&mut serialized).is_ok() {
+            if object.encode(&mut serialized).is_ok() {
                 let roundtripped = read_object(&serialized[..], ParserContext::None)
                     .expect("roundtripped object should parse successfully");
                 assert_eq!(object, roundtripped);

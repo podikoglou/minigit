@@ -306,7 +306,7 @@ mod roundtrip {
 
         // write to buffer
         let mut buf: Vec<u8> = Vec::new();
-        object.write_loose(&mut buf).unwrap();
+        object.encode(&mut buf).unwrap();
 
         // read back
         let read_blob = read_object(&buf[..], ParserContext::None).unwrap();
@@ -321,7 +321,7 @@ mod roundtrip {
 
         // write to buffer
         let mut buf: Vec<u8> = Vec::new();
-        object.write_loose(&mut buf).unwrap();
+        object.encode(&mut buf).unwrap();
 
         // read back
         let read_tree = read_object(&buf[..], ParserContext::None).unwrap();
@@ -336,7 +336,7 @@ mod roundtrip {
 
         // write to buffer
         let mut buf: Vec<u8> = Vec::new();
-        object.write_loose(&mut buf).unwrap();
+        object.encode(&mut buf).unwrap();
 
         // read back
         let read_tree = read_object(&buf[..], ParserContext::None).unwrap();
@@ -351,7 +351,7 @@ mod roundtrip {
 
         // write to buffer
         let mut buf: Vec<u8> = Vec::new();
-        object.write_loose(&mut buf).unwrap();
+        object.encode(&mut buf).unwrap();
 
         // read back
         let read_tag = read_object(&buf[..], ParserContext::None).unwrap();
@@ -369,7 +369,7 @@ mod roundtrip {
         ));
 
         let mut buf = Vec::new();
-        object.write_loose(&mut buf).unwrap();
+        object.encode(&mut buf).unwrap();
 
         let read_tag = read_object(&buf[..], ParserContext::None).unwrap();
 

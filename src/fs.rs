@@ -52,7 +52,7 @@ impl From<FileName> for PathBuf {
 }
 
 impl Encode for FileName {
-    fn write_loose<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
         write!(writer, "{}", self.0)?;
 
         Ok(())

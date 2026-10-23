@@ -54,20 +54,20 @@ impl RawObject {
     pub fn hash(&self) -> Result<ObjectHash, MinigitError> {
         let mut buf = Vec::new(); // TODO: capacity
 
-        self.write_loose(&mut buf)?;
+        self.encode(&mut buf)?;
 
         Ok(Sha1::digest(buf).into())
     }
 
-    pub fn write_loose_compressed<W: Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+    pub fn encode_compressed<W: Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
         let mut zlib_writer = ZlibEncoder::new(writer, Compression::default());
 
-        self.write_loose(&mut zlib_writer)
+        self.encode(&mut zlib_writer)
     }
 }
 
 impl Encode for RawObject {
-    fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+    fn encode<W: Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
         write!(
             writer,
             "{} {}\0",

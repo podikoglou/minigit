@@ -50,7 +50,7 @@ impl Object {
     /// Creates a SHA1 hash of the object.
     pub fn hash(&self) -> Result<ObjectHash, MinigitError> {
         let mut buf = Vec::new();
-        self.write_loose(&mut buf)?;
+        self.encode(&mut buf)?;
 
         Ok(Sha1::digest(buf).into())
     }
@@ -58,29 +58,29 @@ impl Object {
 
 impl Encode for Object {
     /// Writes the uncompressed object to a write.
-    fn write_loose<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
+    fn encode<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
         let mut buf: Vec<u8> = Vec::new();
 
         match self {
             Self::Blob(blob) => {
                 write!(writer, "blob ")?;
 
-                blob.write_loose(&mut buf)?;
+                blob.encode(&mut buf)?;
             }
             Self::Tree(tree) => {
                 write!(writer, "tree ")?;
 
-                tree.write_loose(&mut buf)?;
+                tree.encode(&mut buf)?;
             }
             Self::Commit(commit) => {
                 write!(writer, "commit ")?;
 
-                commit.write_loose(&mut buf)?;
+                commit.encode(&mut buf)?;
             }
             Self::Tag(tag) => {
                 write!(writer, "tag ")?;
 
-                tag.write_loose(&mut buf)?;
+                tag.encode(&mut buf)?;
             }
         }
 
@@ -92,13 +92,13 @@ impl Encode for Object {
 }
 
 impl Object {
-    pub fn write_loose_compressed<W: Write>(
+    pub fn encode_compressed<W: Write>(
         &self,
         writer: &mut W,
     ) -> Result<(), crate::MinigitError> {
         let mut zlib_writer = ZlibEncoder::new(writer, Compression::default());
 
-        self.write_loose(&mut zlib_writer)
+        self.encode(&mut zlib_writer)
     }
 }
 

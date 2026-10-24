@@ -259,12 +259,11 @@ fn offset(input: &mut Stream<'_>) -> ModalResult<u64> {
 }
 
 pub fn size(input: &mut Stream<'_>) -> ModalResult<u64> {
-    // TODO: check to ensure this fits inside a u64
     let mut current_byte = any.parse_next(input)?;
     let mut value = (current_byte & 0b0111_1111) as u64;
     let mut pos = 7;
 
-    while current_byte >= 128 {
+    while current_byte >= 128 && pos < 70 {
         current_byte = any.parse_next(input)?;
 
         // these are the bits that constitute the size, which is the byte as-is, but with the first

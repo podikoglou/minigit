@@ -12,6 +12,7 @@ use minigit::{
     },
     time::{Timestamp, parse_timestamp},
 };
+use winnow::Parser;
 
 /// Fuzz the uncompressed loose object parser with arbitrary raw bytes.
 /// Whenever an input successfully parses into a valid Minigit `Object`,
@@ -136,9 +137,9 @@ fn fuzz_tree() {
 #[test]
 fn fuzz_insert_instruction() {
     check!().for_each(|input: &[u8]| {
-        let mut stream = Stream::new(input);
+        let stream = Stream::new(input);
 
-        if let Ok(instruction) = insert_instruction(&mut stream) {
+        if let Ok(instruction) = insert_instruction.parse(stream) {
             let mut buf = Vec::default();
 
             let _ = instruction.encode(&mut buf);

@@ -21,6 +21,15 @@ pub enum Instruction {
     Copy(CopyInstruction),
 }
 
+impl Encode for Instruction {
+    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+        match self {
+            Instruction::Insert(instruction) => instruction.encode(writer),
+            Instruction::Copy(instruction) => instruction.encode(writer),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct InsertInstruction(pub Vec<u8>);
 

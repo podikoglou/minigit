@@ -8,7 +8,7 @@ use minigit::{
     parsing::Stream,
     storage::object::{
         loose::{Encode, read_object, read_object_compressed},
-        packed::delta::{copy_instruction, insert_instruction},
+        packed::delta::{copy_instruction, insert_instruction, instruction},
     },
     time::{Timestamp, parse_timestamp},
 };
@@ -174,9 +174,28 @@ fn fuzz_copy_instruction() {
 
             let stream_2 = Stream::new(&buf);
 
-            if let Ok(instruction_2) = copy_instruction.parse(stream_2) {
-                assert_eq!(instruction_2, instruction);
-            }
+            let instruction_2 = copy_instruction
+                .parse(stream_2)
+                .expect("should be parseable");
+            assert_eq!(instruction_2, instruction);
+        }
+    });
+}
+
+#[test]
+fn fuzz_delta_instruction() {
+    check!().for_each(|input: &[u8]| {
+        let stream = Stream::new(input);
+
+        if let Ok(instr) = instruction.parse(stream) {
+            let mut buf = Vec::default();
+
+            let _ = instr.encode(&mut buf);
+
+            let stream_2 = Stream::new(&buf);
+
+            let instruction_2 = instruction.parse(stream_2).expect("should be parseable");
+            assert_eq!(instruction_2, instr);
         }
     });
 }

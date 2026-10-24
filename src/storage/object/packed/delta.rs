@@ -51,70 +51,6 @@ pub struct CopyInstruction {
     pub size: u64,
 }
 
-#[derive(Debug, PartialEq)]
-pub struct Delta {
-    pub base_object_size: u64,
-    pub deltified_object_size: u64,
-    pub instructions: Vec<Instruction>,
-}
-
-pub fn base_object(
-    r#type: PackedObjectType,
-) -> impl FnMut(&mut Stream<'_>) -> ModalResult<BaseObject> {
-    match r#type {
-        PackedObjectType::OfsDelta => |input: &mut Stream<'_>| {
-            offset
-                .map(BaseObject::Ofs)
-                .context(StrContext::Label("base object offset"))
-                .parse_next(input)
-        },
-        PackedObjectType::RefDelta => |input: &mut Stream<'_>| {
-            parse_object_hash
-                .map(BaseObject::Ref)
-                .context(StrContext::Label("base object name"))
-                .parse_next(input)
-        },
-
-        _ => unreachable!(),
-    }
-}
-
-pub fn delta(input: &mut Stream<'_>) -> ModalResult<Delta> {
-    let base_object_size = size
-        .context(StrContext::Label("base object size"))
-        .parse_next(input)?;
-
-    let deltified_object_size = size
-        .context(StrContext::Label("deltified object size"))
-        .parse_next(input)?;
-
-    let instructions = repeat(0.., instruction).parse_next(input)?;
-
-    Ok(Delta {
-        base_object_size,
-        deltified_object_size,
-        instructions,
-    })
-}
-
-pub fn instruction(input: &mut Stream<'_>) -> ModalResult<Instruction> {
-    alt((
-        insert_instruction.map(Instruction::Insert),
-        copy_instruction.map(Instruction::Copy),
-    ))
-    .parse_next(input)
-}
-
-pub fn insert_instruction(input: &mut Stream<'_>) -> ModalResult<InsertInstruction> {
-    let size = any
-        .verify(|byte| (1..128).contains(byte))
-        .parse_next(input)?;
-
-    take(size as usize)
-        .map(|x: &[u8]| InsertInstruction(x.into()))
-        .parse_next(input)
-}
-
 impl Encode for CopyInstruction {
     fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
         let CopyInstruction { offset, size } = *self;
@@ -186,6 +122,70 @@ impl Encode for CopyInstruction {
 
         Ok(())
     }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct Delta {
+    pub base_object_size: u64,
+    pub deltified_object_size: u64,
+    pub instructions: Vec<Instruction>,
+}
+
+pub fn base_object(
+    r#type: PackedObjectType,
+) -> impl FnMut(&mut Stream<'_>) -> ModalResult<BaseObject> {
+    match r#type {
+        PackedObjectType::OfsDelta => |input: &mut Stream<'_>| {
+            offset
+                .map(BaseObject::Ofs)
+                .context(StrContext::Label("base object offset"))
+                .parse_next(input)
+        },
+        PackedObjectType::RefDelta => |input: &mut Stream<'_>| {
+            parse_object_hash
+                .map(BaseObject::Ref)
+                .context(StrContext::Label("base object name"))
+                .parse_next(input)
+        },
+
+        _ => unreachable!(),
+    }
+}
+
+pub fn delta(input: &mut Stream<'_>) -> ModalResult<Delta> {
+    let base_object_size = size
+        .context(StrContext::Label("base object size"))
+        .parse_next(input)?;
+
+    let deltified_object_size = size
+        .context(StrContext::Label("deltified object size"))
+        .parse_next(input)?;
+
+    let instructions = repeat(0.., instruction).parse_next(input)?;
+
+    Ok(Delta {
+        base_object_size,
+        deltified_object_size,
+        instructions,
+    })
+}
+
+pub fn instruction(input: &mut Stream<'_>) -> ModalResult<Instruction> {
+    alt((
+        insert_instruction.map(Instruction::Insert),
+        copy_instruction.map(Instruction::Copy),
+    ))
+    .parse_next(input)
+}
+
+pub fn insert_instruction(input: &mut Stream<'_>) -> ModalResult<InsertInstruction> {
+    let size = any
+        .verify(|byte| (1..128).contains(byte))
+        .parse_next(input)?;
+
+    take(size as usize)
+        .map(|x: &[u8]| InsertInstruction(x.into()))
+        .parse_next(input)
 }
 
 pub fn copy_instruction(input: &mut Stream<'_>) -> ModalResult<CopyInstruction> {

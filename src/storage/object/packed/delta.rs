@@ -148,17 +148,17 @@ impl Encode for CopyInstruction {
         let mut first: u8 = 0b1000_0000;
 
         match offset_bytes {
-            4 => first |= 0b0111_1000,
-            3 => first |= 0b0111_0000,
-            2 => first |= 0b0110_0000,
-            1 => first |= 0b0100_0000,
+            4 => first |= 0b0000_1111,
+            3 => first |= 0b0000_0111,
+            2 => first |= 0b0000_0011,
+            1 => first |= 0b0000_0001,
             _ => unreachable!(),
         };
 
         match size_bytes {
-            3 => first |= 0b0000_0111,
-            2 => first |= 0b0000_0110,
-            1 => first |= 0b0000_0100,
+            3 => first |= 0b0111_0000,
+            2 => first |= 0b0011_0000,
+            1 => first |= 0b0001_0000,
             _ => unreachable!(),
         };
 

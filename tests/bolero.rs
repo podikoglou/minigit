@@ -150,6 +150,18 @@ fn fuzz_insert_instruction() {
 }
 
 /// Fuzz the copy instruction parser and writer (roundtrip)
+///
+/// This property is a little different than others. The flow is:
+/// 1. Get input data
+/// 2. Parse it
+/// 3. Encode it to bytes
+/// 3. Parse it
+/// 4. Compare the two parsed versions
+///
+/// This is because copy instructions speciically are not bijective, i.e. there can be multiple raw
+/// bytes that map to the same instruction representation, and our encoder isn't guaranteed to
+/// output the exact same raw bytes as we were given, despite them being correct and parsing to the
+/// same instruction.
 #[test]
 fn fuzz_copy_instruction() {
     check!().for_each(|input: &[u8]| {
@@ -160,7 +172,11 @@ fn fuzz_copy_instruction() {
 
             let _ = instruction.encode(&mut buf);
 
-            assert_eq!(buf, input);
+            let stream_2 = Stream::new(&buf);
+
+            if let Ok(instruction_2) = copy_instruction.parse(stream_2) {
+                assert_eq!(instruction_2, instruction);
+            }
         }
     });
 }

@@ -8,7 +8,7 @@ use minigit::{
     parsing::Stream,
     storage::object::{
         loose::{Encode, read_object, read_object_compressed},
-        packed::delta::insert_instruction,
+        packed::delta::{copy_instruction, insert_instruction},
     },
     time::{Timestamp, parse_timestamp},
 };
@@ -140,6 +140,22 @@ fn fuzz_insert_instruction() {
         let stream = Stream::new(input);
 
         if let Ok(instruction) = insert_instruction.parse(stream) {
+            let mut buf = Vec::default();
+
+            let _ = instruction.encode(&mut buf);
+
+            assert_eq!(buf, input);
+        }
+    });
+}
+
+/// Fuzz the copy instruction parser and writer (roundtrip)
+#[test]
+fn fuzz_copy_instruction() {
+    check!().for_each(|input: &[u8]| {
+        let stream = Stream::new(input);
+
+        if let Ok(instruction) = copy_instruction.parse(stream) {
             let mut buf = Vec::default();
 
             let _ = instruction.encode(&mut buf);

@@ -115,7 +115,79 @@ pub fn insert_instruction(input: &mut Stream<'_>) -> ModalResult<InsertInstructi
         .parse_next(input)
 }
 
-fn copy_instruction(input: &mut Stream<'_>) -> ModalResult<CopyInstruction> {
+impl Encode for CopyInstruction {
+    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+        let CopyInstruction { offset, size } = *self;
+
+        // amount of bytes the offset will occupy
+        let offset_bytes = {
+            if offset > 0xFFFFFF {
+                4
+            } else if offset > 0xFFFF {
+                3
+            } else if offset > 0xFF {
+                2
+            } else {
+                1
+            }
+        };
+
+        let size_bytes = {
+            if size > 0xFFFFFF {
+                // size can only occupy up to 3 bytes
+                return Err(MinigitError::InvalidInstruction);
+            } else if size > 0xFFFF {
+                3
+            } else if size > 0xFF {
+                2
+            } else {
+                1
+            }
+        };
+
+        let mut first: u8 = 0b1000_0000;
+
+        match offset_bytes {
+            4 => first |= 0b0111_1000,
+            3 => first |= 0b0111_0000,
+            2 => first |= 0b0110_0000,
+            1 => first |= 0b0100_0000,
+            _ => unreachable!(),
+        };
+
+        match size_bytes {
+            3 => first |= 0b0000_0111,
+            2 => first |= 0b0000_0110,
+            1 => first |= 0b0000_0100,
+            _ => unreachable!(),
+        };
+
+        writer.write_all(&[first])?;
+
+        let offset_be = offset.to_be_bytes();
+
+        match offset_bytes {
+            1 => writer.write(&[offset_be[7]]),
+            2 => writer.write(&[offset_be[6], offset_be[7]]),
+            3 => writer.write(&[offset_be[5], offset_be[6], offset_be[7]]),
+            4 => writer.write(&[offset_be[4], offset_be[5], offset_be[6], offset_be[7]]),
+            _ => unreachable!(),
+        }?;
+
+        let size_be = size.to_be_bytes();
+
+        match size_bytes {
+            1 => writer.write(&[size_be[7]]),
+            2 => writer.write(&[size_be[6], size_be[7]]),
+            3 => writer.write(&[size_be[5], size_be[6], size_be[7]]),
+            _ => unreachable!(),
+        }?;
+
+        Ok(())
+    }
+}
+
+pub fn copy_instruction(input: &mut Stream<'_>) -> ModalResult<CopyInstruction> {
     let first_byte = any.verify(|byte| *byte >= 128).parse_next(input)?;
 
     let has_offset_1 = (first_byte & 0b0000_0001) != 0;

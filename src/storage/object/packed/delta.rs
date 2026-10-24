@@ -164,22 +164,23 @@ impl Encode for CopyInstruction {
 
         writer.write_all(&[first])?;
 
-        let offset_be = offset.to_be_bytes();
+        let offset_le = offset.to_le_bytes();
 
         match offset_bytes {
-            1 => writer.write(&[offset_be[7]]),
-            2 => writer.write(&[offset_be[6], offset_be[7]]),
-            3 => writer.write(&[offset_be[5], offset_be[6], offset_be[7]]),
-            4 => writer.write(&[offset_be[4], offset_be[5], offset_be[6], offset_be[7]]),
+            1 => writer.write(&offset_le[0..=0]),
+            2 => writer.write(&offset_le[0..=1]),
+            3 => writer.write(&offset_le[0..=2]),
+            4 => writer.write(&offset_le[0..=3]),
             _ => unreachable!(),
         }?;
 
-        let size_be = size.to_be_bytes();
+        let size_le = size.to_le_bytes();
 
         match size_bytes {
-            1 => writer.write(&[size_be[7]]),
-            2 => writer.write(&[size_be[6], size_be[7]]),
-            3 => writer.write(&[size_be[5], size_be[6], size_be[7]]),
+            1 => writer.write(&size_le[0..=0]),
+            2 => writer.write(&size_le[0..=1]),
+            3 => writer.write(&size_le[0..=2]),
+
             _ => unreachable!(),
         }?;
 

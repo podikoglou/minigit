@@ -27,7 +27,7 @@ use winnow::{
 use crate::{
     MinigitError,
     error::ParserContext,
-    object::hash::ObjectHash,
+    object::hash::{ObjectHash, parse_object_hash},
     parsing::Stream,
     storage::object::{
         LazyObject, RawObject,
@@ -256,6 +256,27 @@ fn offset(input: &mut Stream<'_>) -> ModalResult<u64> {
     }
 
     Ok(offset)
+}
+
+pub fn base_object(
+    r#type: PackedObjectType,
+) -> impl FnMut(&mut Stream<'_>) -> ModalResult<BaseObject> {
+    match r#type {
+        PackedObjectType::OfsDelta => |input: &mut Stream<'_>| {
+            offset
+                .map(BaseObject::Ofs)
+                .context(StrContext::Label("base object offset"))
+                .parse_next(input)
+        },
+        PackedObjectType::RefDelta => |input: &mut Stream<'_>| {
+            parse_object_hash
+                .map(BaseObject::Ref)
+                .context(StrContext::Label("base object name"))
+                .parse_next(input)
+        },
+
+        _ => unreachable!(),
+    }
 }
 
 pub fn size(input: &mut Stream<'_>) -> ModalResult<u64> {

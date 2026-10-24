@@ -7,12 +7,8 @@ use winnow::{
 
 use crate::{
     MinigitError,
-    object::hash::parse_object_hash,
     parsing::Stream,
-    storage::object::{
-        loose::Encode,
-        packed::{BaseObject, PackedObjectType, offset, size},
-    },
+    storage::object::{loose::Encode, packed::size},
 };
 
 #[derive(Debug, PartialEq)]
@@ -169,27 +165,6 @@ impl Encode for usize {
         writer.write_all(&[byte])?;
 
         Ok(())
-    }
-}
-
-pub fn base_object(
-    r#type: PackedObjectType,
-) -> impl FnMut(&mut Stream<'_>) -> ModalResult<BaseObject> {
-    match r#type {
-        PackedObjectType::OfsDelta => |input: &mut Stream<'_>| {
-            offset
-                .map(BaseObject::Ofs)
-                .context(StrContext::Label("base object offset"))
-                .parse_next(input)
-        },
-        PackedObjectType::RefDelta => |input: &mut Stream<'_>| {
-            parse_object_hash
-                .map(BaseObject::Ref)
-                .context(StrContext::Label("base object name"))
-                .parse_next(input)
-        },
-
-        _ => unreachable!(),
     }
 }
 

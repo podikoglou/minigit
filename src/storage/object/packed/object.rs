@@ -20,7 +20,10 @@ use crate::{
     parsing::Stream,
     storage::object::{
         RawObject,
-        packed::delta::{Delta, base_object, delta},
+        packed::{
+            base_object,
+            delta::{Delta, delta},
+        },
     },
 };
 

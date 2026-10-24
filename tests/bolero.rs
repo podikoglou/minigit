@@ -9,7 +9,7 @@ use minigit::{
     storage::object::{
         loose::{Encode, read_object, read_object_compressed},
         packed::{
-            delta::{copy_instruction, insert_instruction, instruction},
+            delta::{copy_instruction, delta, insert_instruction, instruction},
             size,
         },
     },
@@ -216,6 +216,23 @@ fn fuzz_size() {
                 .expect("should be encodable");
 
             let parsed_2 = size.parse(Stream::new(&buf)).expect("should be parseable");
+
+            assert_eq!(parsed_2, parsed);
+        }
+    });
+}
+
+#[test]
+fn fuzz_delta() {
+    check!().for_each(|input: &[u8]| {
+        let stream = Stream::new(input);
+
+        if let Ok(parsed) = delta.parse(stream) {
+            let mut buf = Vec::default();
+
+            (parsed).encode(&mut buf).expect("should be encodable");
+
+            let parsed_2 = delta.parse(Stream::new(&buf)).expect("should be parseable");
 
             assert_eq!(parsed_2, parsed);
         }

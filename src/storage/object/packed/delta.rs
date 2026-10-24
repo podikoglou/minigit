@@ -140,6 +140,19 @@ pub struct Delta {
     pub instructions: Vec<Instruction>,
 }
 
+impl Encode for Delta {
+    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+        (self.base_object_size as usize).encode(writer)?;
+        (self.deltified_object_size as usize).encode(writer)?;
+
+        for instruction in &self.instructions {
+            instruction.encode(writer)?;
+        }
+
+        Ok(())
+    }
+}
+
 /// Implements Git's size encoding
 impl Encode for usize {
     fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
@@ -158,6 +171,7 @@ impl Encode for usize {
         Ok(())
     }
 }
+
 pub fn base_object(
     r#type: PackedObjectType,
 ) -> impl FnMut(&mut Stream<'_>) -> ModalResult<BaseObject> {

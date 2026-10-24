@@ -258,7 +258,7 @@ fn offset(input: &mut Stream<'_>) -> ModalResult<u64> {
     Ok(offset)
 }
 
-fn size(input: &mut Stream<'_>) -> ModalResult<u64> {
+pub fn size(input: &mut Stream<'_>) -> ModalResult<u64> {
     // TODO: check to ensure this fits inside a u64
     let mut current_byte = any.parse_next(input)?;
     let mut value = (current_byte & 0b0111_1111) as u64;

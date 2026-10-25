@@ -11,7 +11,7 @@ use minigit::{
         packed::{
             PackedObjectType, base_object,
             delta::{copy_instruction, delta, insert_instruction, instruction},
-            object_header, size, undeltified_object,
+            deltified_object, object_header, size, undeltified_object,
         },
     },
     time::{Timestamp, parse_timestamp},
@@ -308,6 +308,25 @@ fn fuzz_object_header() {
             parsed.encode(&mut buf).expect("should be encodable");
 
             let parsed_2 = object_header
+                .parse(Stream::new(&buf))
+                .expect("should be parseable");
+
+            assert_eq!(parsed_2, parsed);
+        }
+    });
+}
+
+#[test]
+fn fuzz_deltified_object() {
+    check!().for_each(|input: &[u8]| {
+        let stream = Stream::new(input);
+
+        if let Ok(parsed) = deltified_object.parse(stream) {
+            let mut buf = Vec::default();
+
+            parsed.encode(&mut buf).expect("should be encodable");
+
+            let parsed_2 = deltified_object
                 .parse(Stream::new(&buf))
                 .expect("should be parseable");
 

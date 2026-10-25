@@ -4,7 +4,7 @@
 //! the two.
 use std::io::Read;
 
-use flate2::read::ZlibDecoder;
+use flate2::{Compression, read::ZlibDecoder, write::ZlibEncoder};
 use nutype::nutype;
 use strum::FromRepr;
 use winnow::{
@@ -122,6 +122,34 @@ impl Encode for BaseObject {
     }
 }
 
+impl Encode for (BaseObject, Delta) {
+    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+        let (base_object, delta) = self;
+
+        let compressed_buf: Vec<u8> = Vec::default();
+        let mut encoder = ZlibEncoder::new(compressed_buf, Compression::default());
+
+        delta.encode(&mut encoder)?;
+
+        let uncompressed_length = encoder.total_in();
+
+        let compressed_buf = encoder.finish()?;
+
+        let header = PackedObjectHeader {
+            r#type: match base_object {
+                BaseObject::Ref(_) => PackedObjectType::RefDelta,
+                BaseObject::Ofs(_) => PackedObjectType::OfsDelta,
+            },
+            length: uncompressed_length,
+        };
+
+        header.encode(writer)?;
+        writer.write_all(&compressed_buf)?;
+
+        Ok(())
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub enum PackedObject {
     Deltified(usize, DeltifiedObject),
@@ -188,9 +216,7 @@ pub fn object(input: &mut Stream<'_>) -> ModalResult<PackedObject> {
 }
 
 /// Parses the header and data of a deltified object. Does not take care of resolving the deltas.
-fn deltified_object(input: &mut Stream<'_>) -> ModalResult<DeltifiedObject> {
-    let offset = input.current_token_start();
-
+pub fn deltified_object(input: &mut Stream<'_>) -> ModalResult<(BaseObject, Delta)> {
     let header = object_header
         .verify(|header| {
             matches!(

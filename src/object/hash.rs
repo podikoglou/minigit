@@ -39,6 +39,12 @@ impl From<[u8; 20]> for ObjectHash {
     }
 }
 
+impl<'a> From<&'a ObjectHash> for &'a [u8] {
+    fn from(val: &'a ObjectHash) -> Self {
+        &val.0
+    }
+}
+
 impl FromStr for ObjectHash {
     type Err = MinigitError;
 

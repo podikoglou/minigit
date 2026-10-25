@@ -16,10 +16,12 @@ use winnow::{
 };
 
 use crate::{
+    MinigitError,
     object::{ObjectType, hash::ObjectHash},
     parsing::Stream,
     storage::object::{
         RawObject,
+        loose::Encode,
         packed::{
             base_object,
             delta::{Delta, delta},
@@ -59,6 +61,36 @@ pub struct DeltifiedObject((BaseObject, Delta));
 
 #[nutype(derive(Debug, PartialEq))]
 pub struct UndeltifiedObject(RawObject);
+
+impl Encode for BaseObject {
+    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+        match self {
+            BaseObject::Ref(hash) => {
+                let bytes: &[u8] = hash.into();
+
+                writer.write_all(bytes)?;
+            }
+            BaseObject::Ofs(offset) => {
+                let mut num = *offset;
+                let mut buf = [0u8; 10];
+                let mut pos = buf.len();
+
+                pos -= 1;
+                buf[pos] = (num & 0x7F) as u8;
+
+                while num > 0x7F {
+                    num = (num >> 7) - 1;
+                    pos -= 1;
+                    buf[pos] = 0x80 | ((num & 0x7F) as u8);
+                }
+
+                writer.write_all(&buf[pos..])?;
+            }
+        }
+
+        Ok(())
+    }
+}
 
 #[derive(Debug, PartialEq)]
 pub enum PackedObject {

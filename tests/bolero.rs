@@ -9,6 +9,7 @@ use minigit::{
     storage::object::{
         loose::{Encode, read_object, read_object_compressed},
         packed::{
+            PackedObjectType, base_object,
             delta::{copy_instruction, delta, insert_instruction, instruction},
             size, undeltified_object,
         },
@@ -250,6 +251,44 @@ fn fuzz_undeltified_object() {
             parsed.encode(&mut buf).expect("should be encodable");
 
             let parsed_2 = undeltified_object
+                .parse(Stream::new(&buf))
+                .expect("should be parseable");
+
+            assert_eq!(parsed_2, parsed);
+        }
+    });
+}
+
+#[test]
+fn fuzz_ofs_delta_base_object() {
+    check!().for_each(|input: &[u8]| {
+        let stream = Stream::new(input);
+
+        if let Ok(parsed) = base_object(PackedObjectType::OfsDelta).parse(stream) {
+            let mut buf = Vec::default();
+
+            parsed.encode(&mut buf).expect("should be encodable");
+
+            let parsed_2 = base_object(PackedObjectType::OfsDelta)
+                .parse(Stream::new(&buf))
+                .expect("should be parseable");
+
+            assert_eq!(parsed_2, parsed);
+        }
+    });
+}
+
+#[test]
+fn fuzz_ref_delta_base_object() {
+    check!().for_each(|input: &[u8]| {
+        let stream = Stream::new(input);
+
+        if let Ok(parsed) = base_object(PackedObjectType::RefDelta).parse(stream) {
+            let mut buf = Vec::default();
+
+            parsed.encode(&mut buf).expect("should be encodable");
+
+            let parsed_2 = base_object(PackedObjectType::RefDelta)
                 .parse(Stream::new(&buf))
                 .expect("should be parseable");
 

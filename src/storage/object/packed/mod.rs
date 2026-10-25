@@ -31,6 +31,7 @@ use crate::{
     parsing::Stream,
     storage::object::{
         LazyObject, RawObject,
+        loose::Encode,
         packed::{
             delta::{CopyInstruction, InsertInstruction, Instruction},
             idx::PackIndex,

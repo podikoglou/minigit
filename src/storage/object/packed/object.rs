@@ -38,6 +38,36 @@ pub struct PackedObjectHeader {
     pub length: u64,
 }
 
+impl Encode for PackedObjectHeader {
+    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+        let type_id = self.r#type as u8;
+
+        let mut value = self.length;
+
+        let mut curr_byte = type_id << 4 | (value & 0x0F) as u8;
+        value >>= 4;
+
+        if value != 0 {
+            curr_byte |= 1 << 7;
+        }
+
+        writer.write_all(&[curr_byte])?;
+
+        while value != 0 {
+            curr_byte = (value & 0x7F) as u8;
+            value >>= 7;
+
+            if value != 0 {
+                curr_byte |= 1 << 7;
+            }
+
+            writer.write_all(&[curr_byte])?;
+        }
+
+        Ok(())
+    }
+}
+
 #[derive(FromRepr, Debug, PartialEq, Clone, Copy)]
 #[repr(u8)]
 pub enum PackedObjectType {
@@ -105,36 +135,6 @@ impl PackedObject {
             PackedObject::Deltified(offset, _) => *offset,
             PackedObject::Undeltified(offset, _) => *offset,
         }
-    }
-}
-
-impl Encode for PackedObjectHeader {
-    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
-        let type_id = self.r#type as u8;
-
-        let mut value = self.length;
-
-        let mut curr_byte = type_id << 4 | (value & 0x0F) as u8;
-        value >>= 4;
-
-        if value != 0 {
-            curr_byte |= 1 << 7;
-        }
-
-        writer.write_all(&[curr_byte])?;
-
-        while value != 0 {
-            curr_byte = (value & 0x7F) as u8;
-            value >>= 7;
-
-            if value != 0 {
-                curr_byte |= 1 << 7;
-            }
-
-            writer.write_all(&[curr_byte])?;
-        }
-
-        Ok(())
     }
 }
 

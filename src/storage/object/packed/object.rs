@@ -173,7 +173,7 @@ fn deltified_object(input: &mut Stream<'_>) -> ModalResult<DeltifiedObject> {
 }
 
 /// Parses the header and data of an undeltified object. Also takes care of decompressing the data.
-fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<UndeltifiedObject> {
+pub fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<RawObject> {
     let header = object_header
         .verify(|header| {
             matches!(

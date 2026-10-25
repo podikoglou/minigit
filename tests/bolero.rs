@@ -10,7 +10,7 @@ use minigit::{
         loose::{Encode, read_object, read_object_compressed},
         packed::{
             delta::{copy_instruction, delta, insert_instruction, instruction},
-            size,
+            size, undeltified_object,
         },
     },
     time::{Timestamp, parse_timestamp},
@@ -233,6 +233,25 @@ fn fuzz_delta() {
             (parsed).encode(&mut buf).expect("should be encodable");
 
             let parsed_2 = delta.parse(Stream::new(&buf)).expect("should be parseable");
+
+            assert_eq!(parsed_2, parsed);
+        }
+    });
+}
+
+#[test]
+fn fuzz_undeltified_object() {
+    check!().for_each(|input: &[u8]| {
+        let stream = Stream::new(input);
+
+        if let Ok(parsed) = undeltified_object.parse(stream) {
+            let mut buf = Vec::default();
+
+            parsed.encode(&mut buf).expect("should be encodable");
+
+            let parsed_2 = undeltified_object
+                .parse(Stream::new(&buf))
+                .expect("should be parseable");
 
             assert_eq!(parsed_2, parsed);
         }

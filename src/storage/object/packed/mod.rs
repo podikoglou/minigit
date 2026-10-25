@@ -252,7 +252,10 @@ fn offset(input: &mut Stream<'_>) -> ModalResult<u64> {
 
         let chunk = (current_byte & 0b0111_1111) as u64;
 
-        value += 1;
+        match value.checked_add(1) {
+            Some(val) => value = val,
+            None => break,
+        }
         value = (value << 7) | chunk;
     }
 

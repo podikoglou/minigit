@@ -29,7 +29,7 @@ use crate::{
     },
 };
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct PackedObjectHeader {
     /// The object type.
     pub r#type: PackedObjectType,
@@ -38,7 +38,7 @@ pub struct PackedObjectHeader {
     pub length: u64,
 }
 
-#[derive(FromRepr, Debug, PartialEq)]
+#[derive(FromRepr, Debug, PartialEq, Clone, Copy)]
 #[repr(u8)]
 pub enum PackedObjectType {
     Commit = 1,
@@ -108,6 +108,36 @@ impl PackedObject {
     }
 }
 
+impl Encode for PackedObjectHeader {
+    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+        let type_id = self.r#type as u8;
+
+        let mut value = self.length;
+
+        let mut curr_byte = type_id << 4 | (value & 0x0F) as u8;
+        value >>= 4;
+
+        if value != 0 {
+            curr_byte |= 1 << 7;
+        }
+
+        writer.write_all(&[curr_byte])?;
+
+        while value != 0 {
+            curr_byte = (value & 0x7F) as u8;
+            value >>= 7;
+
+            if value != 0 {
+                curr_byte |= 1 << 7;
+            }
+
+            writer.write_all(&[curr_byte])?;
+        }
+
+        Ok(())
+    }
+}
+
 pub fn object_header(input: &mut Stream<'_>) -> ModalResult<PackedObjectHeader> {
     // TODO: using combinators instead of doing this imperatively would be great.
 
@@ -122,13 +152,9 @@ pub fn object_header(input: &mut Stream<'_>) -> ModalResult<PackedObjectHeader> 
     let mut size = (current_byte & 0b00001111) as u64;
     let mut pos = 4;
 
-    // TODO: inside this loop, we must check the size will fit inside a u64
-    // libgit2 does something similar:
-    // https://github.com/libgit2/libgit2/blob/0551dfd4ad989b6a3d5683c0d4cf326c6efef929/src/libgit2/pack.c#L434
-
     // keep reading, the continuation bit is 1
     // (thanks for the trick Aditya! - https://codewords.recurse.com/issues/three/unpacking-git-packfiles)
-    while current_byte >= 128 {
+    while current_byte >= 128 && pos < 67 {
         current_byte = any.parse_next(input)?;
 
         // these are the bits that constitute the size, which is the byte as-is, but with the first

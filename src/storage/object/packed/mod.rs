@@ -245,18 +245,18 @@ pub fn header(input: &mut Stream<'_>) -> ModalResult<PackfileHeader> {
 
 fn offset(input: &mut Stream<'_>) -> ModalResult<u64> {
     let mut current_byte = any.parse_next(input)?;
-    let mut offset = (current_byte & 0b0111_1111) as u64;
+    let mut value = (current_byte & 0b0111_1111) as u64;
 
     while current_byte >= 128 {
         current_byte = any.parse_next(input)?;
 
         let chunk = (current_byte & 0b0111_1111) as u64;
 
-        offset += 1;
-        offset = (offset << 7) | chunk;
+        value += 1;
+        value = (value << 7) | chunk;
     }
 
-    Ok(offset)
+    Ok(value)
 }
 
 pub fn base_object(

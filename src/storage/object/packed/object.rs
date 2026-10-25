@@ -10,7 +10,7 @@ use strum::FromRepr;
 use winnow::{
     ModalResult, Parser,
     combinator::alt,
-    error::{ContextError, ErrMode, StrContext},
+    error::{ContextError, ErrMode, FromExternalError, ParserError, StrContext},
     stream::Location,
     token::{any, take},
 };
@@ -241,7 +241,11 @@ pub fn deltified_object(input: &mut Stream<'_>) -> ModalResult<(BaseObject, Delt
         })
         .parse_next(input)?;
 
-    let mut buf = vec![0; header.length as usize];
+    let mut buf = Vec::default();
+    buf.try_reserve_exact(header.length as usize)
+        .map_err(|_| ErrMode::Cut(ContextError::new()))?;
+    buf.resize(header.length as usize, 0x00);
+
     let mut decoder = ZlibDecoder::new(&input[..]);
 
     decoder
@@ -275,7 +279,10 @@ pub fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<RawObject> {
     //
     // keep in mind the fact that this size is the size of the decompressed data
     // rather than the compressed data
-    let mut buf = vec![0; header.length as usize];
+    let mut buf = Vec::default();
+    buf.try_reserve_exact(header.length as usize)
+        .map_err(|err| ErrMode::Cut(ContextError::from_external_error(input, err)))?;
+    buf.resize(header.length as usize, 0x00);
 
     if header.length == 0 {
         // fixed-sized zlib header + trailer
@@ -286,7 +293,7 @@ pub fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<RawObject> {
 
         decoder
             .read_exact(&mut buf)
-            .map_err(|_| ErrMode::Cut(ContextError::new()))?;
+            .map_err(|err| ErrMode::Cut(ContextError::from_external_error(input, err)))?;
 
         // consume the amount of bytes that the decoder read, advancing the `input` slice
         take(decoder.total_in() as usize).parse_next(input)?;

@@ -14,6 +14,7 @@ use std::{fs::File, io::Read, path::PathBuf, rc::Rc};
 use fallible_iterator::FallibleIterator;
 use flate2::read::ZlibDecoder;
 use memmap2::Mmap;
+use nutype::nutype;
 use strum::FromRepr;
 use winnow::{
     ModalResult, Parser,
@@ -260,14 +261,16 @@ pub enum BaseObject {
     Ofs(u64),
 }
 
+#[nutype(derive(Debug, PartialEq))]
+pub struct DeltifiedObject((BaseObject, Delta));
+
+#[nutype(derive(Debug, PartialEq))]
+pub struct UndeltifiedObject(RawObject);
+
 #[derive(Debug, PartialEq)]
 pub enum PackedObject {
-    Deltified {
-        offset: usize,
-        base: BaseObject,
-        delta: Delta,
-    },
-    Undeltified(usize, RawObject),
+    Deltified(usize, DeltifiedObject),
+    Undeltified(usize, UndeltifiedObject),
 }
 
 impl PackedObject {

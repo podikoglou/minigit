@@ -144,11 +144,9 @@ impl Packfile {
     /// Resolves a [PackedObject] into a [RawObject], resolving the deltas if it is deltified.
     pub fn resolve(&self, object: PackedObject) -> Result<RawObject, MinigitError> {
         match object {
-            PackedObject::Deltified {
-                offset: _,
-                base,
-                delta,
-            } => {
+            PackedObject::Deltified(_offset, object) => {
+                let (base, delta) = object.into_inner();
+
                 let base_packed = match base {
                     BaseObject::Ref(id) => self.read_object_by_id(id),
                     BaseObject::Ofs(offset) => self.read_object_at_offset(offset as usize),
@@ -173,7 +171,7 @@ impl Packfile {
                 Ok(RawObject::new(base_raw.r#type, new_bytes))
             }
 
-            PackedObject::Undeltified(_, object) => Ok(object),
+            PackedObject::Undeltified(_, object) => Ok(object.into_inner()),
         }
     }
 
@@ -277,11 +275,7 @@ impl PackedObject {
     /// Gets the offset of the object in the packfile.
     pub fn offset(&self) -> usize {
         match self {
-            PackedObject::Deltified {
-                offset,
-                base: _base,
-                delta: _delta,
-            } => *offset,
+            PackedObject::Deltified(offset, _) => *offset,
             PackedObject::Undeltified(offset, _) => *offset,
         }
     }
@@ -341,21 +335,25 @@ pub fn object(input: &mut Stream<'_>) -> ModalResult<PackedObject> {
 
     alt((
         deltified_object
-            .map(|(base, delta)| PackedObject::Deltified {
-                offset,
-                delta,
-                base: match base {
-                    BaseObject::Ofs(relative_offset) => {
-                        // we resolve the relative offset ofs_delta gives us offset to a file-level offset
-                        BaseObject::Ofs(offset as u64 - relative_offset)
-                    }
+            .map(|(base, delta)| {
+                PackedObject::Deltified(
+                    offset,
+                    DeltifiedObject::new((
+                        match base {
+                            BaseObject::Ofs(relative_offset) => {
+                                // we resolve the relative offset ofs_delta gives us offset to a file-level offset
+                                BaseObject::Ofs(offset as u64 - relative_offset)
+                            }
 
-                    other => other,
-                },
+                            other => other,
+                        },
+                        delta,
+                    )),
+                )
             })
             .context(StrContext::Label("deltified object")),
         undeltified_object
-            .map(|object| PackedObject::Undeltified(offset, object))
+            .map(|object| PackedObject::Undeltified(offset, UndeltifiedObject::new(object)))
             .context(StrContext::Label("undeltified object")),
     ))
     .context(StrContext::Label("object"))

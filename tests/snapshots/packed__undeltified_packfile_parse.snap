@@ -5,14 +5,20 @@ expression: objects
 [
     Undeltified(
         12,
-        RawObject(Commit, 169 B),
+        UndeltifiedObject(
+            RawObject(Commit, 169 B),
+        ),
     ),
     Undeltified(
         132,
-        RawObject(Blob, 39 B),
+        UndeltifiedObject(
+            RawObject(Blob, 39 B),
+        ),
     ),
     Undeltified(
         181,
-        RawObject(Tree, 36 B),
+        UndeltifiedObject(
+            RawObject(Tree, 36 B),
+        ),
     ),
 ]

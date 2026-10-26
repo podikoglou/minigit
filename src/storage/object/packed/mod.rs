@@ -226,10 +226,20 @@ impl FallibleIterator for Objects<'_> {
 
 impl Eq for Packfile {}
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct PackfileHeader {
     /// The amount of objects contained in the packfile.
     pub objects: u32,
+}
+
+impl Encode for PackfileHeader {
+    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+        write!(writer, "PACK")?;
+        writer.write_all(&[0x00, 0x00, 0x00, 0x02])?;
+        writer.write_all(&self.objects.to_be_bytes())?;
+
+        Ok(())
+    }
 }
 
 /// Parses the header of a packfile, returning the amount of objects contained in the packfile.

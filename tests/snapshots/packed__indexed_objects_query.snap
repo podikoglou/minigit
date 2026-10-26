@@ -1,0 +1,10 @@
+---
+source: tests/packed.rs
+expression: obj
+---
+Undeltified(
+    486,
+    UndeltifiedObject(
+        RawObject(Commit, 169 B),
+    ),
+)

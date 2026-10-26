@@ -2,6 +2,7 @@ use std::assert_matches;
 use std::fs::File;
 
 use fallible_iterator::FallibleIterator;
+use insta::assert_debug_snapshot;
 use memmap2::Mmap;
 use minigit::{
     object::{ObjectType, hash::ObjectHash},
@@ -122,17 +123,7 @@ fn indexed_objects_query() {
         )
         .expect("should be able to read object by id");
 
-    // TODO: make this into a snapshot test
-    // assert_matches!(
-    //     obj,
-    //     PackedObject::Undeltified(
-    //         486,
-    //         RawObject {
-    //             r#type: ObjectType::Commit,
-    //             ..
-    //         }
-    //     )
-    // );
+    assert_debug_snapshot!(obj);
 }
 
 #[test]

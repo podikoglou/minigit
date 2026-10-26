@@ -27,7 +27,7 @@ use winnow::{
 use crate::{
     MinigitError,
     error::ParserContext,
-    object::hash::{ObjectHash, parse_object_hash},
+    object::hash::ObjectHash,
     parsing::Stream,
     storage::object::{
         LazyObject, RawObject,
@@ -253,7 +253,7 @@ pub fn header(input: &mut Stream<'_>) -> ModalResult<PackfileHeader> {
     .parse_next(input)
 }
 
-fn offset(input: &mut Stream<'_>) -> ModalResult<u64> {
+pub fn offset(input: &mut Stream<'_>) -> ModalResult<u64> {
     let mut current_byte = any.parse_next(input)?;
     let mut value = (current_byte & 0b0111_1111) as u64;
 
@@ -270,27 +270,6 @@ fn offset(input: &mut Stream<'_>) -> ModalResult<u64> {
     }
 
     Ok(value)
-}
-
-pub fn base_object(
-    r#type: PackedObjectType,
-) -> impl FnMut(&mut Stream<'_>) -> ModalResult<BaseObject> {
-    match r#type {
-        PackedObjectType::OfsDelta => |input: &mut Stream<'_>| {
-            offset
-                .map(BaseObject::Ofs)
-                .context(StrContext::Label("base object offset"))
-                .parse_next(input)
-        },
-        PackedObjectType::RefDelta => |input: &mut Stream<'_>| {
-            parse_object_hash
-                .map(BaseObject::Ref)
-                .context(StrContext::Label("base object name"))
-                .parse_next(input)
-        },
-
-        _ => unreachable!(),
-    }
 }
 
 pub fn size(input: &mut Stream<'_>) -> ModalResult<u64> {

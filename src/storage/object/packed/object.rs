@@ -17,14 +17,17 @@ use winnow::{
 
 use crate::{
     MinigitError,
-    object::{ObjectType, hash::ObjectHash},
+    object::{
+        ObjectType,
+        hash::{ObjectHash, parse_object_hash},
+    },
     parsing::Stream,
     storage::object::{
         RawObject,
         loose::Encode,
         packed::{
-            base_object,
             delta::{Delta, delta},
+            offset,
         },
     },
 };
@@ -86,12 +89,6 @@ pub enum BaseObject {
     Ofs(u64),
 }
 
-#[nutype(derive(Debug, PartialEq))]
-pub struct DeltifiedObject((BaseObject, Delta));
-
-#[nutype(derive(Debug, PartialEq))]
-pub struct UndeltifiedObject(RawObject);
-
 impl Encode for BaseObject {
     fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
         match self {
@@ -150,6 +147,12 @@ impl Encode for (BaseObject, Delta) {
     }
 }
 
+#[nutype(derive(Debug, PartialEq))]
+pub struct DeltifiedObject((BaseObject, Delta));
+
+#[nutype(derive(Debug, PartialEq))]
+pub struct UndeltifiedObject(RawObject);
+
 #[derive(Debug, PartialEq)]
 pub enum PackedObject {
     Deltified(usize, DeltifiedObject),
@@ -197,6 +200,27 @@ pub fn object_header(input: &mut Stream<'_>) -> ModalResult<PackedObjectHeader> 
         r#type,
         length: size,
     })
+}
+
+pub fn base_object(
+    r#type: PackedObjectType,
+) -> impl FnMut(&mut Stream<'_>) -> ModalResult<BaseObject> {
+    match r#type {
+        PackedObjectType::OfsDelta => |input: &mut Stream<'_>| {
+            offset
+                .map(BaseObject::Ofs)
+                .context(StrContext::Label("base object offset"))
+                .parse_next(input)
+        },
+        PackedObjectType::RefDelta => |input: &mut Stream<'_>| {
+            parse_object_hash
+                .map(BaseObject::Ref)
+                .context(StrContext::Label("base object name"))
+                .parse_next(input)
+        },
+
+        _ => unreachable!(),
+    }
 }
 
 /// Parses an object. Takes care of parsing the header too.
@@ -286,7 +310,6 @@ pub fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<RawObject> {
 
     if header.length == 0 {
         // fixed-sized zlib header + trailer
-        // not sure why but it's not cosnsumed with the below code
         take(8usize).parse_next(input)?;
     } else {
         let mut decoder = ZlibDecoder::new(&input[..]);

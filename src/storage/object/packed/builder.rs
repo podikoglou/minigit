@@ -5,7 +5,10 @@ use crate::{
     object::hash::ObjectHash,
     storage::{
         Store,
-        object::{loose::Encode, packed::PackfileHeader},
+        object::{
+            loose::Encode,
+            packed::{PackedObject, PackfileHeader, UndeltifiedObject},
+        },
     },
 };
 
@@ -39,6 +42,18 @@ impl PackBuilder {
         );
 
         header.encode(writer)?;
+
+        for object in self.entries.iter().map(|hash| store.raw_object(hash)) {
+            let object = object?;
+            let undeltified_object = UndeltifiedObject::new(object);
+
+            // the offset is not actually used in the writing. it's also nontrivial to track the
+            // current offset (aka amount of bytes written). perhaps in the future we may neeed to
+            // do it though.
+            let packed_object = PackedObject::Undeltified(0, undeltified_object);
+
+            packed_object.encode(writer)?;
+        }
 
         Ok(())
     }

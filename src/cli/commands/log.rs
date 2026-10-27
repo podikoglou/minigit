@@ -93,7 +93,7 @@ impl LogCommand {
                     continue;
                 }
 
-                let parent = repo.store.object(parent_hash.clone())?;
+                let parent = repo.store.object(&parent_hash)?;
                 let parent = *parent.try_as_commit().ok_or(MinigitError::UnexpectedType)?;
 
                 queue.push((parent, parent_hash.clone()).into());

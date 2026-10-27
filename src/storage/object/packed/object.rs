@@ -2,7 +2,7 @@
 //!
 //! The main types are [DeltifiedObject], [UndeltifiedObject], and [PackedObject] that holds one of
 //! the two.
-use std::io::Read;
+use std::io::{Read, Write};
 
 use flate2::{Compression, read::ZlibDecoder, write::ZlibEncoder};
 use nutype::nutype;
@@ -164,7 +164,11 @@ impl Encode for UndeltifiedObject {
         let compressed_buf: Vec<u8> = Vec::default();
         let mut encoder = ZlibEncoder::new(compressed_buf, Compression::default());
 
-        raw_object.encode(&mut encoder)?;
+        // NOTE: This bypasses the `RawObject` `Encode` implementation, because that is meant for
+        // loose objects which have a different format. perhaps this is a bad API.
+        // Possible future work: don't implement `Encode` for `RawObject`; have newtypes over it
+        // depending on the way you want to encode it.
+        encoder.write_all(&raw_object.bytes)?;
 
         let uncompressed_length = encoder.total_in();
 

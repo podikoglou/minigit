@@ -43,38 +43,38 @@ fn ref_db_lookup() {
 fn store_reference_loose() {
     let (repo, _dir) = include_repo!("fixtures/repos/repo-3.tar");
 
-    assert_debug_snapshot!(repo.store.reference("refs/heads/main".into()));
-    assert_debug_snapshot!(repo.store.reference("refs/heads/feature".into()));
+    assert_debug_snapshot!(repo.store.reference(&"refs/heads/main".into()));
+    assert_debug_snapshot!(repo.store.reference(&"refs/heads/feature".into()));
 }
 
 #[test]
 fn store_reference_packed() {
     let (repo, _dir) = include_repo!("fixtures/repos/repo-9.tar");
 
-    assert_debug_snapshot!(repo.store.reference("refs/tags/v6.5.17".into()));
+    assert_debug_snapshot!(repo.store.reference(&"refs/tags/v6.5.17".into()));
 }
 
 #[test]
 fn store_reference_shadowing() {
     let (repo, _dir) = include_repo!("fixtures/repos/repo-5.tar");
 
-    assert_debug_snapshot!(repo.store.reference("refs/heads/main".into()));
+    assert_debug_snapshot!(repo.store.reference(&"refs/heads/main".into()));
 }
 
 #[test]
 fn store_reference_symbolic() {
     let (repo, _dir) = include_repo!("fixtures/repos/repo-9.tar");
 
-    assert_debug_snapshot!(repo.store.reference("HEAD".into()));
-    assert_debug_snapshot!(repo.store.reference("refs/heads/sym_1_7yjy".into()));
-    assert_debug_snapshot!(repo.store.reference("refs/heads/sym_2_iqi5".into()));
+    assert_debug_snapshot!(repo.store.reference(&"HEAD".into()));
+    assert_debug_snapshot!(repo.store.reference(&"refs/heads/sym_1_7yjy".into()));
+    assert_debug_snapshot!(repo.store.reference(&"refs/heads/sym_2_iqi5".into()));
 }
 
 #[test]
 fn store_reference_missing() {
     let (repo_packed, _dir) = include_repo!("fixtures/repos/repo-9.tar");
-    assert_debug_snapshot!(repo_packed.store.reference("refs/heads/ghost".into()));
+    assert_debug_snapshot!(repo_packed.store.reference(&"refs/heads/ghost".into()));
 
     let (repo_loose_only, _dir) = include_repo!("fixtures/repos/repo-3.tar");
-    assert_debug_snapshot!(repo_loose_only.store.reference("refs/heads/ghost".into()));
+    assert_debug_snapshot!(repo_loose_only.store.reference(&"refs/heads/ghost".into()));
 }

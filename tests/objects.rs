@@ -24,7 +24,7 @@ fn store_object_retrieval() {
         .expect("should parse hash");
     let loose_object = repo
         .store
-        .object(loose_hash.clone())
+        .object(&loose_hash)
         .expect("should find loose object");
     assert_eq!(
         loose_object.hash().expect("should calculate hash"),
@@ -37,7 +37,7 @@ fn store_object_retrieval() {
         .expect("should parse hash");
     let packed_object = repo
         .store
-        .object(packed_hash.clone())
+        .object(&packed_hash)
         .expect("should find packed object");
     assert_eq!(
         packed_object.hash().expect("should calculate hash"),

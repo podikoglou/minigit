@@ -71,7 +71,7 @@ fn raw_objects_match() {
             let hash = oid_to_hash(&oid);
 
             let minigit_raw_obj = minigit_store
-                .raw_object(hash)
+                .raw_object(&hash)
                 .expect("minigit should load the object");
 
             let oracle_obj = oracle_odb
@@ -116,7 +116,7 @@ fn commits_match() {
             let hash = oid_to_hash(&oid);
 
             let minigit_raw_obj = minigit_store
-                .raw_object(hash)
+                .raw_object(&hash)
                 .expect("minigit should load the object");
 
             let minigit_obj = minigit_raw_obj
@@ -198,7 +198,7 @@ fn trees_match() {
             let hash = oid_to_hash(&oid);
 
             let minigit_raw_obj = minigit_store
-                .raw_object(hash)
+                .raw_object(&hash)
                 .expect("minigit should load the object");
 
             let minigit_obj = minigit_raw_obj
@@ -266,7 +266,7 @@ fn blobs_match() {
             let hash = oid_to_hash(&oid);
 
             let minigit_raw_obj = minigit_store
-                .raw_object(hash)
+                .raw_object(&hash)
                 .expect("minigit should load the object");
 
             let minigit_obj = minigit_raw_obj
@@ -310,7 +310,7 @@ fn tags_match() {
             let hash = oid_to_hash(&oid);
 
             let minigit_raw_obj = minigit_store
-                .raw_object(hash)
+                .raw_object(&hash)
                 .expect("minigit should load the object");
 
             let minigit_obj = minigit_raw_obj
@@ -368,7 +368,7 @@ fn commits_reserialization_match() {
             let hash = oid_to_hash(&oid);
 
             let minigit_raw_obj = minigit_store
-                .raw_object(hash)
+                .raw_object(&hash)
                 .expect("minigit should load the object");
 
             let minigit_obj = minigit_raw_obj
@@ -431,7 +431,7 @@ fn trees_reserialization_match() {
             let hash = oid_to_hash(&oid);
 
             let minigit_raw_obj = minigit_store
-                .raw_object(hash)
+                .raw_object(&hash)
                 .expect("minigit should load the object");
 
             let minigit_obj = minigit_raw_obj
@@ -487,7 +487,7 @@ fn blobs_reserialization_match() {
             let hash = oid_to_hash(&oid);
 
             let minigit_raw_obj = minigit_store
-                .raw_object(hash)
+                .raw_object(&hash)
                 .expect("minigit should load the object");
 
             let minigit_obj = minigit_raw_obj
@@ -540,7 +540,7 @@ fn tags_reserialization_match() {
             let hash = oid_to_hash(&oid);
 
             let minigit_raw_obj = minigit_store
-                .raw_object(hash)
+                .raw_object(&hash)
                 .expect("minigit should load the object");
 
             let minigit_obj = minigit_raw_obj
@@ -605,7 +605,7 @@ fn refs_match() {
             let ref_name = oracle_ref.name().expect("utf-8 reference name");
 
             let minigit_ref = minigit_store
-                .reference(ref_name.to_string())
+                .reference(&ref_name.to_string())
                 .expect("minigit should load the reference");
 
             assert_eq!(minigit_ref.name, ref_name, "reference names match");

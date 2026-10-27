@@ -144,6 +144,8 @@ impl Encode for DeltifiedObject {
         };
 
         header.encode(writer)?;
+        base_object.encode(writer)?;
+
         writer.write_all(&compressed_buf)?;
 
         Ok(())

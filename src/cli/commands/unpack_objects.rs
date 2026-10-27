@@ -30,7 +30,7 @@ impl UnpackObjectsCommand {
             let packed_obj = packed_obj?;
             let raw_obj = pack.resolve(packed_obj)?;
 
-            if let Err(err) = repo.store.encode_object(raw_obj) {
+            if let Err(err) = repo.store.encode_object(&raw_obj) {
                 match err {
                     MinigitError::ObjectExists => {
                         // we ignore objects that already exist

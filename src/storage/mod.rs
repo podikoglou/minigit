@@ -165,7 +165,7 @@ impl Store {
     }
 
     /// Gets a [RawObject] by its [ObjectHash].
-    pub fn raw_object(&self, hash: ObjectHash) -> Result<RawObject, MinigitError> {
+    pub fn raw_object(&self, hash: &ObjectHash) -> Result<RawObject, MinigitError> {
         // search in packfiles
         for pack in self.packs() {
             if let Ok(packed) = pack.read_object_by_id(hash.clone()) {
@@ -183,7 +183,7 @@ impl Store {
     }
 
     /// Gets a [LazyObject] by its [ObjectHash].
-    pub fn object(&self, hash: ObjectHash) -> Result<Object, MinigitError> {
+    pub fn object(&self, hash: &ObjectHash) -> Result<Object, MinigitError> {
         // search in packfiles
         for pack in self.packs() {
             if let Ok(packed) = pack.read_object_by_id(hash.clone()) {
@@ -203,7 +203,7 @@ impl Store {
     }
 
     /// Writes a [RawObject] to the loose object database.
-    pub fn encode_object(&self, object: RawObject) -> Result<(), MinigitError> {
+    pub fn encode_object(&self, object: &RawObject) -> Result<(), MinigitError> {
         let hash = object.hash()?;
         let prefix = hash.prefix();
 
@@ -231,7 +231,7 @@ impl Store {
     /// Finds a [Ref] in the repository.
     ///
     /// Note that this function does not guarantee that the returned ref is peeled.
-    pub fn reference(&self, name: RefName) -> Result<Ref, MinigitError> {
+    pub fn reference(&self, name: &RefName) -> Result<Ref, MinigitError> {
         // try to read as loose
         //
         // NOTE: this will be unpeeled!
@@ -265,9 +265,9 @@ impl Store {
     /// Gets the [ObjectHash] of the commit `HEAD` is pointing to.
     /// Gets the [Commit] and [ObjectHash] (in a tuple) of the commit `HEAD` is pointing to.
     pub fn head(&self) -> Result<(Commit, ObjectHash), MinigitError> {
-        self.reference("HEAD".into())
+        self.reference(&"HEAD".into())
             .and_then(|head| self.resolve_reference(&head.pointer))
-            .and_then(|hash| self.object(hash.clone()).map(|obj| (obj, hash)))
+            .and_then(|hash| self.object(&hash).map(|obj| (obj, hash)))
             .and_then(|(object, hash)| {
                 object
                     .try_as_commit()

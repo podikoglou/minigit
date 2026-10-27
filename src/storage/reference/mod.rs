@@ -36,7 +36,7 @@ impl Ref {
     /// Opens a loose ref given its path, and given its name.
     ///
     /// No validation is done to ensure the name matches the path, so is trusted.
-    pub fn open_loose(path: impl AsRef<Path>, name: RefName) -> Result<Ref, MinigitError> {
+    pub fn open_loose(path: impl AsRef<Path>, name: &RefName) -> Result<Ref, MinigitError> {
         let path = path.as_ref();
 
         let contents = fs::read(path)?;
@@ -48,7 +48,7 @@ impl Ref {
             })?;
 
         Ok(Ref {
-            name,
+            name: name.to_owned(),
             pointer,
             peeled: None,
         })

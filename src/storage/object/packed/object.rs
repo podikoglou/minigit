@@ -296,14 +296,16 @@ pub fn deltified_object(input: &mut Stream<'_>) -> ModalResult<DeltifiedObject> 
 
     let base_object = base_object(header.r#type)
         .context(StrContext::Label("base object"))
-        .map(|base| {
+        .verify_map(|base| {
             match base {
                 BaseObject::Ofs(relative_offset) => {
                     // we resolve the relative offset ofs_delta gives us offset to a file-level offset
-                    BaseObject::Ofs(offset as u64 - relative_offset)
+                    Some(BaseObject::Ofs(
+                        (offset as u64).checked_sub(relative_offset)?,
+                    ))
                 }
 
-                other => other,
+                other => Some(other),
             }
         })
         .parse_next(input)?;

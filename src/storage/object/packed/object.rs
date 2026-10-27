@@ -119,9 +119,12 @@ impl Encode for BaseObject {
     }
 }
 
-impl Encode for (BaseObject, Delta) {
+#[nutype(derive(Debug, PartialEq, AsRef))]
+pub struct DeltifiedObject((BaseObject, Delta));
+
+impl Encode for DeltifiedObject {
     fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
-        let (base_object, delta) = self;
+        let (base_object, delta) = self.as_ref();
 
         let compressed_buf: Vec<u8> = Vec::default();
         let mut encoder = ZlibEncoder::new(compressed_buf, Compression::default());
@@ -147,10 +150,7 @@ impl Encode for (BaseObject, Delta) {
     }
 }
 
-#[nutype(derive(Debug, PartialEq))]
-pub struct DeltifiedObject((BaseObject, Delta));
-
-#[nutype(derive(Debug, PartialEq))]
+#[nutype(derive(Debug, PartialEq, AsRef))]
 pub struct UndeltifiedObject(RawObject);
 
 #[derive(Debug, PartialEq)]

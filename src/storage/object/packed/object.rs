@@ -116,25 +116,10 @@ pub fn object(input: &mut Stream<'_>) -> ModalResult<PackedObject> {
 
     alt((
         deltified_object
-            .map(|(base, delta)| {
-                PackedObject::Deltified(
-                    offset,
-                    DeltifiedObject::new((
-                        match base {
-                            BaseObject::Ofs(relative_offset) => {
-                                // we resolve the relative offset ofs_delta gives us offset to a file-level offset
-                                BaseObject::Ofs(offset as u64 - relative_offset)
-                            }
-
-                            other => other,
-                        },
-                        delta,
-                    )),
-                )
-            })
+            .map(|object| PackedObject::Deltified(offset, object))
             .context(StrContext::Label("deltified object")),
         undeltified_object
-            .map(|object| PackedObject::Undeltified(offset, UndeltifiedObject::new(object)))
+            .map(|object| PackedObject::Undeltified(offset, object))
             .context(StrContext::Label("undeltified object")),
     ))
     .context(StrContext::Label("object"))
@@ -142,7 +127,9 @@ pub fn object(input: &mut Stream<'_>) -> ModalResult<PackedObject> {
 }
 
 /// Parses the header and data of a deltified object. Does not take care of resolving the deltas.
-fn deltified_object(input: &mut Stream<'_>) -> ModalResult<(BaseObject, Delta)> {
+fn deltified_object(input: &mut Stream<'_>) -> ModalResult<DeltifiedObject> {
+    let offset = input.current_token_start();
+
     let header = object_header
         .verify(|header| {
             matches!(
@@ -155,6 +142,16 @@ fn deltified_object(input: &mut Stream<'_>) -> ModalResult<(BaseObject, Delta)> 
 
     let base_object = base_object(header.r#type)
         .context(StrContext::Label("base object"))
+        .map(|base| {
+            match base {
+                BaseObject::Ofs(relative_offset) => {
+                    // we resolve the relative offset ofs_delta gives us offset to a file-level offset
+                    BaseObject::Ofs(offset as u64 - relative_offset)
+                }
+
+                other => other,
+            }
+        })
         .parse_next(input)?;
 
     let mut buf = vec![0; header.length as usize];
@@ -169,11 +166,11 @@ fn deltified_object(input: &mut Stream<'_>) -> ModalResult<(BaseObject, Delta)> 
 
     let delta = delta.parse_next(&mut Stream::new(&buf))?;
 
-    Ok((base_object, delta))
+    Ok(DeltifiedObject::new((base_object, delta)))
 }
 
 /// Parses the header and data of an undeltified object. Also takes care of decompressing the data.
-fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<RawObject> {
+fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<UndeltifiedObject> {
     let header = object_header
         .verify(|header| {
             matches!(
@@ -217,7 +214,7 @@ fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<RawObject> {
         _ => unreachable!(),
     };
 
-    Ok(RawObject::new(r#type, buf))
+    Ok(UndeltifiedObject::new(RawObject::new(r#type, buf)))
 }
 
 #[cfg(test)]
@@ -225,10 +222,14 @@ mod tests {
     use crate::{
         object::ObjectType,
         parsing::Stream,
-        storage::object::{RawObject, packed::object::undeltified_object},
+        storage::object::{
+            RawObject,
+            packed::{UndeltifiedObject, object::undeltified_object},
+        },
     };
 
     use super::{BaseObject, PackedObjectType, base_object, object_header};
+    use insta::assert_debug_snapshot;
     use std::assert_matches;
     use winnow::Parser;
 
@@ -282,13 +283,7 @@ mod tests {
             ]))
             .expect("commit object should parse");
 
-        assert_matches!(
-            obj,
-            RawObject {
-                r#type: ObjectType::Commit,
-                ..
-            }
-        );
+        assert_debug_snapshot!(obj);
     }
 
     #[test]

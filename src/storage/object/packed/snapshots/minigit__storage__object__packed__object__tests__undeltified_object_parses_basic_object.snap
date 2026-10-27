@@ -1,0 +1,7 @@
+---
+source: src/storage/object/packed/object.rs
+expression: obj
+---
+UndeltifiedObject(
+    RawObject(Commit, 169 B),
+)

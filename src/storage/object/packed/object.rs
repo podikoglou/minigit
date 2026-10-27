@@ -321,13 +321,16 @@ pub fn deltified_object(input: &mut Stream<'_>) -> ModalResult<DeltifiedObject> 
     let mut buf = Vec::default();
     buf.try_reserve_exact(header.length as usize)
         .map_err(|_| ErrMode::Cut(ContextError::new()))?;
-    buf.resize(header.length as usize, 0x00);
 
     let mut decoder = ZlibDecoder::new(&input[..]);
 
     decoder
-        .read_exact(&mut buf)
+        .read_to_end(&mut buf)
         .map_err(|_| ErrMode::Cut(ContextError::new()))?;
+
+    if buf.len() != header.length as usize {
+        return Err(ErrMode::Cut(ContextError::new()));
+    }
 
     // consume the amount of bytes that the decoder read, advancing the `input` slice
     take(decoder.total_in() as usize).parse_next(input)?;
@@ -363,7 +366,6 @@ pub fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<UndeltifiedObje
     let mut buf = Vec::default();
     buf.try_reserve_exact(header.length as usize)
         .map_err(|err| ErrMode::Cut(ContextError::from_external_error(input, err)))?;
-    buf.resize(header.length as usize, 0x00);
 
     if header.length == 0 {
         // fixed-sized zlib header + trailer
@@ -372,8 +374,12 @@ pub fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<UndeltifiedObje
         let mut decoder = ZlibDecoder::new(&input[..]);
 
         decoder
-            .read_exact(&mut buf)
+            .read_to_end(&mut buf)
             .map_err(|err| ErrMode::Cut(ContextError::from_external_error(input, err)))?;
+
+        if buf.len() != header.length as usize {
+            return Err(ErrMode::Cut(ContextError::new()));
+        }
 
         // consume the amount of bytes that the decoder read, advancing the `input` slice
         take(decoder.total_in() as usize).parse_next(input)?;

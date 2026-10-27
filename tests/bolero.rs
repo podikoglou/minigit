@@ -146,7 +146,7 @@ fn fuzz_insert_instruction() {
         if let Ok(instruction) = insert_instruction.parse(stream) {
             let mut buf = Vec::default();
 
-            let _ = instruction.encode(&mut buf);
+            instruction.encode(&mut buf).expect("should be encodable");
 
             assert_eq!(buf, input);
         }
@@ -174,7 +174,7 @@ fn fuzz_copy_instruction() {
         if let Ok(instruction) = copy_instruction.parse(stream) {
             let mut buf = Vec::default();
 
-            let _ = instruction.encode(&mut buf);
+            instruction.encode(&mut buf).expect("should be encodable");
 
             let stream_2 = Stream::new(&buf);
 
@@ -194,7 +194,7 @@ fn fuzz_delta_instruction() {
         if let Ok(instr) = instruction.parse(stream) {
             let mut buf = Vec::default();
 
-            let _ = instr.encode(&mut buf);
+            instr.encode(&mut buf).expect("should be encodable");
 
             let stream_2 = Stream::new(&buf);
 

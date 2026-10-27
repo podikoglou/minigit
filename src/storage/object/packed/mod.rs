@@ -10,6 +10,7 @@ pub mod builder;
 pub mod delta;
 pub mod idx;
 mod object;
+pub mod stream;
 
 pub use object::*;
 
@@ -36,6 +37,7 @@ use crate::{
         packed::{
             delta::{CopyInstruction, InsertInstruction, Instruction},
             idx::PackIndex,
+            stream::PackStream,
         },
     },
 };
@@ -92,16 +94,15 @@ impl Packfile {
     }
 
     /// Returns an iterator over the objects of the packfile.
-    pub fn objects<'a>(&'a self) -> Objects<'a> {
+    pub fn objects<'a>(&'a self) -> PackStream<'a> {
         let mut buf = Stream::new(&self.pack.1[..]);
         let _: ModalResult<_> = take(12usize).parse_next(&mut buf);
 
-        Objects {
-            amount: self.objects_count as usize,
-            context: ParserContext::File(self.path().to_owned()),
-            read: 0,
+        PackStream::new_from_stream(
             buf,
-        }
+            self.objects_count as usize,
+            ParserContext::File(self.path().to_owned()),
+        )
     }
 
     /// Returns an iterator over the objects of the packfile as [LazyObject]s.
@@ -187,41 +188,6 @@ impl PartialEq for Packfile {
         self.path() == other.path()
             && self.idx == other.idx
             && self.objects_count == other.objects_count
-    }
-}
-
-/// An iterator over [PackedObject].
-pub struct Objects<'a> {
-    /// The amount of objects to read. [`Self::next`] will start returning `None` after having read
-    /// `amount` objects.
-    amount: usize,
-
-    /// The parser context, used for error reporting.
-    context: ParserContext,
-
-    /// A slice of the packfile's contents, starting from the first object.
-    buf: Stream<'a>,
-
-    /// (state) The amount of objects that have been read so far.
-    read: usize,
-}
-
-impl FallibleIterator for Objects<'_> {
-    type Item = PackedObject;
-    type Error = MinigitError;
-
-    fn next(&mut self) -> Result<Option<PackedObject>, MinigitError> {
-        if self.read >= self.amount {
-            return Ok(None);
-        }
-
-        let object = object
-            .parse_next(&mut self.buf)
-            .map_err(|err| MinigitError::ParserError(err.to_string(), self.context.to_owned()))?;
-
-        self.read += 1;
-
-        Ok(Some(object))
     }
 }
 

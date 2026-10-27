@@ -153,6 +153,38 @@ impl Encode for DeltifiedObject {
 #[nutype(derive(Debug, PartialEq, AsRef))]
 pub struct UndeltifiedObject(RawObject);
 
+impl Encode for UndeltifiedObject {
+    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+        let raw_object = self.as_ref();
+
+        let compressed_buf: Vec<u8> = Vec::default();
+        let mut encoder = ZlibEncoder::new(compressed_buf, Compression::default());
+
+        raw_object.encode(&mut encoder)?;
+
+        let uncompressed_length = encoder.total_in();
+
+        let compressed_buf = encoder.finish()?;
+
+        let header = PackedObjectHeader {
+            r#type: match raw_object.r#type {
+                // TODO: this should be somewhere else, possibly already a function for it i can't
+                // think of right now
+                ObjectType::Blob => PackedObjectType::Blob,
+                ObjectType::Tree => PackedObjectType::Tree,
+                ObjectType::Commit => PackedObjectType::Commit,
+                ObjectType::Tag => PackedObjectType::Tag,
+            },
+            length: uncompressed_length,
+        };
+
+        header.encode(writer)?;
+        writer.write_all(&compressed_buf)?;
+
+        Ok(())
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub enum PackedObject {
     Deltified(usize, DeltifiedObject),

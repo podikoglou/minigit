@@ -10,7 +10,7 @@ use strum::FromRepr;
 use winnow::{
     ModalResult, Parser,
     combinator::alt,
-    error::{ContextError, ErrMode, FromExternalError, ParserError, StrContext},
+    error::{ContextError, ErrMode, FromExternalError, StrContext},
     stream::Location,
     token::{any, take},
 };
@@ -31,6 +31,8 @@ use crate::{
         },
     },
 };
+
+pub const MAX_BUF_SIZE: u64 = 512 * 1024 * 1024; // 512MB, like Git
 
 #[derive(Debug, PartialEq)]
 pub struct PackedObjectHeader {
@@ -312,6 +314,10 @@ pub fn deltified_object(input: &mut Stream<'_>) -> ModalResult<DeltifiedObject> 
         })
         .parse_next(input)?;
 
+    if header.length > MAX_BUF_SIZE {
+        return Err(ErrMode::Cut(ContextError::new()));
+    }
+
     let mut buf = Vec::default();
     buf.try_reserve_exact(header.length as usize)
         .map_err(|_| ErrMode::Cut(ContextError::new()))?;
@@ -345,6 +351,10 @@ pub fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<UndeltifiedObje
         })
         .context(StrContext::Label("object header"))
         .parse_next(input)?;
+
+    if header.length > MAX_BUF_SIZE {
+        return Err(ErrMode::Cut(ContextError::new()));
+    }
 
     // we create a buffer with the size we read from the header
     //

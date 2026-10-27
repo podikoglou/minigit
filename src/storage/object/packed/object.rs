@@ -204,8 +204,8 @@ impl PackedObject {
 impl Encode for PackedObject {
     fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
         match self {
-            PackedObject::Deltified(_size, object) => object.encode(writer),
-            PackedObject::Undeltified(_size, object) => object.encode(writer),
+            PackedObject::Deltified(_offset, object) => object.encode(writer),
+            PackedObject::Undeltified(_offset, object) => object.encode(writer),
         }
     }
 }

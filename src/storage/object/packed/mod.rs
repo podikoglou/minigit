@@ -6,6 +6,7 @@
 //!
 //! In particular, this deals with version 2 of the packfile format.
 
+pub mod builder;
 pub mod delta;
 pub mod idx;
 mod object;
@@ -230,6 +231,12 @@ impl Eq for Packfile {}
 pub struct PackfileHeader {
     /// The amount of objects contained in the packfile.
     pub objects: u32,
+}
+
+impl PackfileHeader {
+    pub fn new(objects: u32) -> Self {
+        Self { objects }
+    }
 }
 
 impl Encode for PackfileHeader {

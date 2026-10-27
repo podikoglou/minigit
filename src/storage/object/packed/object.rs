@@ -281,7 +281,9 @@ pub fn object(input: &mut Stream<'_>) -> ModalResult<PackedObject> {
 }
 
 /// Parses the header and data of a deltified object. Does not take care of resolving the deltas.
-pub fn deltified_object(input: &mut Stream<'_>) -> ModalResult<(BaseObject, Delta)> {
+pub fn deltified_object(input: &mut Stream<'_>) -> ModalResult<DeltifiedObject> {
+    let offset = input.current_token_start();
+
     let header = object_header
         .verify(|header| {
             matches!(
@@ -326,7 +328,7 @@ pub fn deltified_object(input: &mut Stream<'_>) -> ModalResult<(BaseObject, Delt
 }
 
 /// Parses the header and data of an undeltified object. Also takes care of decompressing the data.
-pub fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<RawObject> {
+pub fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<UndeltifiedObject> {
     let header = object_header
         .verify(|header| {
             matches!(

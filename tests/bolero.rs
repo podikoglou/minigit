@@ -9,7 +9,7 @@ use minigit::{
     storage::object::{
         loose::{Encode, read_object, read_object_compressed},
         packed::{
-            PackedObjectType, base_object,
+            self, PackedObjectType, base_object,
             delta::{copy_instruction, delta, insert_instruction, instruction},
             deltified_object, header, object_header, size, undeltified_object,
         },
@@ -346,6 +346,25 @@ fn fuzz_pack_header() {
             parsed.encode(&mut buf).expect("should be encodable");
 
             let parsed_2 = header
+                .parse(Stream::new(&buf))
+                .expect("should be parseable");
+
+            assert_eq!(parsed_2, parsed);
+        }
+    });
+}
+
+#[test]
+fn fuzz_packed_object() {
+    check!().for_each(|input: &[u8]| {
+        let stream = Stream::new(input);
+
+        if let Ok(parsed) = packed::object.parse(stream) {
+            let mut buf = Vec::default();
+
+            parsed.encode(&mut buf).expect("should be encodable");
+
+            let parsed_2 = packed::object
                 .parse(Stream::new(&buf))
                 .expect("should be parseable");
 

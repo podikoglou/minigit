@@ -201,6 +201,15 @@ impl PackedObject {
     }
 }
 
+impl Encode for PackedObject {
+    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+        match self {
+            PackedObject::Deltified(_size, object) => object.encode(writer),
+            PackedObject::Undeltified(_size, object) => object.encode(writer),
+        }
+    }
+}
+
 pub fn object_header(input: &mut Stream<'_>) -> ModalResult<PackedObjectHeader> {
     // TODO: using combinators instead of doing this imperatively would be great.
 

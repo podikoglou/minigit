@@ -168,8 +168,8 @@ impl Store {
     pub fn raw_object(&self, hash: &ObjectHash) -> Result<RawObject, MinigitError> {
         // search in packfiles
         for pack in self.packs() {
-            if let Ok(packed) = pack.read_object_by_id(hash.clone()) {
-                return pack.resolve(packed);
+            if let Ok(raw) = pack.raw_object(hash) {
+                return Ok(raw);
             }
         }
 
@@ -186,10 +186,8 @@ impl Store {
     pub fn object(&self, hash: &ObjectHash) -> Result<Object, MinigitError> {
         // search in packfiles
         for pack in self.packs() {
-            if let Ok(packed) = pack.read_object_by_id(hash.clone()) {
-                return pack
-                    .resolve(packed)
-                    .and_then(|obj| obj.into_object(ParserContext::File(pack.path().to_owned())));
+            if let Ok(raw) = pack.raw_object(hash) {
+                return raw.into_object(ParserContext::File(pack.path().to_owned()));
             }
         }
 

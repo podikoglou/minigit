@@ -16,7 +16,6 @@ pub use object::*;
 
 use std::{fs::File, path::PathBuf, rc::Rc};
 
-use fallible_iterator::FallibleIterator;
 use memmap2::Mmap;
 use winnow::{
     ModalResult, Parser,
@@ -32,13 +31,9 @@ use crate::{
     object::hash::ObjectHash,
     parsing::Stream,
     storage::object::{
-        LazyObject, RawObject,
+        LazyObject, ObjectDb, RawObject,
         loose::Encode,
-        packed::{
-            delta::{CopyInstruction, InsertInstruction, Instruction},
-            idx::PackIndex,
-            stream::PackStream,
-        },
+        packed::{idx::PackIndex, stream::PackStream},
     },
 };
 
@@ -143,6 +138,12 @@ impl Packfile {
         self.read_object_at_offset(offset)
     }
 
+    /// Reads and resolves a [`RawObject`] by its ID ([`ObjectHash`]) from the packfile.
+    pub fn raw_object(&self, hash: &ObjectHash) -> Result<RawObject, MinigitError> {
+        let packed = self.read_object_by_id(hash.clone())?;
+        self.resolve(packed)
+    }
+
     /// Resolves a [PackedObject] into a [RawObject], resolving the deltas if it is deltified.
     pub fn resolve(&self, object: PackedObject) -> Result<RawObject, MinigitError> {
         match object {
@@ -178,6 +179,12 @@ impl PartialEq for Packfile {
 }
 
 impl Eq for Packfile {}
+
+impl ObjectDb for Packfile {
+    fn raw_object(&self, hash: &ObjectHash) -> Result<RawObject, MinigitError> {
+        self.raw_object(hash)
+    }
+}
 
 #[derive(Debug, PartialEq)]
 pub struct PackfileHeader {

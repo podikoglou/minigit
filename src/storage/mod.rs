@@ -1,12 +1,9 @@
 use std::{
-    fs::{self, File},
-    io::BufWriter,
+    fs,
     path::PathBuf,
     rc::Rc,
     sync::OnceLock,
 };
-
-use itertools::Itertools;
 
 use crate::{
     MinigitError,
@@ -17,7 +14,7 @@ use crate::{
         hash::{HashPrefix, ObjectHash},
     },
     storage::{
-        object::{LazyObject, ObjectsBucket, RawObject, packed::Packfile},
+        object::{LazyObject, LooseDb, ObjectDb, ObjectsBucket, RawObject, packed::Packfile},
         reference::{Ref, RefName, RefPointer, db::RefsDb},
     },
 };
@@ -28,6 +25,7 @@ pub mod reference;
 #[derive(Debug, Default)]
 pub struct Store {
     pub path: PathBuf,
+    pub loose: LooseDb,
 
     packs: Vec<Rc<Packfile>>,
     refs_db: OnceLock<Rc<RefsDb>>,
@@ -40,8 +38,11 @@ impl Store {
 
         match fs::exists(&path) {
             Ok(true) => {
+                let loose = LooseDb::open(path.join("objects/"))?;
+
                 let mut store = Self {
                     path,
+                    loose,
                     ..Default::default()
                 };
 
@@ -83,23 +84,12 @@ impl Store {
     ///
     /// At most 256 of them exist, so they are collected eagerly.
     pub fn buckets(&self) -> Result<Vec<ObjectsBucket>, MinigitError> {
-        fs::read_dir(self.objects_path())?
-            .filter_map(|result| match result {
-                Err(err) => Some(Err(err.into())),
-                Ok(entry) if entry.file_name().len() == 2 => {
-                    Some(ObjectsBucket::open(entry.path()))
-                }
-                Ok(_) => None,
-            })
-            .collect()
+        self.loose.buckets()
     }
 
     /// Finds an [`ObjectsBucket`] in .git/objects/
     pub fn bucket(&self, prefix: HashPrefix) -> Result<ObjectsBucket, MinigitError> {
-        self.buckets()?
-            .into_iter()
-            .find(|dir| dir.prefix == prefix)
-            .ok_or(MinigitError::BucketNotFound)
+        self.loose.bucket(prefix)
     }
 
     /// Refreshes the internal packfile listing
@@ -155,13 +145,7 @@ impl Store {
 
         let objects = packs.into_iter().flat_map(Packfile::lazy_objects).map(Ok);
 
-        Ok(self
-            .buckets()?
-            .into_iter()
-            .map(ObjectsBucket::objects)
-            .flatten_ok()
-            .map(Result::flatten)
-            .chain(objects))
+        Ok(self.loose.objects()?.chain(objects))
     }
 
     /// Gets a [RawObject] by its [ObjectHash].
@@ -174,12 +158,7 @@ impl Store {
         }
 
         // search in loose objects
-        let path = self
-            .objects_path()
-            .join(hash.prefix().to_string())
-            .join(&hash.to_string()[2..]); // <-- TODO: this could be a function of `ObjectHash`
-
-        LazyObject::loose(path).into_raw()
+        self.loose.raw_object(hash)
     }
 
     /// Gets a [LazyObject] by its [ObjectHash].
@@ -192,31 +171,12 @@ impl Store {
         }
 
         // search in loose objects
-        let path = self
-            .objects_path()
-            .join(hash.prefix().to_string())
-            .join(&hash.to_string()[2..]); // <-- TODO: this could be a function of `ObjectHash`
-
-        LazyObject::loose(path).into_object()
+        self.loose.object(hash)
     }
 
     /// Writes a [RawObject] to the loose object database.
     pub fn encode_object(&self, object: &RawObject) -> Result<(), MinigitError> {
-        let hash = object.hash()?;
-        let prefix = hash.prefix();
-
-        let bucket_path = self.objects_path().join(prefix.to_string());
-
-        if !bucket_path.exists() {
-            fs::create_dir_all(&bucket_path)?;
-        }
-
-        let object_path = bucket_path.join(&hash.to_string()[2..]);
-
-        let object_file = File::create_new(object_path).map_err(|_| MinigitError::ObjectExists)?;
-        let mut writer = BufWriter::new(object_file);
-
-        object.encode_compressed(&mut writer)
+        self.loose.encode_object(object)
     }
 
     /// Gets a handle to the `packed-refs` database
@@ -272,5 +232,11 @@ impl Store {
                     .ok_or(MinigitError::UnexpectedObjectType)
                     .map(|commit| (*commit, hash))
             })
+    }
+}
+
+impl ObjectDb for Store {
+    fn raw_object(&self, hash: &ObjectHash) -> Result<RawObject, MinigitError> {
+        self.raw_object(hash)
     }
 }

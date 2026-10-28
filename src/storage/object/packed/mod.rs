@@ -156,21 +156,7 @@ impl Packfile {
 
                 let base_raw = self.resolve(base_packed)?;
 
-                let mut new_bytes: Vec<u8> =
-                    Vec::with_capacity(delta.deltified_object_size as usize);
-
-                for instruction in delta.instructions {
-                    let mut new_data = match instruction {
-                        Instruction::Insert(InsertInstruction(data)) => data,
-                        Instruction::Copy(CopyInstruction { offset, size }) => {
-                            base_raw.bytes[offset as usize..offset as usize + size as usize].into()
-                        }
-                    };
-
-                    new_bytes.append(&mut new_data);
-                }
-
-                Ok(RawObject::new(base_raw.r#type, new_bytes))
+                Ok(base_raw.apply_delta(delta))
             }
 
             PackedObject::Undeltified(_, object) => Ok(object.into_inner()),

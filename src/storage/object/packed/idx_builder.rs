@@ -112,7 +112,7 @@ impl PackIndexBuilder {
         Ok(raw_object)
     }
 
-    pub fn build(&self, cache: &mut ObjectCache) -> Result<(), MinigitError> {
+    pub fn build(&self, cache: &mut ObjectCache) -> Result<PackIndex, MinigitError> {
         let mut idx = PackIndex::new(&self.path);
 
         let mut intermediate: Vec<IntermediateTableEntry> = Vec::default();
@@ -169,7 +169,7 @@ impl PackIndexBuilder {
             }
         }
 
-        Ok(())
+        Ok(idx)
     }
 }
 

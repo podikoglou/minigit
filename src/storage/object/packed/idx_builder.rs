@@ -11,11 +11,10 @@ use winnow::{
 use crate::{
     MinigitError,
     error::ParserContext,
-    object::hash::{HashPrefix, ObjectHash},
+    object::hash::ObjectHash,
     parsing::Stream,
     storage::object::{
         ObjectDb, RawObject,
-        loose::Encode,
         packed::{BaseObject, PackedObject, header, idx::PackIndex, object, stream::PackStream},
     },
 };

@@ -20,7 +20,7 @@ use crate::{
 };
 
 /// Holds a handle to a memory-mapped pack .idx and provides an API for querying it.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct PackIndex {
     pub path: PathBuf,
 
@@ -111,6 +111,16 @@ impl PackIndex {
             pack_checksum,
             idx_checksum,
         })
+    }
+
+    /// Creates a new [PackIndex] meant for creating a new index at the given path.
+    ///
+    /// It does not read from path, it is only stored for writing.
+    pub fn new(path: PathBuf) -> Self {
+        Self {
+            path,
+            ..Default::default()
+        }
     }
 
     /// Gets the object count.

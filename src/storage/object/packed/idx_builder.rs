@@ -11,7 +11,7 @@ use winnow::{
 use crate::{
     MinigitError,
     error::ParserContext,
-    object::hash::ObjectHash,
+    object::hash::{HashPrefix, ObjectHash},
     parsing::Stream,
     storage::object::{
         ObjectDb, RawObject,
@@ -19,6 +19,7 @@ use crate::{
     },
 };
 
+#[derive(Debug)]
 pub struct PackIndexBuilder {
     path: PathBuf,
     mmap: Mmap,
@@ -111,13 +112,31 @@ impl PackIndexBuilder {
         Ok(raw_object)
     }
 
-    pub fn build(&mut self, cache: &mut ObjectCache) -> Result<(), MinigitError> {
+    pub fn build(&self, cache: &mut ObjectCache) -> Result<(), MinigitError> {
+        let mut fanout: [usize; 255] = [0; 255];
+        let mut object_names: Vec<ObjectHash> = Vec::with_capacity(self.objects_expected);
+
         for packed_object in self.objects().iterator() {
             let packed_object = packed_object?;
             let raw_object = self.resolve(packed_object, cache)?;
 
-            todo!()
+            let hash = raw_object.hash()?;
+
+            let prefix: u8 = hash.prefix().into();
+            let prefix = prefix as usize;
+
+            // populate fanout table cumulatively
+            for i in 0..=prefix {
+                fanout[i] += 1;
+            }
+
+            // populate object names
+            object_names.push(hash);
+
+            // TODO compute crc value
         }
+
+        object_names.sort();
 
         Ok(())
     }
@@ -134,6 +153,7 @@ impl ObjectDb for PackIndexBuilder {
 }
 
 /// Caches objects by their offsets (TODO: also hash?)
+#[derive(Default, Debug)]
 pub struct ObjectCache {
     offset_to_obj: HashMap<usize, RawObject>,
 }

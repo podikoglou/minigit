@@ -117,7 +117,7 @@ impl PackIndexBuilder {
         let mut fanout: [usize; 255] = [0; 255];
         let mut object_names: Vec<ObjectHash> = Vec::with_capacity(self.objects_expected);
 
-        let mut crcs: Vec<Vec<u32>> = Vec::default();
+        let mut crcs: Vec<u32> = Vec::default();
 
         let mut small_offsets: Vec<u32> = Vec::default();
         let mut large_offsets: Vec<u64> = Vec::default();
@@ -146,9 +146,7 @@ impl PackIndexBuilder {
             // populate object names
             object_names.push(hash.clone());
 
-            // TODO compute crc value
-
-            let crc: Vec<u32> = vec![];
+            let crc = crc32fast::hash(&raw_object.bytes);
 
             // figure out where to place offset
             let offset = if offset > 2 ^ 31 {
@@ -229,4 +227,4 @@ impl From<Offset> for u32 {
 }
 
 #[derive(PartialOrd, Ord, PartialEq, Eq)]
-struct IntermediateTableEntry(ObjectHash, Vec<u32>, Offset);
+struct IntermediateTableEntry(ObjectHash, u32, Offset);

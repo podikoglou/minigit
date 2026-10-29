@@ -93,12 +93,9 @@ impl PackIndexBuilder {
                             Some(val) => val.clone(),
 
                             // read at offset, cache for future use
-                            None => {
-                                let packed = self.read_object_at_offset(offset)?;
-                                let raw = self.resolve(packed, cache)?;
-
-                                raw
-                            }
+                            None => self
+                                .read_object_at_offset(offset)
+                                .and_then(|packed| self.resolve(packed, cache))?,
                         })
                     }
                 };

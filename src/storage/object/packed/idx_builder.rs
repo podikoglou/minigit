@@ -116,8 +116,6 @@ impl PackIndexBuilder {
     pub fn build(&self, cache: &mut ObjectCache) -> Result<(), MinigitError> {
         let mut idx = PackIndex::new(&self.path);
 
-        let mut object_names: Vec<ObjectHash> = Vec::with_capacity(self.objects_expected);
-
         let mut crcs: Vec<u32> = Vec::default();
 
         let mut small_offsets: Vec<u32> = Vec::default();
@@ -147,7 +145,7 @@ impl PackIndexBuilder {
             }
 
             // populate object names
-            object_names.push(hash.clone());
+            idx.object_names.push(hash.clone());
 
             let crc = crc32fast::hash(&raw_object.bytes);
 

@@ -2,7 +2,7 @@
 
 use std::{
     fs::{self},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 use winnow::{
@@ -42,8 +42,8 @@ impl PartialEq for PackIndex {
 
 impl PackIndex {
     /// Creates an index of [PackIndex], memory mapping the file and reading its header.
-    pub fn open(path: PathBuf) -> Result<Self, MinigitError> {
-        let contents = fs::read(&path)?;
+    pub fn open(path: impl AsRef<Path>) -> Result<Self, MinigitError> {
+        let contents = fs::read(path.as_ref())?;
         let mut stream = Stream::new(&contents[..]);
 
         // read idx header
@@ -51,11 +51,17 @@ impl PackIndex {
         // this doesn't return any information, this is mostly for validation that this is a valid idx
         // file.
         header.parse_next(&mut stream).map_err(|err| {
-            MinigitError::ParserError(err.to_string(), ParserContext::File(path.clone()))
+            MinigitError::ParserError(
+                err.to_string(),
+                ParserContext::File(path.as_ref().to_path_buf()),
+            )
         })?;
 
         let fanout_table = fanout_table.parse_next(&mut stream).map_err(|err| {
-            MinigitError::ParserError(err.to_string(), ParserContext::File(path.clone()))
+            MinigitError::ParserError(
+                err.to_string(),
+                ParserContext::File(path.as_ref().to_path_buf()),
+            )
         })?;
 
         let objects_count = fanout_table
@@ -66,19 +72,28 @@ impl PackIndex {
         let object_names = object_names(objects_count)
             .parse_next(&mut stream)
             .map_err(|err| {
-                MinigitError::ParserError(err.to_string(), ParserContext::File(path.clone()))
+                MinigitError::ParserError(
+                    err.to_string(),
+                    ParserContext::File(path.as_ref().to_path_buf()),
+                )
             })?;
 
         let crc_entries = crc_entries(objects_count)
             .parse_next(&mut stream)
             .map_err(|err| {
-                MinigitError::ParserError(err.to_string(), ParserContext::File(path.clone()))
+                MinigitError::ParserError(
+                    err.to_string(),
+                    ParserContext::File(path.as_ref().to_path_buf()),
+                )
             })?;
 
         let offsets_1 = offsets_1(objects_count)
             .parse_next(&mut stream)
             .map_err(|err| {
-                MinigitError::ParserError(err.to_string(), ParserContext::File(path.clone()))
+                MinigitError::ParserError(
+                    err.to_string(),
+                    ParserContext::File(path.as_ref().to_path_buf()),
+                )
             })?;
 
         let offsets_2_entries = offsets_1
@@ -89,19 +104,28 @@ impl PackIndex {
         let offsets_2 = offsets_2(offsets_2_entries)
             .parse_next(&mut stream)
             .map_err(|err| {
-                MinigitError::ParserError(err.to_string(), ParserContext::File(path.clone()))
+                MinigitError::ParserError(
+                    err.to_string(),
+                    ParserContext::File(path.as_ref().to_path_buf()),
+                )
             })?;
 
         let pack_checksum = checksum.parse_next(&mut stream).map_err(|err| {
-            MinigitError::ParserError(err.to_string(), ParserContext::File(path.clone()))
+            MinigitError::ParserError(
+                err.to_string(),
+                ParserContext::File(path.as_ref().to_path_buf()),
+            )
         })?;
 
         let idx_checksum = checksum.parse_next(&mut stream).map_err(|err| {
-            MinigitError::ParserError(err.to_string(), ParserContext::File(path.clone()))
+            MinigitError::ParserError(
+                err.to_string(),
+                ParserContext::File(path.as_ref().to_path_buf()),
+            )
         })?;
 
         Ok(Self {
-            path,
+            path: path.as_ref().to_path_buf(),
             objects_count,
             fanout_table,
             object_names,
@@ -116,9 +140,9 @@ impl PackIndex {
     /// Creates a new [PackIndex] meant for creating a new index at the given path.
     ///
     /// It does not read from path, it is only stored for writing.
-    pub fn new(path: PathBuf) -> Self {
+    pub fn new(path: impl AsRef<Path>) -> Self {
         Self {
-            path,
+            path: path.as_ref().to_path_buf(),
             ..Default::default()
         }
     }

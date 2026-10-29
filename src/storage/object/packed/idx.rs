@@ -19,7 +19,7 @@ use crate::{
     parsing::Stream,
 };
 
-/// Holds a handle to a memory-mapped pack .idx and provides an API for querying it.
+/// A packfile index providing information for reading a Packfile.
 #[derive(Debug, Default)]
 pub struct PackIndex {
     pub path: PathBuf,

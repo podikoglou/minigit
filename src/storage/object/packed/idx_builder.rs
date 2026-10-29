@@ -118,8 +118,6 @@ impl PackIndexBuilder {
 
         let mut crcs: Vec<u32> = Vec::default();
 
-        let mut large_offsets: Vec<u64> = Vec::default();
-
         let mut intermediate: Vec<IntermediateTableEntry> = Vec::default();
 
         for packed_object in self.objects().iterator() {
@@ -150,11 +148,11 @@ impl PackIndexBuilder {
 
             // figure out where to place offset
             let offset = if offset > 2 ^ 31 {
-                let idx = large_offsets.len();
+                let offsets_2_idx = idx.offsets_2.len();
 
-                large_offsets.push(offset as u64);
+                idx.offsets_2.push(offset as u64);
 
-                Offset::Large(idx as u32)
+                Offset::Large(offsets_2_idx as u32)
             } else {
                 Offset::Small(offset as u32)
             };

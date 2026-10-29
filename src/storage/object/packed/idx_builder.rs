@@ -116,8 +116,6 @@ impl PackIndexBuilder {
     pub fn build(&self, cache: &mut ObjectCache) -> Result<(), MinigitError> {
         let mut idx = PackIndex::new(&self.path);
 
-        let mut crcs: Vec<u32> = Vec::default();
-
         let mut intermediate: Vec<IntermediateTableEntry> = Vec::default();
 
         for packed_object in self.objects().iterator() {
@@ -164,7 +162,7 @@ impl PackIndexBuilder {
         intermediate.sort();
 
         for IntermediateTableEntry(_, crc, offset) in intermediate {
-            crcs.push(crc);
+            idx.crc_entries.push(crc);
 
             match offset {
                 Offset::Small(offset) => idx.offsets_1.push(offset),

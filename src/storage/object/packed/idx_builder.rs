@@ -118,7 +118,6 @@ impl PackIndexBuilder {
 
         let mut crcs: Vec<u32> = Vec::default();
 
-        let mut small_offsets: Vec<u32> = Vec::default();
         let mut large_offsets: Vec<u64> = Vec::default();
 
         let mut intermediate: Vec<IntermediateTableEntry> = Vec::default();
@@ -170,8 +169,8 @@ impl PackIndexBuilder {
             crcs.push(crc);
 
             match offset {
-                Offset::Small(offset) => small_offsets.push(offset),
-                Offset::Large(index) => small_offsets.push(index | 0x10),
+                Offset::Small(offset) => idx.offsets_1.push(offset),
+                Offset::Large(index) => idx.offsets_1.push(index | 0x10),
             }
         }
 

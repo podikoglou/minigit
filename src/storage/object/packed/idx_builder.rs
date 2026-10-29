@@ -15,6 +15,7 @@ use crate::{
     parsing::Stream,
     storage::object::{
         ObjectDb, RawObject,
+        loose::Encode,
         packed::{BaseObject, PackedObject, header, object, stream::PackStream},
     },
 };
@@ -116,8 +117,20 @@ impl PackIndexBuilder {
         let mut fanout: [usize; 255] = [0; 255];
         let mut object_names: Vec<ObjectHash> = Vec::with_capacity(self.objects_expected);
 
+        let mut crcs: Vec<Vec<u32>> = Vec::default();
+
+        let mut small_offsets: Vec<u32> = Vec::default();
+        let mut large_offsets: Vec<u64> = Vec::default();
+
+        let mut intermediate: Vec<IntermediateTableEntry> = Vec::default();
+
         for packed_object in self.objects().iterator() {
             let packed_object = packed_object?;
+
+            // wait, why is this usize? what about 32 bit computers? can we address large
+            // packfiles in them at all?
+            let offset = packed_object.offset();
+
             let raw_object = self.resolve(packed_object, cache)?;
 
             let hash = raw_object.hash()?;
@@ -131,12 +144,37 @@ impl PackIndexBuilder {
             }
 
             // populate object names
-            object_names.push(hash);
+            object_names.push(hash.clone());
 
             // TODO compute crc value
+
+            let crc: Vec<u32> = vec![];
+
+            // figure out where to place offset
+            let offset = if offset > 2 ^ 31 {
+                let idx = large_offsets.len();
+
+                large_offsets.push(offset as u64);
+
+                Offset::Large(idx as u32)
+            } else {
+                Offset::Small(offset as u32)
+            };
+
+            intermediate.push(IntermediateTableEntry(hash, crc, offset));
         }
 
-        object_names.sort();
+        // does this sort as we expect it to?
+        intermediate.sort();
+
+        for IntermediateTableEntry(_, crc, offset) in intermediate {
+            crcs.push(crc);
+
+            match offset {
+                Offset::Small(offset) => small_offsets.push(offset),
+                Offset::Large(index) => small_offsets.push(index | 0x10),
+            }
+        }
 
         Ok(())
     }
@@ -167,3 +205,28 @@ impl ObjectCache {
         self.offset_to_obj.insert(offset, object);
     }
 }
+
+/// A value of the first offset table.
+///
+/// Either an offset to the Packfile ([Offset::Small]) or an index to the second table
+/// ([Offset::Large]).
+#[derive(Debug, PartialOrd, Ord, PartialEq, Eq)]
+enum Offset {
+    /// The offset of the object in the Packfile.
+    Small(u32),
+
+    /// The index to the large offsets table. It is assumed that it exists.
+    Large(u32),
+}
+
+impl From<Offset> for u32 {
+    fn from(val: Offset) -> Self {
+        match val {
+            Offset::Small(offset) => offset,
+            Offset::Large(index) => index | 0x10,
+        }
+    }
+}
+
+#[derive(PartialOrd, Ord, PartialEq, Eq)]
+struct IntermediateTableEntry(ObjectHash, Vec<u32>, Offset);

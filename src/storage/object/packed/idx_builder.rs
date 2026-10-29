@@ -16,7 +16,7 @@ use crate::{
     storage::object::{
         ObjectDb, RawObject,
         loose::Encode,
-        packed::{BaseObject, PackedObject, header, object, stream::PackStream},
+        packed::{BaseObject, PackedObject, header, idx::PackIndex, object, stream::PackStream},
     },
 };
 
@@ -114,7 +114,8 @@ impl PackIndexBuilder {
     }
 
     pub fn build(&self, cache: &mut ObjectCache) -> Result<(), MinigitError> {
-        let mut fanout: [usize; 255] = [0; 255];
+        let mut idx = PackIndex::new(&self.path);
+
         let mut object_names: Vec<ObjectHash> = Vec::with_capacity(self.objects_expected);
 
         let mut crcs: Vec<u32> = Vec::default();
@@ -140,7 +141,9 @@ impl PackIndexBuilder {
 
             // populate fanout table cumulatively
             for i in 0..=prefix {
-                fanout[i] += 1;
+                if let Some(entry) = idx.fanout_table.get_mut(i) {
+                    *entry += 1;
+                }
             }
 
             // populate object names

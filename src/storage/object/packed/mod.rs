@@ -9,6 +9,7 @@
 pub mod builder;
 pub mod delta;
 pub mod idx;
+pub mod idx_builder;
 mod object;
 pub mod stream;
 

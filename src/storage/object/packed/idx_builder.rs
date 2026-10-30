@@ -160,12 +160,13 @@ impl PackIndexBuilder {
                 None => pack_data.len() - 20,
             };
 
+            // resolve object
             let raw_object = self.resolve(packed_object, cache)?;
 
+            // get its hash and prefix
+            // this encodes the objet to a temporary buffer, slow
             let hash = raw_object.hash()?;
-
-            let prefix: u8 = hash.prefix().into();
-            let prefix = prefix as usize;
+            let prefix = Into::<u8>::into(hash.prefix()) as usize;
 
             // populate fanout table cumulatively
             for i in prefix..idx.fanout_table.len() {

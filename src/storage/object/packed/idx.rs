@@ -2,9 +2,14 @@
 
 use std::{
     fs::{self},
+    io::Write,
     path::{Path, PathBuf},
 };
 
+use sha1::{
+    Digest, Sha1,
+    digest::{array::Array, consts::U20},
+};
 use winnow::{
     ModalResult, Parser,
     binary::{be_u32, be_u64},
@@ -17,6 +22,7 @@ use crate::{
     error::ParserContext,
     object::hash::{ObjectHash, parse_object_hash},
     parsing::Stream,
+    storage::object::loose::Encode,
 };
 
 /// A packfile index providing information for reading a Packfile.
@@ -197,6 +203,50 @@ impl PackIndex {
     }
 }
 
+impl Encode for PackIndex {
+    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+        let mut writer = HashingWriter::new(writer);
+
+        writer.write_all(&[0xff, 0x74, 0x4f, 0x63])?; // magic bytes
+        writer.write_all(&[0x00, 0x00, 0x00, 0x02])?; // version
+
+        // fanout table
+        for entry in &self.fanout_table {
+            writer.write_all(&entry.to_be_bytes())?;
+        }
+
+        // object names
+        for hash in &self.object_names {
+            writer.write_all(hash.into())?;
+        }
+
+        // CRC values
+        for crc in &self.crc_entries {
+            writer.write_all(&crc.to_be_bytes())?;
+        }
+
+        // small offsets table
+        for entry in &self.offsets_1 {
+            writer.write_all(&entry.to_be_bytes())?;
+        }
+
+        // large offsets table
+        for entry in &self.offsets_2 {
+            writer.write_all(&entry.to_be_bytes())?;
+        }
+
+        // packfile hash
+        writer.write_all((&self.pack_checksum).into())?;
+
+        // hash of the entire index
+        let (hash, writer) = writer.finalize();
+
+        writer.write_all(&hash)?;
+
+        Ok(())
+    }
+}
+
 pub fn header(input: &mut Stream<'_>) -> ModalResult<()> {
     seq!(
         seq!(0xff, 0x74, 0x4f, 0x63).context(StrContext::Label("magic bytes")),
@@ -237,4 +287,37 @@ pub fn offsets_2(amount: usize) -> impl FnMut(&mut Stream<'_>) -> ModalResult<Ve
 
 pub fn checksum(input: &mut Stream<'_>) -> ModalResult<ObjectHash> {
     parse_object_hash(input)
+}
+
+/// A wrapper of a [Write] that computes a hash of the contents written to it.
+struct HashingWriter<W: Write> {
+    writer: W,
+    hasher: Sha1,
+}
+
+impl<W: Write> HashingWriter<W> {
+    fn new(writer: W) -> Self {
+        Self {
+            writer,
+            hasher: Sha1::default(),
+        }
+    }
+
+    fn finalize(self) -> (Array<u8, U20>, W) {
+        (self.hasher.finalize(), self.writer)
+    }
+}
+
+impl<W: Write> Write for HashingWriter<W> {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        let written = self.writer.write(buf)?;
+
+        self.hasher.update(buf);
+
+        Ok(written)
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        self.writer.flush()
+    }
 }

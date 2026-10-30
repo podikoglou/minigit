@@ -1,0 +1,5 @@
+---
+source: src/parsing.rs
+expression: parse_err.to_string()
+---
+failed to parse file 'pack-c547e79e77bfc46a9f8024f984014da3cda61c7c.pack' at offset 0x1234: corrupt deflate stream while parsing undeltified object in object

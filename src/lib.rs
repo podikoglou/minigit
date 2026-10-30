@@ -1,6 +1,6 @@
 #![feature(once_cell_try)]
 pub mod error;
-pub use error::MinigitError;
+pub use error::{MinigitError, ParseError, ParserContext};
 
 pub mod object;
 pub mod storage;

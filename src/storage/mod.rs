@@ -2,8 +2,9 @@ use std::{
     fs,
     path::PathBuf,
     rc::Rc,
-    sync::OnceLock,
 };
+
+use once_cell::unsync::OnceCell;
 
 use crate::{
     TinygitError,
@@ -28,7 +29,7 @@ pub struct Store {
     pub loose: LooseDb,
 
     packs: Vec<Rc<Packfile>>,
-    refs_db: OnceLock<Rc<RefsDb>>,
+    refs_db: OnceCell<Rc<RefsDb>>,
 }
 
 impl Store {

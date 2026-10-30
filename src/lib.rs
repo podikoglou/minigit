@@ -1,4 +1,3 @@
-#![feature(once_cell_try)]
 pub mod error;
 pub use error::{TinygitError, ParseError, ParserContext};
 

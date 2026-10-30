@@ -20,6 +20,9 @@ use crate::{
     },
 };
 
+/// Amount of items that the item can hold.
+const CACHE_CAPACITY: usize = 100;
+
 #[derive(Debug)]
 pub struct PackIndexBuilder {
     pack_path: PathBuf,
@@ -242,7 +245,7 @@ impl ObjectCache {
 impl Default for ObjectCache {
     fn default() -> Self {
         Self {
-            cache: Cache::new(50),
+            cache: Cache::new(CACHE_CAPACITY),
         }
     }
 }

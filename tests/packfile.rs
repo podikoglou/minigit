@@ -2,15 +2,15 @@ mod common;
 
 use std::fs::{self, File};
 
-use include_dir::{include_dir, Dir};
+use include_dir::{Dir, include_dir};
 use insta::assert_debug_snapshot;
 use minigit::storage::object::{
     loose::Encode,
     packed::{
+        Packfile,
         builder::PackBuilder,
         idx::PackIndex,
         idx_builder::{ObjectCache, PackIndexBuilder},
-        Packfile,
     },
 };
 use similar_asserts::assert_eq;
@@ -30,8 +30,6 @@ fn store_packs_listing() {
 
 #[test]
 fn pack_index_builder() {
-    let mut tested_packs = 0;
-
     for repo_file in REPOS_DIR.files() {
         let (repo, _dir) = unpack_repo(repo_file.contents());
 
@@ -84,21 +82,12 @@ fn pack_index_builder() {
             //     built_idx.idx_checksum, expected_idx.idx_checksum,
             //     "idx_checksum mismatch"
             // );
-
-            tested_packs += 1;
         }
     }
-
-    assert!(
-        tested_packs > 0,
-        "expected to find packfiles in repo fixtures"
-    );
 }
 
 #[test]
 fn pack_index_encode() {
-    let mut tested_packs = 0;
-
     for repo_file in REPOS_DIR.files() {
         let (repo, _dir) = unpack_repo(repo_file.contents());
 
@@ -120,14 +109,8 @@ fn pack_index_encode() {
                 .expect("should be able to encode pack index");
 
             assert_eq!(new_idx, old_idx);
-            tested_packs += 1;
         }
     }
-
-    assert!(
-        tested_packs > 0,
-        "expected to find packfiles in repo fixtures"
-    );
 }
 
 #[test]

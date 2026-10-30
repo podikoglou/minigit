@@ -2,6 +2,7 @@ mod common;
 
 use include_dir::{Dir, include_dir};
 use insta::assert_debug_snapshot;
+use similar_asserts::assert_eq;
 use minigit::storage::object::packed::{
     idx::PackIndex,
     idx_builder::{ObjectCache, PackIndexBuilder},

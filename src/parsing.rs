@@ -1,10 +1,12 @@
 //! This module contains various utilities for parsing object files using the `winnow` crate.
 
+use std::io::Error;
+
 use winnow::{
     LocatingSlice, ModalResult, Parser,
     ascii::oct_digit1,
     combinator::{repeat, seq, terminated},
-    error::{ContextError, ErrMode, StrContext},
+    error::{ContextError, ErrMode, Needed, StrContext},
     stream::Location,
     token::{take_till, take_until},
 };
@@ -118,28 +120,32 @@ pub fn format_context_error(
         })
         .collect();
 
-    let cause = err.cause().map(|c| {
-        if let Some(io) = c.downcast_ref::<std::io::Error>() {
-            if let Some(raw_os) = io.raw_os_error() {
-                Box::new(std::io::Error::from_raw_os_error(raw_os))
-                    as Box<dyn std::error::Error + Send + Sync>
+    let cause = err
+        .cause()
+        .map(|c| {
+            if let Some(io) = c.downcast_ref::<Error>() {
+                if let Some(raw_os) = io.raw_os_error() {
+                    Error::from_raw_os_error(raw_os)
+                } else {
+                    Error::new(io.kind(), io.to_string())
+                }
             } else {
-                Box::new(std::io::Error::new(io.kind(), io.to_string()))
+                Error::other(c.to_string())
             }
-        } else {
-            Box::new(std::io::Error::other(c.to_string()))
-        }
-    });
+        })
+        .map(|x| Box::new(x) as Box<dyn std::error::Error + Send + Sync>);
 
     let mut message = String::new();
 
     if let Some(ref c) = cause {
+        // we have a cause
         message.push_str(&c.to_string());
         if !labels.is_empty() {
             message.push_str(" while parsing ");
             message.push_str(&labels.join(" in "));
         }
     } else if !labels.is_empty() {
+        // we have labels
         message.push_str("invalid ");
         message.push_str(&labels.join(" in "));
         if !expected.is_empty() {
@@ -147,9 +153,11 @@ pub fn format_context_error(
             message.push_str(&expected.join(", "));
         }
     } else if !expected.is_empty() {
+        // we have expected
         message.push_str("expected ");
         message.push_str(&expected.join(", "));
     } else {
+        // we have nothing
         message.push_str("syntax error");
     }
 
@@ -166,11 +174,12 @@ impl ParseError {
         match err {
             ErrMode::Incomplete(needed) => {
                 let msg = match needed {
-                    winnow::error::Needed::Size(n) => {
+                    Needed::Size(n) => {
                         format!("unexpected end of input, requires {n} more bytes")
                     }
-                    winnow::error::Needed::Unknown => "unexpected end of input".to_string(),
+                    Needed::Unknown => "unexpected end of input".to_string(),
                 };
+
                 Self {
                     context,
                     offset,
@@ -178,8 +187,10 @@ impl ParseError {
                     cause: None,
                 }
             }
+
             ErrMode::Backtrack(c) | ErrMode::Cut(c) => {
                 let (message, cause) = format_context_error(&c);
+
                 Self {
                     context,
                     offset,
@@ -198,6 +209,7 @@ impl ParseError {
         let offset = err.offset();
         let inner = err.into_inner();
         let (message, cause) = format_context_error(&inner);
+
         Self {
             context,
             offset: Some(offset),
@@ -222,11 +234,19 @@ pub trait ParseNextExt<T>: Sized {
         self.context_err_at(context, Some(stream.current_token_start()))
     }
 
-    fn context_err_at(self, context: ParserContext, offset: Option<usize>) -> Result<T, MinigitError>;
+    fn context_err_at(
+        self,
+        context: ParserContext,
+        offset: Option<usize>,
+    ) -> Result<T, MinigitError>;
 }
 
 impl<T> ParseNextExt<T> for Result<T, ErrMode<ContextError>> {
-    fn context_err_at(self, context: ParserContext, offset: Option<usize>) -> Result<T, MinigitError> {
+    fn context_err_at(
+        self,
+        context: ParserContext,
+        offset: Option<usize>,
+    ) -> Result<T, MinigitError> {
         self.map_err(|err| ParseError::from_winnow_error(err, context, offset).into())
     }
 }
@@ -325,7 +345,9 @@ mod tests {
 
         let parse_err = ParseError::from_winnow_error(
             ErrMode::Cut(ctx_err),
-            ParserContext::File(PathBuf::from("pack-c547e79e77bfc46a9f8024f984014da3cda61c7c.pack")),
+            ParserContext::File(PathBuf::from(
+                "pack-c547e79e77bfc46a9f8024f984014da3cda61c7c.pack",
+            )),
             Some(0x1234),
         );
 

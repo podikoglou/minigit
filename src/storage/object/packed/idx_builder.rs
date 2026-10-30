@@ -167,14 +167,14 @@ impl PackIndexBuilder {
             let crc = crc32fast::hash(object_bytes);
 
             // figure out where to place offset
-            let offset = if offset > 2 ^ 31 {
+            let offset = if offset > (1 << 31) {
                 let offsets_2_idx = idx.offsets_2.len();
 
                 idx.offsets_2.push(offset as u64);
 
                 Offset::Large(offsets_2_idx as u32)
             } else {
-                Offset::Small(offset as u32)
+                Offset::Small(offset as u32 + 12)
             };
 
             intermediate.push(IntermediateTableEntry(hash, crc, offset));

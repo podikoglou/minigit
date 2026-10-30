@@ -154,7 +154,7 @@ impl PackIndex {
         }
     }
 
-    /// Writes (overwriting contents) the index to the filesystem.
+    /// Writes the index to the filesystem, overwriting it if it already exists.
     pub fn write(&self) -> Result<(), MinigitError> {
         let mut file = File::create(&self.path)?;
 

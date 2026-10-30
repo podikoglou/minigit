@@ -1,4 +1,4 @@
-//! This test suite tests `minigit` against `libgit2` which is used as an oracle and considered to
+//! This test suite tests `tinygit` against `libgit2` which is used as an oracle and considered to
 //! be a correct implementation.
 //!
 //! NOTE: Because of the way the `git2` crate works, it often happens that while tests may be
@@ -11,10 +11,10 @@ use git2::{
     Odb, Oid, ReferenceType, Signature,
 };
 use include_dir::{Dir, include_dir};
-use minigit::{
+use tinygit::{
     error::ParserContext,
     identity::{Email, Identity, Name},
-    object::{Object, ObjectType as MinigitObjectType, hash::ObjectHash},
+    object::{Object, ObjectType as TinygitObjectType, hash::ObjectHash},
     storage::{object::loose::Encode, reference::RefPointer},
 };
 use std::str::FromStr;
@@ -36,13 +36,13 @@ fn signature_to_identity(signature: Signature) -> Identity {
     }
 }
 
-fn git2_object_type_to_object_type(obj_type: Git2ObjectType) -> Option<MinigitObjectType> {
+fn git2_object_type_to_object_type(obj_type: Git2ObjectType) -> Option<TinygitObjectType> {
     match obj_type {
         Git2ObjectType::Any => None,
-        Git2ObjectType::Commit => Some(MinigitObjectType::Commit),
-        Git2ObjectType::Tree => Some(MinigitObjectType::Tree),
-        Git2ObjectType::Blob => Some(MinigitObjectType::Blob),
-        Git2ObjectType::Tag => Some(MinigitObjectType::Tag),
+        Git2ObjectType::Commit => Some(TinygitObjectType::Commit),
+        Git2ObjectType::Tree => Some(TinygitObjectType::Tree),
+        Git2ObjectType::Blob => Some(TinygitObjectType::Blob),
+        Git2ObjectType::Tag => Some(TinygitObjectType::Tag),
     }
 }
 
@@ -61,31 +61,31 @@ fn collect_oids(odb: &Odb<'_>) -> Vec<Oid> {
 #[test]
 fn raw_objects_match() {
     for repo_dir in REPOS_DIR.files() {
-        let (minigit_repo, _dir) = unpack_repo(repo_dir.contents());
+        let (tinygit_repo, _dir) = unpack_repo(repo_dir.contents());
         let (oracle_repo, _dir) = unpack_git2_repo(repo_dir.contents());
 
         let oracle_odb = oracle_repo.odb().expect("should be able to open odb");
-        let minigit_store = minigit_repo.store;
+        let tinygit_store = tinygit_repo.store;
 
         for oid in collect_oids(&oracle_odb) {
             let hash = oid_to_hash(&oid);
 
-            let minigit_raw_obj = minigit_store
+            let tinygit_raw_obj = tinygit_store
                 .raw_object(&hash)
-                .expect("minigit should load the object");
+                .expect("tinygit should load the object");
 
             let oracle_obj = oracle_odb
                 .read(oid)
                 .expect("libgit2 should load the object");
 
             assert_eq!(
-                minigit_raw_obj.bytes.len(),
+                tinygit_raw_obj.bytes.len(),
                 oracle_obj.data().len(),
                 "object lengths should be equal"
             );
 
             assert_eq!(
-                minigit_raw_obj.bytes,
+                tinygit_raw_obj.bytes,
                 oracle_obj.data(),
                 "raw object data should be equal"
             );
@@ -94,7 +94,7 @@ fn raw_objects_match() {
             let oracle_obj_type = git2_object_type_to_object_type(oracle_obj_type);
 
             assert_eq!(
-                Some(minigit_raw_obj.r#type),
+                Some(tinygit_raw_obj.r#type),
                 oracle_obj_type,
                 "object types should match"
             );
@@ -105,25 +105,25 @@ fn raw_objects_match() {
 #[test]
 fn commits_match() {
     for repo_dir in REPOS_DIR.files() {
-        let (minigit_repo, _dir) = unpack_repo(repo_dir.contents());
+        let (tinygit_repo, _dir) = unpack_repo(repo_dir.contents());
         let (oracle_repo, _dir) = unpack_git2_repo(repo_dir.contents());
 
         let oracle_odb = oracle_repo.odb().expect("should be able to open odb");
-        let minigit_store = minigit_repo.store;
+        let tinygit_store = tinygit_repo.store;
 
         for oid in collect_oids(&oracle_odb) {
-            // minigit object
+            // tinygit object
             let hash = oid_to_hash(&oid);
 
-            let minigit_raw_obj = minigit_store
+            let tinygit_raw_obj = tinygit_store
                 .raw_object(&hash)
-                .expect("minigit should load the object");
+                .expect("tinygit should load the object");
 
-            let minigit_obj = minigit_raw_obj
+            let tinygit_obj = tinygit_raw_obj
                 .into_object(ParserContext::None)
                 .expect("should be able to parse the bject");
 
-            let Object::Commit(minigit_commit) = minigit_obj else {
+            let Object::Commit(tinygit_commit) = tinygit_obj else {
                 continue;
             };
 
@@ -141,13 +141,13 @@ fn commits_match() {
             };
 
             assert_eq!(
-                minigit_commit.tree,
+                tinygit_commit.tree,
                 oid_to_hash(&oracle_commit.tree_id()),
                 "tree matches"
             );
 
             assert_eq!(
-                minigit_commit.parents,
+                tinygit_commit.parents,
                 oracle_commit
                     .parent_ids()
                     .map(|oid| oid_to_hash(&oid))
@@ -156,25 +156,25 @@ fn commits_match() {
             );
 
             assert_eq!(
-                minigit_commit.author.0,
+                tinygit_commit.author.0,
                 signature_to_identity(oracle_commit.author()),
                 "authors match"
             );
 
             assert_eq!(
-                minigit_commit.committer.0,
+                tinygit_commit.committer.0,
                 signature_to_identity(oracle_commit.committer()),
                 "commiters match"
             );
 
             assert_eq!(
-                minigit_commit.author.1.timestamp(),
+                tinygit_commit.author.1.timestamp(),
                 oracle_commit.time().seconds(),
                 "commit times match"
             );
 
             assert_eq!(
-                minigit_commit.description,
+                tinygit_commit.description,
                 oracle_commit.message().unwrap(),
                 "message matches"
             );
@@ -187,25 +187,25 @@ fn commits_match() {
 #[test]
 fn trees_match() {
     for repo_dir in REPOS_DIR.files() {
-        let (minigit_repo, _dir) = unpack_repo(repo_dir.contents());
+        let (tinygit_repo, _dir) = unpack_repo(repo_dir.contents());
         let (oracle_repo, _dir) = unpack_git2_repo(repo_dir.contents());
 
         let oracle_odb = oracle_repo.odb().expect("should be able to open odb");
-        let minigit_store = minigit_repo.store;
+        let tinygit_store = tinygit_repo.store;
 
         for oid in collect_oids(&oracle_odb) {
-            // minigit object
+            // tinygit object
             let hash = oid_to_hash(&oid);
 
-            let minigit_raw_obj = minigit_store
+            let tinygit_raw_obj = tinygit_store
                 .raw_object(&hash)
-                .expect("minigit should load the object");
+                .expect("tinygit should load the object");
 
-            let minigit_obj = minigit_raw_obj
+            let tinygit_obj = tinygit_raw_obj
                 .into_object(ParserContext::None)
                 .expect("should be able to parse the bject");
 
-            let Object::Tree(minigit_tree) = minigit_obj else {
+            let Object::Tree(tinygit_tree) = tinygit_obj else {
                 continue;
             };
 
@@ -223,27 +223,27 @@ fn trees_match() {
             };
 
             assert_eq!(
-                minigit_tree.entries.len(),
+                tinygit_tree.entries.len(),
                 oracle_tree.len(),
                 "tree lengths match"
             );
 
-            for (oracle_entry, minigit_entry) in oracle_tree.iter().zip(minigit_tree.entries.iter())
+            for (oracle_entry, tinygit_entry) in oracle_tree.iter().zip(tinygit_tree.entries.iter())
             {
                 assert_eq!(
-                    minigit_entry.0.as_str(),
+                    tinygit_entry.0.as_str(),
                     oracle_entry.name().unwrap(),
                     "file names match"
                 );
 
                 assert_eq!(
-                    minigit_entry.0.mode as i32,
+                    tinygit_entry.0.mode as i32,
                     oracle_entry.filemode(),
                     "filemode mathces"
                 );
 
                 assert_eq!(
-                    minigit_entry.1.object,
+                    tinygit_entry.1.object,
                     oid_to_hash(&oracle_entry.id()),
                     "entry object hashes match"
                 );
@@ -255,25 +255,25 @@ fn trees_match() {
 #[test]
 fn blobs_match() {
     for repo_dir in REPOS_DIR.files() {
-        let (minigit_repo, _dir) = unpack_repo(repo_dir.contents());
+        let (tinygit_repo, _dir) = unpack_repo(repo_dir.contents());
         let (oracle_repo, _dir) = unpack_git2_repo(repo_dir.contents());
 
         let oracle_odb = oracle_repo.odb().expect("should be able to open odb");
-        let minigit_store = minigit_repo.store;
+        let tinygit_store = tinygit_repo.store;
 
         for oid in collect_oids(&oracle_odb) {
-            // minigit object
+            // tinygit object
             let hash = oid_to_hash(&oid);
 
-            let minigit_raw_obj = minigit_store
+            let tinygit_raw_obj = tinygit_store
                 .raw_object(&hash)
-                .expect("minigit should load the object");
+                .expect("tinygit should load the object");
 
-            let minigit_obj = minigit_raw_obj
+            let tinygit_obj = tinygit_raw_obj
                 .into_object(ParserContext::None)
                 .expect("should be able to parse the bject");
 
-            let Object::Blob(minigit_blob) = minigit_obj else {
+            let Object::Blob(tinygit_blob) = tinygit_obj else {
                 continue;
             };
 
@@ -290,8 +290,8 @@ fn blobs_match() {
                 continue;
             };
 
-            assert_eq!(minigit_blob.0.len(), oracle_blob.size(), "sizes match");
-            assert_eq!(minigit_blob.0, oracle_blob.content(), "contents match");
+            assert_eq!(tinygit_blob.0.len(), oracle_blob.size(), "sizes match");
+            assert_eq!(tinygit_blob.0, oracle_blob.content(), "contents match");
         }
     }
 }
@@ -299,25 +299,25 @@ fn blobs_match() {
 #[test]
 fn tags_match() {
     for repo_dir in REPOS_DIR.files() {
-        let (minigit_repo, _dir) = unpack_repo(repo_dir.contents());
+        let (tinygit_repo, _dir) = unpack_repo(repo_dir.contents());
         let (oracle_repo, _dir) = unpack_git2_repo(repo_dir.contents());
 
         let oracle_odb = oracle_repo.odb().expect("should be able to open odb");
-        let minigit_store = minigit_repo.store;
+        let tinygit_store = tinygit_repo.store;
 
         for oid in collect_oids(&oracle_odb) {
-            // minigit object
+            // tinygit object
             let hash = oid_to_hash(&oid);
 
-            let minigit_raw_obj = minigit_store
+            let tinygit_raw_obj = tinygit_store
                 .raw_object(&hash)
-                .expect("minigit should load the object");
+                .expect("tinygit should load the object");
 
-            let minigit_obj = minigit_raw_obj
+            let tinygit_obj = tinygit_raw_obj
                 .into_object(ParserContext::None)
                 .expect("should be able to parse the bject");
 
-            let Object::Tag(minigit_tag) = minigit_obj else {
+            let Object::Tag(tinygit_tag) = tinygit_obj else {
                 continue;
             };
 
@@ -335,19 +335,19 @@ fn tags_match() {
             };
 
             assert_eq!(
-                minigit_tag.name.as_str(),
+                tinygit_tag.name.as_str(),
                 oracle_tag.name().unwrap(),
                 "names match"
             );
 
             assert_eq!(
-                minigit_tag.description.as_str(),
+                tinygit_tag.description.as_str(),
                 oracle_tag.message().unwrap().unwrap_or_default(),
                 "descriptions match"
             );
 
             assert_eq!(
-                minigit_tag.tagger.map(|x| x.0),
+                tinygit_tag.tagger.map(|x| x.0),
                 oracle_tag.tagger().map(signature_to_identity),
                 "taggers match"
             );
@@ -358,24 +358,24 @@ fn tags_match() {
 #[test]
 fn commits_reserialization_match() {
     for repo_dir in REPOS_DIR.files() {
-        let (minigit_repo, _dir) = unpack_repo(repo_dir.contents());
+        let (tinygit_repo, _dir) = unpack_repo(repo_dir.contents());
         let (oracle_repo, _dir) = unpack_git2_repo(repo_dir.contents());
 
         let oracle_odb = oracle_repo.odb().expect("should be able to open odb");
-        let minigit_store = minigit_repo.store;
+        let tinygit_store = tinygit_repo.store;
 
         for oid in collect_oids(&oracle_odb) {
             let hash = oid_to_hash(&oid);
 
-            let minigit_raw_obj = minigit_store
+            let tinygit_raw_obj = tinygit_store
                 .raw_object(&hash)
-                .expect("minigit should load the object");
+                .expect("tinygit should load the object");
 
-            let minigit_obj = minigit_raw_obj
+            let tinygit_obj = tinygit_raw_obj
                 .into_object(ParserContext::None)
-                .expect("minigit should parse the object");
+                .expect("tinygit should parse the object");
 
-            let Object::Commit(minigit_commit) = minigit_obj else {
+            let Object::Commit(tinygit_commit) = tinygit_obj else {
                 continue;
             };
 
@@ -404,13 +404,13 @@ fn commits_reserialization_match() {
                 )
                 .expect("libgit2 should serialize commit");
 
-            let mut minigit_bytes = Vec::new();
-            minigit_commit
-                .encode(&mut minigit_bytes)
-                .expect("minigit should serialize commit");
+            let mut tinygit_bytes = Vec::new();
+            tinygit_commit
+                .encode(&mut tinygit_bytes)
+                .expect("tinygit should serialize commit");
 
             assert_eq!(
-                minigit_bytes.as_slice(),
+                tinygit_bytes.as_slice(),
                 &libgit2_buf[..],
                 "serialized commit bytes match"
             );
@@ -421,24 +421,24 @@ fn commits_reserialization_match() {
 #[test]
 fn trees_reserialization_match() {
     for repo_dir in REPOS_DIR.files() {
-        let (minigit_repo, _dir) = unpack_repo(repo_dir.contents());
+        let (tinygit_repo, _dir) = unpack_repo(repo_dir.contents());
         let (oracle_repo, _dir) = unpack_git2_repo(repo_dir.contents());
 
         let oracle_odb = oracle_repo.odb().expect("should be able to open odb");
-        let minigit_store = minigit_repo.store;
+        let tinygit_store = tinygit_repo.store;
 
         for oid in collect_oids(&oracle_odb) {
             let hash = oid_to_hash(&oid);
 
-            let minigit_raw_obj = minigit_store
+            let tinygit_raw_obj = tinygit_store
                 .raw_object(&hash)
-                .expect("minigit should load the object");
+                .expect("tinygit should load the object");
 
-            let minigit_obj = minigit_raw_obj
+            let tinygit_obj = tinygit_raw_obj
                 .into_object(ParserContext::None)
-                .expect("minigit should parse the object");
+                .expect("tinygit should parse the object");
 
-            let Object::Tree(minigit_tree) = minigit_obj else {
+            let Object::Tree(tinygit_tree) = tinygit_obj else {
                 continue;
             };
 
@@ -460,13 +460,13 @@ fn trees_reserialization_match() {
             let new_tree_oid = builder.write().expect("treebuilder write");
             let libgit2_tree_obj = oracle_odb.read(new_tree_oid).expect("read tree");
 
-            let mut minigit_bytes = Vec::new();
-            minigit_tree
-                .encode(&mut minigit_bytes)
-                .expect("minigit should serialize tree");
+            let mut tinygit_bytes = Vec::new();
+            tinygit_tree
+                .encode(&mut tinygit_bytes)
+                .expect("tinygit should serialize tree");
 
             assert_eq!(
-                minigit_bytes,
+                tinygit_bytes,
                 libgit2_tree_obj.data(),
                 "serialized tree bytes match"
             );
@@ -477,24 +477,24 @@ fn trees_reserialization_match() {
 #[test]
 fn blobs_reserialization_match() {
     for repo_dir in REPOS_DIR.files() {
-        let (minigit_repo, _dir) = unpack_repo(repo_dir.contents());
+        let (tinygit_repo, _dir) = unpack_repo(repo_dir.contents());
         let (oracle_repo, _dir) = unpack_git2_repo(repo_dir.contents());
 
         let oracle_odb = oracle_repo.odb().expect("should be able to open odb");
-        let minigit_store = minigit_repo.store;
+        let tinygit_store = tinygit_repo.store;
 
         for oid in collect_oids(&oracle_odb) {
             let hash = oid_to_hash(&oid);
 
-            let minigit_raw_obj = minigit_store
+            let tinygit_raw_obj = tinygit_store
                 .raw_object(&hash)
-                .expect("minigit should load the object");
+                .expect("tinygit should load the object");
 
-            let minigit_obj = minigit_raw_obj
+            let tinygit_obj = tinygit_raw_obj
                 .into_object(ParserContext::None)
-                .expect("minigit should parse the object");
+                .expect("tinygit should parse the object");
 
-            let Object::Blob(minigit_blob) = minigit_obj else {
+            let Object::Blob(tinygit_blob) = tinygit_obj else {
                 continue;
             };
 
@@ -513,13 +513,13 @@ fn blobs_reserialization_match() {
             let new_blob_oid = oracle_repo.blob(oracle_blob.content()).expect("write blob");
             let libgit2_blob_obj = oracle_odb.read(new_blob_oid).expect("read blob");
 
-            let mut minigit_bytes = Vec::new();
-            minigit_blob
-                .encode(&mut minigit_bytes)
-                .expect("minigit should serialize blob");
+            let mut tinygit_bytes = Vec::new();
+            tinygit_blob
+                .encode(&mut tinygit_bytes)
+                .expect("tinygit should serialize blob");
 
             assert_eq!(
-                minigit_bytes,
+                tinygit_bytes,
                 libgit2_blob_obj.data(),
                 "serialized blob bytes match"
             );
@@ -530,24 +530,24 @@ fn blobs_reserialization_match() {
 #[test]
 fn tags_reserialization_match() {
     for repo_dir in REPOS_DIR.files() {
-        let (minigit_repo, _dir) = unpack_repo(repo_dir.contents());
+        let (tinygit_repo, _dir) = unpack_repo(repo_dir.contents());
         let (oracle_repo, _dir) = unpack_git2_repo(repo_dir.contents());
 
         let oracle_odb = oracle_repo.odb().expect("should be able to open odb");
-        let minigit_store = minigit_repo.store;
+        let tinygit_store = tinygit_repo.store;
 
         for oid in collect_oids(&oracle_odb) {
             let hash = oid_to_hash(&oid);
 
-            let minigit_raw_obj = minigit_store
+            let tinygit_raw_obj = tinygit_store
                 .raw_object(&hash)
-                .expect("minigit should load the object");
+                .expect("tinygit should load the object");
 
-            let minigit_obj = minigit_raw_obj
+            let tinygit_obj = tinygit_raw_obj
                 .into_object(ParserContext::None)
-                .expect("minigit should parse the object");
+                .expect("tinygit should parse the object");
 
-            let Object::Tag(minigit_tag) = minigit_obj else {
+            let Object::Tag(tinygit_tag) = tinygit_obj else {
                 continue;
             };
 
@@ -575,13 +575,13 @@ fn tags_reserialization_match() {
                 .expect("tag_annotation_create");
             let libgit2_tag_obj = oracle_odb.read(new_tag_oid).expect("read tag");
 
-            let mut minigit_bytes = Vec::new();
-            minigit_tag
-                .encode(&mut minigit_bytes)
-                .expect("minigit should serialize tag");
+            let mut tinygit_bytes = Vec::new();
+            tinygit_tag
+                .encode(&mut tinygit_bytes)
+                .expect("tinygit should serialize tag");
 
             assert_eq!(
-                minigit_bytes,
+                tinygit_bytes,
                 libgit2_tag_obj.data(),
                 "serialized tag bytes match"
             );
@@ -592,10 +592,10 @@ fn tags_reserialization_match() {
 #[test]
 fn refs_match() {
     for repo_dir in REPOS_DIR.files() {
-        let (minigit_repo, _dir) = unpack_repo(repo_dir.contents());
+        let (tinygit_repo, _dir) = unpack_repo(repo_dir.contents());
         let (oracle_repo, _dir) = unpack_git2_repo(repo_dir.contents());
 
-        let minigit_store = minigit_repo.store;
+        let tinygit_store = tinygit_repo.store;
         let oracle_refs = oracle_repo
             .references()
             .expect("libgit2 should list references");
@@ -604,17 +604,17 @@ fn refs_match() {
             let oracle_ref = oracle_ref.expect("valid reference");
             let ref_name = oracle_ref.name().expect("utf-8 reference name");
 
-            let minigit_ref = minigit_store
+            let tinygit_ref = tinygit_store
                 .reference(&ref_name.to_string())
-                .expect("minigit should load the reference");
+                .expect("tinygit should load the reference");
 
-            assert_eq!(minigit_ref.name, ref_name, "reference names match");
+            assert_eq!(tinygit_ref.name, ref_name, "reference names match");
 
             match oracle_ref.kind() {
                 Some(ReferenceType::Direct) => {
                     let oracle_target = oracle_ref.target().expect("direct ref should have target");
                     assert_eq!(
-                        minigit_ref.pointer,
+                        tinygit_ref.pointer,
                         RefPointer::Hash(oid_to_hash(&oracle_target)),
                         "direct ref targets match"
                     );
@@ -625,7 +625,7 @@ fn refs_match() {
                         .expect("valid symbolic target")
                         .expect("symbolic ref should have target");
                     assert_eq!(
-                        minigit_ref.pointer,
+                        tinygit_ref.pointer,
                         RefPointer::Symbolic(oracle_target.to_string()),
                         "symbolic ref targets match"
                     );
@@ -640,12 +640,12 @@ fn refs_match() {
                 .target()
                 .expect("resolved ref should have target");
 
-            let minigit_resolved_hash = minigit_store
-                .resolve_reference(&minigit_ref.pointer)
-                .expect("minigit should resolve reference");
+            let tinygit_resolved_hash = tinygit_store
+                .resolve_reference(&tinygit_ref.pointer)
+                .expect("tinygit should resolve reference");
 
             assert_eq!(
-                minigit_resolved_hash,
+                tinygit_resolved_hash,
                 oid_to_hash(&oracle_resolved_oid),
                 "resolved reference hashes match"
             );
@@ -656,13 +656,13 @@ fn refs_match() {
 #[test]
 fn head_matches() {
     for repo_dir in REPOS_DIR.files() {
-        let (minigit_repo, _dir) = unpack_repo(repo_dir.contents());
+        let (tinygit_repo, _dir) = unpack_repo(repo_dir.contents());
         let (oracle_repo, _dir) = unpack_git2_repo(repo_dir.contents());
 
-        let minigit_store = minigit_repo.store;
+        let tinygit_store = tinygit_repo.store;
 
-        let (minigit_commit, minigit_head_hash) =
-            minigit_store.head().expect("minigit should resolve HEAD");
+        let (tinygit_commit, tinygit_head_hash) =
+            tinygit_store.head().expect("tinygit should resolve HEAD");
 
         let oracle_head = oracle_repo.head().expect("libgit2 should find HEAD");
         let oracle_commit = oracle_head
@@ -670,19 +670,19 @@ fn head_matches() {
             .expect("libgit2 should peel HEAD to commit");
 
         assert_eq!(
-            minigit_head_hash,
+            tinygit_head_hash,
             oid_to_hash(&oracle_commit.id()),
             "HEAD commit hashes match"
         );
 
         assert_eq!(
-            minigit_commit.tree,
+            tinygit_commit.tree,
             oid_to_hash(&oracle_commit.tree_id()),
             "HEAD commit tree matches"
         );
 
         assert_eq!(
-            minigit_commit.parents,
+            tinygit_commit.parents,
             oracle_commit
                 .parent_ids()
                 .map(|oid| oid_to_hash(&oid))
@@ -691,25 +691,25 @@ fn head_matches() {
         );
 
         assert_eq!(
-            minigit_commit.author.0,
+            tinygit_commit.author.0,
             signature_to_identity(oracle_commit.author()),
             "HEAD commit authors match"
         );
 
         assert_eq!(
-            minigit_commit.committer.0,
+            tinygit_commit.committer.0,
             signature_to_identity(oracle_commit.committer()),
             "HEAD commit committers match"
         );
 
         assert_eq!(
-            minigit_commit.author.1.timestamp(),
+            tinygit_commit.author.1.timestamp(),
             oracle_commit.time().seconds(),
             "HEAD commit times match"
         );
 
         assert_eq!(
-            minigit_commit.description,
+            tinygit_commit.description,
             oracle_commit.message().unwrap(),
             "HEAD commit messages match"
         );

@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use argh::FromArgs;
 use fallible_iterator::FallibleIterator;
-use minigit::{MinigitError, storage::object::packed::Packfile};
+use tinygit::{TinygitError, storage::object::packed::Packfile};
 
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "parse-pack")]
@@ -13,7 +13,7 @@ pub struct ParsePackCommand {
 }
 
 impl ParsePackCommand {
-    pub fn run(self) -> Result<(), MinigitError> {
+    pub fn run(self) -> Result<(), TinygitError> {
         let Self { file } = self;
 
         let pack_path = PathBuf::from(file);

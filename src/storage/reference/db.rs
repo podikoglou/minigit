@@ -9,7 +9,7 @@ use winnow::{
 };
 
 use crate::{
-    MinigitError,
+    TinygitError,
     error::ParserContext,
     object::hash::parse_object_hash_str,
     parsing::{ParseNextExt, Stream},
@@ -27,7 +27,7 @@ pub struct RefsDb {
 
 impl RefsDb {
     /// Opens a `packed-refs` file
-    pub fn open(path: PathBuf) -> Result<Self, MinigitError> {
+    pub fn open(path: PathBuf) -> Result<Self, TinygitError> {
         let file = File::open(&path)?;
         let mmap = unsafe { Mmap::map(&file) }?;
 
@@ -45,7 +45,7 @@ impl RefsDb {
     }
 
     /// Looks up a ref's unpeeled hash
-    pub fn lookup(&self, name: &str) -> Result<Ref, MinigitError> {
+    pub fn lookup(&self, name: &str) -> Result<Ref, TinygitError> {
         // This is of couse an inefficient implementation. This does no binary search whatsoever,
         // despite the file being sorted.
         //
@@ -67,7 +67,7 @@ impl RefsDb {
             }
         }
 
-        Err(MinigitError::RefNotFound)
+        Err(TinygitError::RefNotFound)
     }
 }
 

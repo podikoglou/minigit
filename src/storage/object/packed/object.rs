@@ -16,7 +16,7 @@ use winnow::{
 };
 
 use crate::{
-    MinigitError,
+    TinygitError,
     object::{
         ObjectType,
         hash::{ObjectHash, parse_object_hash},
@@ -44,7 +44,7 @@ pub struct PackedObjectHeader {
 }
 
 impl Encode for PackedObjectHeader {
-    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), TinygitError> {
         let type_id = self.r#type as u8;
 
         let mut value = self.length;
@@ -92,7 +92,7 @@ pub enum BaseObject {
 }
 
 impl Encode for BaseObject {
-    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), TinygitError> {
         match self {
             BaseObject::Ref(hash) => {
                 let bytes: &[u8] = hash.into();
@@ -125,7 +125,7 @@ impl Encode for BaseObject {
 pub struct DeltifiedObject((BaseObject, Delta));
 
 impl Encode for DeltifiedObject {
-    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), TinygitError> {
         let (base_object, delta) = self.as_ref();
 
         let compressed_buf: Vec<u8> = Vec::default();
@@ -158,7 +158,7 @@ impl Encode for DeltifiedObject {
 pub struct UndeltifiedObject(RawObject);
 
 impl Encode for UndeltifiedObject {
-    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), TinygitError> {
         let raw_object = self.as_ref();
 
         let compressed_buf: Vec<u8> = Vec::default();
@@ -210,7 +210,7 @@ impl PackedObject {
 }
 
 impl Encode for PackedObject {
-    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), TinygitError> {
         match self {
             PackedObject::Deltified(_offset, object) => object.encode(writer),
             PackedObject::Undeltified(_offset, object) => object.encode(writer),

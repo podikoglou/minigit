@@ -13,7 +13,7 @@ use winnow::{
 };
 
 use crate::{
-    MinigitError,
+    TinygitError,
     error::{ParseError, ParserContext},
     parsing::Stream,
 };
@@ -50,7 +50,7 @@ impl<'a> From<&'a ObjectHash> for &'a [u8] {
 }
 
 impl FromStr for ObjectHash {
-    type Err = MinigitError;
+    type Err = TinygitError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         let decoded = hex::decode(value)?;
@@ -66,21 +66,21 @@ impl FromStr for ObjectHash {
 }
 
 impl TryFrom<&PathBuf> for ObjectHash {
-    type Error = MinigitError;
+    type Error = TinygitError;
 
     /// Converts a [`PathBuf`] into an [`ObjectHash`]. This expects a path to a loose object that is
     /// under a bucket directory.
     fn try_from(value: &PathBuf) -> Result<Self, Self::Error> {
         let prefix = value
             .parent()
-            .ok_or(MinigitError::BucketNotFound)?
+            .ok_or(TinygitError::BucketNotFound)?
             .file_name()
-            .ok_or(MinigitError::InvalidFileName)?
+            .ok_or(TinygitError::InvalidFileName)?
             .to_string_lossy();
 
         let name = value
             .file_name()
-            .ok_or(MinigitError::InvalidFileName)?
+            .ok_or(TinygitError::InvalidFileName)?
             .to_string_lossy();
 
         let hash_str = format!("{prefix}{name}");
@@ -163,7 +163,7 @@ impl From<HashPrefix> for u8 {
 }
 
 impl FromStr for HashPrefix {
-    type Err = MinigitError;
+    type Err = TinygitError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let decoded = hex::decode(s)?;
@@ -215,7 +215,7 @@ mod test {
 
     #[test]
     fn parse_objecthash_try_from_path() {
-        let path = "/home/alex/minigit/.git/objects/9d/5476d96d3262b69f03f2af27750a495cca43b6"
+        let path = "/home/alex/tinygit/.git/objects/9d/5476d96d3262b69f03f2af27750a495cca43b6"
             .parse::<PathBuf>()
             .unwrap();
 

@@ -18,7 +18,7 @@ use winnow::{
 };
 
 use crate::{
-    MinigitError,
+    TinygitError,
     error::ParserContext,
     object::hash::{ObjectHash, parse_object_hash},
     parsing::{ParseNextExt, Stream},
@@ -48,7 +48,7 @@ impl PartialEq for PackIndex {
 
 impl PackIndex {
     /// Creates an index of [PackIndex], memory mapping the file and reading its header.
-    pub fn open(path: impl AsRef<Path>) -> Result<Self, MinigitError> {
+    pub fn open(path: impl AsRef<Path>) -> Result<Self, TinygitError> {
         let contents = fs::read(path.as_ref())?;
         let mut stream = Stream::new(&contents[..]);
 
@@ -69,7 +69,7 @@ impl PackIndex {
         let objects_count = fanout_table
             .last()
             .map(|x| Ok(*x as usize))
-            .unwrap_or_else(|| Err(MinigitError::InvalidPackIndex))?;
+            .unwrap_or_else(|| Err(TinygitError::InvalidPackIndex))?;
 
         let object_names = object_names(objects_count)
             .parse_next(&mut stream)
@@ -125,7 +125,7 @@ impl PackIndex {
     }
 
     /// Writes the index to the filesystem, overwriting it if it already exists.
-    pub fn write(&self) -> Result<(), MinigitError> {
+    pub fn write(&self) -> Result<(), TinygitError> {
         let mut file = File::create(&self.path)?;
 
         self.encode(&mut file)?;
@@ -184,7 +184,7 @@ impl PackIndex {
 }
 
 impl Encode for PackIndex {
-    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), TinygitError> {
         let mut writer = HashingWriter::new(writer);
 
         writer.write_all(&[0xff, 0x74, 0x4f, 0x63])?; // magic bytes

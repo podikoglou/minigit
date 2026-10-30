@@ -6,7 +6,7 @@ use std::{
 };
 
 use crate::{
-    MinigitError,
+    TinygitError,
     error::ParserContext,
     object::{
         Object,
@@ -33,7 +33,7 @@ pub struct Store {
 
 impl Store {
     /// Opens an already existing git database.
-    pub fn open(path: impl Into<PathBuf>) -> Result<Self, MinigitError> {
+    pub fn open(path: impl Into<PathBuf>) -> Result<Self, TinygitError> {
         let path = path.into();
 
         match fs::exists(&path) {
@@ -50,7 +50,7 @@ impl Store {
 
                 Ok(store)
             }
-            Ok(false) => Err(MinigitError::NoGitDirectory),
+            Ok(false) => Err(TinygitError::NoGitDirectory),
             Err(err) => Err(err.into()),
         }
     }
@@ -83,17 +83,17 @@ impl Store {
     /// Returns all buckets (directories named after the prefix of a hash) under `.git/objects/`.
     ///
     /// At most 256 of them exist, so they are collected eagerly.
-    pub fn buckets(&self) -> Result<Vec<ObjectsBucket>, MinigitError> {
+    pub fn buckets(&self) -> Result<Vec<ObjectsBucket>, TinygitError> {
         self.loose.buckets()
     }
 
     /// Finds an [`ObjectsBucket`] in .git/objects/
-    pub fn bucket(&self, prefix: HashPrefix) -> Result<ObjectsBucket, MinigitError> {
+    pub fn bucket(&self, prefix: HashPrefix) -> Result<ObjectsBucket, TinygitError> {
         self.loose.bucket(prefix)
     }
 
     /// Refreshes the internal packfile listing
-    pub fn refresh_packs(&mut self) -> Result<(), MinigitError> {
+    pub fn refresh_packs(&mut self) -> Result<(), TinygitError> {
         let pack_dir = self.packs_path();
 
         self.packs = if pack_dir.exists() {
@@ -140,7 +140,7 @@ impl Store {
 
     pub fn objects(
         &self,
-    ) -> Result<impl Iterator<Item = Result<LazyObject, MinigitError>>, MinigitError> {
+    ) -> Result<impl Iterator<Item = Result<LazyObject, TinygitError>>, TinygitError> {
         let packs = self.packs();
 
         let objects = packs.into_iter().flat_map(Packfile::lazy_objects).map(Ok);
@@ -149,7 +149,7 @@ impl Store {
     }
 
     /// Gets a [RawObject] by its [ObjectHash].
-    pub fn raw_object(&self, hash: &ObjectHash) -> Result<RawObject, MinigitError> {
+    pub fn raw_object(&self, hash: &ObjectHash) -> Result<RawObject, TinygitError> {
         // search in packfiles
         for pack in self.packs() {
             if let Ok(raw) = pack.raw_object(hash) {
@@ -162,7 +162,7 @@ impl Store {
     }
 
     /// Gets a [LazyObject] by its [ObjectHash].
-    pub fn object(&self, hash: &ObjectHash) -> Result<Object, MinigitError> {
+    pub fn object(&self, hash: &ObjectHash) -> Result<Object, TinygitError> {
         // search in packfiles
         for pack in self.packs() {
             if let Ok(raw) = pack.raw_object(hash) {
@@ -175,12 +175,12 @@ impl Store {
     }
 
     /// Writes a [RawObject] to the loose object database.
-    pub fn encode_object(&self, object: &RawObject) -> Result<(), MinigitError> {
+    pub fn encode_object(&self, object: &RawObject) -> Result<(), TinygitError> {
         self.loose.encode_object(object)
     }
 
     /// Gets a handle to the `packed-refs` database
-    pub fn ref_db(&self) -> Result<Rc<RefsDb>, MinigitError> {
+    pub fn ref_db(&self) -> Result<Rc<RefsDb>, TinygitError> {
         self.refs_db
             .get_or_try_init(|| RefsDb::open(self.packed_refs_path()).map(Rc::new))
             .cloned()
@@ -189,7 +189,7 @@ impl Store {
     /// Finds a [Ref] in the repository.
     ///
     /// Note that this function does not guarantee that the returned ref is peeled.
-    pub fn reference(&self, name: &RefName) -> Result<Ref, MinigitError> {
+    pub fn reference(&self, name: &RefName) -> Result<Ref, TinygitError> {
         // try to read as loose
         //
         // NOTE: this will be unpeeled!
@@ -201,15 +201,15 @@ impl Store {
         // try to read packed
         // TODO: Is this good error handling? I don't like how we completely ignore the underlying
         // error, but the truth is that, yes, indeed, the ref was not found, no matter why. Perhaps
-        // RefNotFound could contain Option<MinigitError> ?
+        // RefNotFound could contain Option<TinygitError> ?
 
-        let ref_db = self.ref_db().map_err(|_| MinigitError::RefNotFound)?;
+        let ref_db = self.ref_db().map_err(|_| TinygitError::RefNotFound)?;
 
-        ref_db.lookup(&name).map_err(|_| MinigitError::RefNotFound)
+        ref_db.lookup(&name).map_err(|_| TinygitError::RefNotFound)
     }
 
     /// Recursively resolve a [RefPointer] to a the [ObjectHash] of the object it points to.
-    pub fn resolve_reference(&self, pointer: &RefPointer) -> Result<ObjectHash, MinigitError> {
+    pub fn resolve_reference(&self, pointer: &RefPointer) -> Result<ObjectHash, TinygitError> {
         match pointer {
             RefPointer::Hash(hash) => Ok(hash.to_owned()),
             RefPointer::Symbolic(name) => {
@@ -222,21 +222,21 @@ impl Store {
 
     /// Gets the [ObjectHash] of the commit `HEAD` is pointing to.
     /// Gets the [Commit] and [ObjectHash] (in a tuple) of the commit `HEAD` is pointing to.
-    pub fn head(&self) -> Result<(Commit, ObjectHash), MinigitError> {
+    pub fn head(&self) -> Result<(Commit, ObjectHash), TinygitError> {
         self.reference(&"HEAD".into())
             .and_then(|head| self.resolve_reference(&head.pointer))
             .and_then(|hash| self.object(&hash).map(|obj| (obj, hash)))
             .and_then(|(object, hash)| {
                 object
                     .try_as_commit()
-                    .ok_or(MinigitError::UnexpectedObjectType)
+                    .ok_or(TinygitError::UnexpectedObjectType)
                     .map(|commit| (*commit, hash))
             })
     }
 }
 
 impl ObjectDb for Store {
-    fn raw_object(&self, hash: &ObjectHash) -> Result<RawObject, MinigitError> {
+    fn raw_object(&self, hash: &ObjectHash) -> Result<RawObject, TinygitError> {
         self.raw_object(hash)
     }
 }

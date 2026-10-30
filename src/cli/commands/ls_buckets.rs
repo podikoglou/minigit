@@ -1,7 +1,7 @@
 use std::env;
 
 use argh::FromArgs;
-use minigit::{MinigitError, Repo};
+use tinygit::{TinygitError, Repo};
 
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "ls-buckets")]
@@ -9,7 +9,7 @@ use minigit::{MinigitError, Repo};
 pub struct LsBucketsCommand {}
 
 impl LsBucketsCommand {
-    pub fn run(self) -> Result<(), MinigitError> {
+    pub fn run(self) -> Result<(), TinygitError> {
         let repo = Repo::open(env::current_dir()?)?;
 
         for bucket in repo.store.buckets()? {

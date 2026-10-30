@@ -4,8 +4,8 @@ use std::{
 };
 
 use argh::FromArgs;
-use minigit::{
-    MinigitError,
+use tinygit::{
+    TinygitError,
     object::{Object, ObjectType, blob::Blob},
 };
 
@@ -30,7 +30,7 @@ pub struct HashObjectCommand {
 }
 
 impl HashObjectCommand {
-    pub fn run(self) -> Result<(), MinigitError> {
+    pub fn run(self) -> Result<(), TinygitError> {
         let Self {
             r#type,
             stdin,

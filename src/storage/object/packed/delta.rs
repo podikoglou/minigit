@@ -6,7 +6,7 @@ use winnow::{
 };
 
 use crate::{
-    MinigitError,
+    TinygitError,
     parsing::Stream,
     storage::object::{loose::Encode, packed::size},
 };
@@ -18,7 +18,7 @@ pub enum Instruction {
 }
 
 impl Encode for Instruction {
-    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), TinygitError> {
         match self {
             Instruction::Insert(instruction) => instruction.encode(writer),
             Instruction::Copy(instruction) => instruction.encode(writer),
@@ -30,7 +30,7 @@ impl Encode for Instruction {
 pub struct InsertInstruction(pub Vec<u8>);
 
 impl Encode for InsertInstruction {
-    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), TinygitError> {
         let len = self.0.len();
 
         // if len is bigger than 128 (0b0000_0000), then we can't encode it, because the MSB should
@@ -40,7 +40,7 @@ impl Encode for InsertInstruction {
         //
         // TODO: don't check this here, enforce it during the creation of `InsertInstruction`
         if len == 0 || len >= 128 {
-            return Err(MinigitError::InvalidInstruction);
+            return Err(TinygitError::InvalidInstruction);
         }
 
         writer.write_all(&[len as u8])?;
@@ -57,7 +57,7 @@ pub struct CopyInstruction {
 }
 
 impl Encode for CopyInstruction {
-    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), TinygitError> {
         let CopyInstruction { offset, size } = *self;
 
         // amount of bytes the offset will occupy
@@ -76,7 +76,7 @@ impl Encode for CopyInstruction {
         let size_bytes = {
             if size > 0xFFFFFF {
                 // size can only occupy up to 3 bytes
-                return Err(MinigitError::InvalidInstruction);
+                return Err(TinygitError::InvalidInstruction);
             } else if size > 0xFFFF {
                 3
             } else if size > 0xFF {
@@ -137,7 +137,7 @@ pub struct Delta {
 }
 
 impl Encode for Delta {
-    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), TinygitError> {
         (self.base_object_size as usize).encode(writer)?;
         (self.deltified_object_size as usize).encode(writer)?;
 
@@ -151,7 +151,7 @@ impl Encode for Delta {
 
 /// Implements Git's size encoding
 impl Encode for usize {
-    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), TinygitError> {
         let mut remaining = *self;
 
         while remaining >= 0b1000_0000 {

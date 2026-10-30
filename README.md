@@ -1,4 +1,4 @@
-# minigit
+# tinygit
 Implementation of (some of) Git in Rust.
 
 I started working on this project when I was inspired by what

@@ -77,7 +77,7 @@ impl ParseError {
 }
 
 #[derive(Error, Debug)]
-pub enum MinigitError {
+pub enum TinygitError {
     #[error("IO Error: {0}")]
     IO(#[from] io::Error),
 

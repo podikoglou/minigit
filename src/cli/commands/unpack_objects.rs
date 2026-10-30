@@ -3,7 +3,7 @@ use std::{env, path::PathBuf, rc::Rc};
 use argh::FromArgs;
 use fallible_iterator::FallibleIterator;
 use indicatif::ProgressBar;
-use minigit::{MinigitError, Repo, storage::object::packed::Packfile};
+use tinygit::{TinygitError, Repo, storage::object::packed::Packfile};
 
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "unpack-objects")]
@@ -14,7 +14,7 @@ pub struct UnpackObjectsCommand {
 }
 
 impl UnpackObjectsCommand {
-    pub fn run(self) -> Result<(), MinigitError> {
+    pub fn run(self) -> Result<(), TinygitError> {
         let Self { file } = self;
 
         let repo = Repo::open(env::current_dir()?)?;
@@ -32,7 +32,7 @@ impl UnpackObjectsCommand {
 
             if let Err(err) = repo.store.encode_object(&raw_obj) {
                 match err {
-                    MinigitError::ObjectExists => {
+                    TinygitError::ObjectExists => {
                         // we ignore objects that already exist
                     }
 

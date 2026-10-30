@@ -12,7 +12,7 @@ use winnow::{
 };
 
 use crate::{
-    error::{MinigitError, ParseError, ParserContext},
+    error::{TinygitError, ParseError, ParserContext},
     object::commit::CommitProperty,
 };
 
@@ -220,17 +220,17 @@ impl ParseError {
 }
 
 pub trait ParseResultExt<T>: Sized {
-    fn with_context(self, context: ParserContext) -> Result<T, MinigitError>;
+    fn with_context(self, context: ParserContext) -> Result<T, TinygitError>;
 }
 
 impl<T> ParseResultExt<T> for Result<T, winnow::error::ParseError<Stream<'_>, ContextError>> {
-    fn with_context(self, context: ParserContext) -> Result<T, MinigitError> {
+    fn with_context(self, context: ParserContext) -> Result<T, TinygitError> {
         self.map_err(|err| ParseError::from_winnow_parse_error(err, context).into())
     }
 }
 
 pub trait ParseNextExt<T>: Sized {
-    fn context_err(self, context: ParserContext, stream: &Stream<'_>) -> Result<T, MinigitError> {
+    fn context_err(self, context: ParserContext, stream: &Stream<'_>) -> Result<T, TinygitError> {
         self.context_err_at(context, Some(stream.current_token_start()))
     }
 
@@ -238,7 +238,7 @@ pub trait ParseNextExt<T>: Sized {
         self,
         context: ParserContext,
         offset: Option<usize>,
-    ) -> Result<T, MinigitError>;
+    ) -> Result<T, TinygitError>;
 }
 
 impl<T> ParseNextExt<T> for Result<T, ErrMode<ContextError>> {
@@ -246,7 +246,7 @@ impl<T> ParseNextExt<T> for Result<T, ErrMode<ContextError>> {
         self,
         context: ParserContext,
         offset: Option<usize>,
-    ) -> Result<T, MinigitError> {
+    ) -> Result<T, TinygitError> {
         self.map_err(|err| ParseError::from_winnow_error(err, context, offset).into())
     }
 }

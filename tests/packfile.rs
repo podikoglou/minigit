@@ -4,7 +4,7 @@ use std::fs::{self, File};
 
 use include_dir::{Dir, include_dir};
 use insta::assert_debug_snapshot;
-use minigit::storage::object::{
+use tinygit::storage::object::{
     loose::Encode,
     packed::{
         Packfile,

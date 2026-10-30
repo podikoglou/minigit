@@ -1,4 +1,4 @@
-use minigit::object::hash::ObjectHash;
+use tinygit::object::hash::ObjectHash;
 
 mod common;
 

@@ -716,39 +716,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "minigit"
-version = "0.1.0"
-dependencies = [
- "argh",
- "bolero",
- "bstr",
- "chrono",
- "crc32fast",
- "fallible-iterator",
- "flate2",
- "git2",
- "hegeltest",
- "hex",
- "humansize",
- "include_dir",
- "indicatif",
- "insta",
- "itertools",
- "memmap2",
- "nutype",
- "owo-colors",
- "quick_cache",
- "sha1",
- "similar-asserts",
- "strum",
- "tar",
- "tempfile",
- "thiserror",
- "walkdir",
- "winnow 1.0.4",
-]
-
-[[package]]
 name = "miniz_oxide"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1212,6 +1179,39 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 3.0.5",
+]
+
+[[package]]
+name = "tinygit"
+version = "0.1.0"
+dependencies = [
+ "argh",
+ "bolero",
+ "bstr",
+ "chrono",
+ "crc32fast",
+ "fallible-iterator",
+ "flate2",
+ "git2",
+ "hegeltest",
+ "hex",
+ "humansize",
+ "include_dir",
+ "indicatif",
+ "insta",
+ "itertools",
+ "memmap2",
+ "nutype",
+ "owo-colors",
+ "quick_cache",
+ "sha1",
+ "similar-asserts",
+ "strum",
+ "tar",
+ "tempfile",
+ "thiserror",
+ "walkdir",
+ "winnow 1.0.4",
 ]
 
 [[package]]

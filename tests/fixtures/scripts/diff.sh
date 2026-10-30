@@ -11,4 +11,4 @@
 #   scripts/diff.sh ./objects/commit-4.obj
 #
 
-${DIFF:-diff --text --color -y} <(cat "$1" | pigz -zd) <(minigit parse-object -b "$1" | pigz -zd) 
+${DIFF:-diff --text --color -y} <(cat "$1" | pigz -zd) <(tinygit parse-object -b "$1" | pigz -zd) 

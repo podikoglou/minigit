@@ -2,13 +2,13 @@ use std::path::Path;
 
 use include_dir::{Dir, include_dir};
 use itertools::Itertools;
-use minigit::{
+use tinygit::{
     error::ParserContext,
     storage::object::{LazyObject, loose},
 };
 
 mod fixtures {
-    use minigit::{error::ParserContext, storage::object::loose::read_object_compressed};
+    use tinygit::{error::ParserContext, storage::object::loose::read_object_compressed};
 
     #[test]
     fn read_loose_blob() {
@@ -150,11 +150,11 @@ mod roundtrip {
     use hegel::Generator;
     use hegel::TestCase;
 
-    use minigit::error::ParserContext;
-    use minigit::object::{Object, ObjectType, hash::ObjectHash, tag::Tag};
+    use tinygit::error::ParserContext;
+    use tinygit::object::{Object, ObjectType, hash::ObjectHash, tag::Tag};
 
-    use minigit::storage::object::loose::Encode;
-    use minigit::storage::object::loose::read_object;
+    use tinygit::storage::object::loose::Encode;
+    use tinygit::storage::object::loose::read_object;
 
     mod generators {
         use crate::roundtrip::generators;
@@ -163,20 +163,20 @@ mod roundtrip {
         use hegel::TestCase;
         use hegel::extras::chrono::datetimes;
         use hegel::generators as gs;
-        use minigit::fs::FileName;
-        use minigit::identity::Email;
-        use minigit::identity::Identity;
-        use minigit::identity::Name;
-        use minigit::object::ObjectType;
-        use minigit::object::blob::Blob;
-        use minigit::object::commit::Commit;
-        use minigit::object::commit::CommitProperty;
-        use minigit::object::hash::ObjectHash;
-        use minigit::object::tag::Tag;
-        use minigit::object::tree::Tree;
-        use minigit::object::tree::TreeEntry;
-        use minigit::object::tree::TreeKey;
-        use minigit::time::Timestamp;
+        use tinygit::fs::FileName;
+        use tinygit::identity::Email;
+        use tinygit::identity::Identity;
+        use tinygit::identity::Name;
+        use tinygit::object::ObjectType;
+        use tinygit::object::blob::Blob;
+        use tinygit::object::commit::Commit;
+        use tinygit::object::commit::CommitProperty;
+        use tinygit::object::hash::ObjectHash;
+        use tinygit::object::tag::Tag;
+        use tinygit::object::tree::Tree;
+        use tinygit::object::tree::TreeEntry;
+        use tinygit::object::tree::TreeKey;
+        use tinygit::time::Timestamp;
         use std::collections::BTreeMap;
         use strum::VariantArray;
 
@@ -300,7 +300,7 @@ mod roundtrip {
     }
 
     #[hegel::test]
-    #[ignore = "see https://github.com/podikoglou/minigit/issues/13"]
+    #[ignore = "see https://github.com/podikoglou/tinygit/issues/13"]
     fn roundtrip_blob(tc: TestCase) {
         let object = tc.draw(generators::blob().map(Object::from).print_as_debug());
 
@@ -315,7 +315,7 @@ mod roundtrip {
     }
 
     #[hegel::test]
-    #[ignore = "see https://github.com/podikoglou/minigit/issues/13"]
+    #[ignore = "see https://github.com/podikoglou/tinygit/issues/13"]
     fn roundtrip_tree(tc: TestCase) {
         let object = tc.draw(generators::tree().map(Object::from).print_as_debug());
 
@@ -330,7 +330,7 @@ mod roundtrip {
     }
 
     #[hegel::test]
-    #[ignore = "see https://github.com/podikoglou/minigit/issues/13"]
+    #[ignore = "see https://github.com/podikoglou/tinygit/issues/13"]
     fn roundtrip_commit(tc: TestCase) {
         let object = tc.draw(generators::commit().map(Object::from).print_as_debug());
 
@@ -345,7 +345,7 @@ mod roundtrip {
     }
 
     #[hegel::test]
-    #[ignore = "see https://github.com/podikoglou/minigit/issues/13"]
+    #[ignore = "see https://github.com/podikoglou/tinygit/issues/13"]
     fn roundtrip_tag(tc: TestCase) {
         let object = tc.draw(generators::tag().map(Object::from).print_as_debug());
 

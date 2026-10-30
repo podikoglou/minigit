@@ -1,7 +1,7 @@
 use std::{fs, io::Read, path::PathBuf, rc::Rc};
 
 use crate::{
-    MinigitError,
+    TinygitError,
     error::ParserContext,
     object::{Object, hash::ObjectHash, parse_header},
     parsing::{ParseNextExt, Stream},
@@ -27,7 +27,7 @@ impl LazyObject {
     }
 
     /// Reads and decompresses the object into a [RawObject] container.
-    pub fn into_raw(&self) -> Result<RawObject, MinigitError> {
+    pub fn into_raw(&self) -> Result<RawObject, TinygitError> {
         match self {
             Self::Loose(path) => {
                 let contents = fs::read(path)?;
@@ -64,7 +64,7 @@ impl LazyObject {
     }
 
     /// Reads and parses the full object.
-    pub fn into_object(&self) -> Result<Object, MinigitError> {
+    pub fn into_object(&self) -> Result<Object, TinygitError> {
         let raw = self.into_raw()?;
 
         let context = match self {
@@ -75,7 +75,7 @@ impl LazyObject {
         raw.into_object(context)
     }
 
-    pub fn hash(&self) -> Result<ObjectHash, MinigitError> {
+    pub fn hash(&self) -> Result<ObjectHash, TinygitError> {
         match self {
             Self::Loose(path) => path.try_into(),
             Self::Packed(_packfile, _offset) => {

@@ -4,7 +4,7 @@ use std::fs::File;
 use fallible_iterator::FallibleIterator;
 use insta::assert_debug_snapshot;
 use memmap2::Mmap;
-use minigit::{
+use tinygit::{
     object::{ObjectType, hash::ObjectHash},
     parsing::Stream,
     storage::object::{

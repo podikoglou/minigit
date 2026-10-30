@@ -6,7 +6,7 @@ use sha1::{
 };
 
 use crate::{
-    MinigitError,
+    TinygitError,
     object::hash::ObjectHash,
     storage::{
         Store,
@@ -38,14 +38,14 @@ impl PackBuilder {
     }
 
     /// Writes the packfile into the writer.
-    pub fn flush<W: Write>(&self, writer: &mut W, store: &Store) -> Result<(), MinigitError> {
+    pub fn flush<W: Write>(&self, writer: &mut W, store: &Store) -> Result<(), TinygitError> {
         let mut writer = HashingWriter::new(writer);
 
         let header = PackfileHeader::new(
             self.entries
                 .len()
                 .try_into()
-                .map_err(|_| MinigitError::TooMuchData)?,
+                .map_err(|_| TinygitError::TooMuchData)?,
         );
 
         header.encode(&mut writer)?;

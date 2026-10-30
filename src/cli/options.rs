@@ -1,5 +1,5 @@
 use argh::FromArgs;
-use minigit::MinigitError;
+use tinygit::TinygitError;
 
 use crate::cli::commands::{
     hash_object::HashObjectCommand, index_pack::IndexPackCommand, log::LogCommand,
@@ -28,7 +28,7 @@ pub enum Subcommand {
 }
 
 impl Args {
-    pub fn run(self) -> Result<(), MinigitError> {
+    pub fn run(self) -> Result<(), TinygitError> {
         match self.subcommand {
             Subcommand::HashObject(cmd) => cmd.run(),
             Subcommand::LsBuckets(cmd) => cmd.run(),

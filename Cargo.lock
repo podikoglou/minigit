@@ -1202,6 +1202,7 @@ dependencies = [
  "itertools",
  "memmap2",
  "nutype",
+ "once_cell",
  "owo-colors",
  "quick_cache",
  "sha1",

@@ -2,6 +2,7 @@ use std::{collections::HashMap, fs::File, path::PathBuf};
 
 use fallible_iterator::FallibleIterator;
 use memmap2::Mmap;
+use quick_cache::sync::Cache;
 use winnow::{
     Parser,
     error::{ContextError, ErrMode},
@@ -223,18 +224,26 @@ impl ObjectDb for PackIndexBuilder {
 }
 
 /// Caches objects by their offsets (TODO: also hash?)
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct ObjectCache {
-    offset_to_obj: HashMap<usize, RawObject>,
+    cache: Cache<usize, RawObject>,
 }
 
 impl ObjectCache {
     pub fn get(&mut self, offset: &usize) -> Option<RawObject> {
-        self.offset_to_obj.get(offset).map(|x| x.to_owned())
+        self.cache.get(offset).map(|x| x.to_owned())
     }
 
     fn insert(&mut self, offset: usize, object: RawObject) {
-        self.offset_to_obj.insert(offset, object);
+        self.cache.insert(offset, object);
+    }
+}
+
+impl Default for ObjectCache {
+    fn default() -> Self {
+        Self {
+            cache: Cache::new(50),
+        }
     }
 }
 

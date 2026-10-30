@@ -1,14 +1,20 @@
 //! This module contains various utilities for parsing object files using the `winnow` crate.
 
+use std::io::Error;
+
 use winnow::{
     LocatingSlice, ModalResult, Parser,
     ascii::oct_digit1,
     combinator::{repeat, seq, terminated},
-    error::{ContextError, ErrMode, StrContext},
+    error::{ContextError, ErrMode, Needed, StrContext},
+    stream::Location,
     token::{take_till, take_until},
 };
 
-use crate::object::commit::CommitProperty;
+use crate::{
+    error::{MinigitError, ParseError, ParserContext},
+    object::commit::CommitProperty,
+};
 
 pub type Stream<'a> = LocatingSlice<&'a [u8]>;
 
@@ -94,6 +100,157 @@ pub fn mode(input: &mut Stream<'_>) -> ModalResult<u16> {
         .parse_next(input)
 }
 
+/// Helper to extract a human-readable message and optional cause from winnow's `ContextError`.
+pub fn format_context_error(
+    err: &ContextError,
+) -> (String, Option<Box<dyn std::error::Error + Send + Sync>>) {
+    let labels: Vec<&'static str> = err
+        .context()
+        .filter_map(|c| match c {
+            StrContext::Label(l) => Some(*l),
+            _ => None,
+        })
+        .collect();
+
+    let expected: Vec<String> = err
+        .context()
+        .filter_map(|c| match c {
+            StrContext::Expected(e) => Some(e.to_string()),
+            _ => None,
+        })
+        .collect();
+
+    let cause = err
+        .cause()
+        .map(|c| {
+            if let Some(io) = c.downcast_ref::<Error>() {
+                if let Some(raw_os) = io.raw_os_error() {
+                    Error::from_raw_os_error(raw_os)
+                } else {
+                    Error::new(io.kind(), io.to_string())
+                }
+            } else {
+                Error::other(c.to_string())
+            }
+        })
+        .map(|x| Box::new(x) as Box<dyn std::error::Error + Send + Sync>);
+
+    let mut message = String::new();
+
+    if let Some(ref c) = cause {
+        // we have a cause
+        message.push_str(&c.to_string());
+        if !labels.is_empty() {
+            message.push_str(" while parsing ");
+            message.push_str(&labels.join(" in "));
+        }
+    } else if !labels.is_empty() {
+        // we have labels
+        message.push_str("invalid ");
+        message.push_str(&labels.join(" in "));
+        if !expected.is_empty() {
+            message.push_str(", expected ");
+            message.push_str(&expected.join(", "));
+        }
+    } else if !expected.is_empty() {
+        // we have expected
+        message.push_str("expected ");
+        message.push_str(&expected.join(", "));
+    } else {
+        // we have nothing
+        message.push_str("syntax error");
+    }
+
+    (message, cause)
+}
+
+impl ParseError {
+    /// Creates a `ParseError` from winnow's `ErrMode<ContextError>` and optional offset.
+    pub fn from_winnow_error(
+        err: ErrMode<ContextError>,
+        context: ParserContext,
+        offset: Option<usize>,
+    ) -> Self {
+        match err {
+            ErrMode::Incomplete(needed) => {
+                let msg = match needed {
+                    Needed::Size(n) => {
+                        format!("unexpected end of input, requires {n} more bytes")
+                    }
+                    Needed::Unknown => "unexpected end of input".to_string(),
+                };
+
+                Self {
+                    context,
+                    offset,
+                    message: msg,
+                    cause: None,
+                }
+            }
+
+            ErrMode::Backtrack(c) | ErrMode::Cut(c) => {
+                let (message, cause) = format_context_error(&c);
+
+                Self {
+                    context,
+                    offset,
+                    message,
+                    cause,
+                }
+            }
+        }
+    }
+
+    /// Creates a `ParseError` from winnow's top-level `ParseError<Stream, ContextError>`.
+    pub fn from_winnow_parse_error(
+        err: winnow::error::ParseError<Stream<'_>, ContextError>,
+        context: ParserContext,
+    ) -> Self {
+        let offset = err.offset();
+        let inner = err.into_inner();
+        let (message, cause) = format_context_error(&inner);
+
+        Self {
+            context,
+            offset: Some(offset),
+            message,
+            cause,
+        }
+    }
+}
+
+pub trait ParseResultExt<T>: Sized {
+    fn with_context(self, context: ParserContext) -> Result<T, MinigitError>;
+}
+
+impl<T> ParseResultExt<T> for Result<T, winnow::error::ParseError<Stream<'_>, ContextError>> {
+    fn with_context(self, context: ParserContext) -> Result<T, MinigitError> {
+        self.map_err(|err| ParseError::from_winnow_parse_error(err, context).into())
+    }
+}
+
+pub trait ParseNextExt<T>: Sized {
+    fn context_err(self, context: ParserContext, stream: &Stream<'_>) -> Result<T, MinigitError> {
+        self.context_err_at(context, Some(stream.current_token_start()))
+    }
+
+    fn context_err_at(
+        self,
+        context: ParserContext,
+        offset: Option<usize>,
+    ) -> Result<T, MinigitError>;
+}
+
+impl<T> ParseNextExt<T> for Result<T, ErrMode<ContextError>> {
+    fn context_err_at(
+        self,
+        context: ParserContext,
+        offset: Option<usize>,
+    ) -> Result<T, MinigitError> {
+        self.map_err(|err| ParseError::from_winnow_error(err, context, offset).into())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{Stream, extra_property, mode, multiline_property};
@@ -172,5 +329,28 @@ mod tests {
             extra_property.parse_peek(Stream::new(b"\ncommit message\n")),
             Err(ErrMode::Backtrack(_))
         );
+    }
+
+    #[test]
+    fn parse_error_snapshot() {
+        use crate::error::{ParseError, ParserContext};
+        use std::{io, path::PathBuf};
+        use winnow::error::{ContextError, FromExternalError, StrContext};
+
+        let io_err = io::Error::new(io::ErrorKind::InvalidInput, "corrupt deflate stream");
+        let input: &[u8] = b"";
+        let mut ctx_err = ContextError::from_external_error(&input, io_err);
+        ctx_err.push(StrContext::Label("undeltified object"));
+        ctx_err.push(StrContext::Label("object"));
+
+        let parse_err = ParseError::from_winnow_error(
+            ErrMode::Cut(ctx_err),
+            ParserContext::File(PathBuf::from(
+                "pack-c547e79e77bfc46a9f8024f984014da3cda61c7c.pack",
+            )),
+            Some(0x1234),
+        );
+
+        insta::assert_snapshot!(parse_err.to_string());
     }
 }

@@ -30,7 +30,7 @@ use crate::{
         tag::{Tag, parse_tag},
         tree::parse_tree,
     },
-    parsing::Stream,
+    parsing::{ParseResultExt, Stream},
     storage::object::{LazyObject, loose::Encode},
 };
 
@@ -139,7 +139,7 @@ impl TryFrom<LazyObject> for Object {
 pub fn parse_object(input: &[u8], context: ParserContext) -> Result<Object, MinigitError> {
     object
         .parse(Stream::new(input))
-        .map_err(|err| MinigitError::ParserError(err.to_string(), context))
+        .with_context(context)
 }
 
 /// Parses an [Object] from some input.

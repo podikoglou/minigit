@@ -4,7 +4,7 @@ use winnow::Parser;
 use crate::{
     MinigitError,
     error::ParserContext,
-    parsing::Stream,
+    parsing::{ParseNextExt, Stream},
     storage::object::packed::{PackedObject, object},
 };
 
@@ -61,7 +61,7 @@ impl FallibleIterator for PackStream<'_> {
 
         let object = object
             .parse_next(&mut self.buf)
-            .map_err(|err| MinigitError::ParserError(err.to_string(), self.context.to_owned()))?;
+            .context_err(self.context.to_owned(), &self.buf)?;
 
         self.read += 1;
 

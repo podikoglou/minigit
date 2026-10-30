@@ -1,19 +1,15 @@
-use std::{collections::HashMap, fs::File, path::PathBuf};
+use std::{fs::File, path::PathBuf};
 
 use fallible_iterator::FallibleIterator;
 use memmap2::Mmap;
 use quick_cache::sync::Cache;
-use winnow::{
-    Parser,
-    error::{ContextError, ErrMode},
-    token::take,
-};
+use winnow::{Parser, token::take};
 
 use crate::{
     MinigitError,
     error::ParserContext,
     object::hash::{ObjectHash, parse_object_hash},
-    parsing::Stream,
+    parsing::{ParseNextExt, Stream},
     storage::object::{
         ObjectDb, RawObject,
         packed::{BaseObject, PackedObject, header, idx::PackIndex, object, stream::PackStream},
@@ -45,24 +41,20 @@ impl PackIndexBuilder {
         let mmap = unsafe { Mmap::map(&file) }?;
 
         let mut stream = Stream::new(&mmap);
+        let context = ParserContext::File(pack_path.clone());
 
-        let header = header.parse_next(&mut stream).map_err(|err| {
-            MinigitError::ParserError(err.to_string(), ParserContext::File(pack_path.to_owned()))
-        })?;
+        let header = header
+            .parse_next(&mut stream)
+            .context_err(context.clone(), &stream)?;
 
         // seek to the end
-        let _ = take(mmap.len() - 12 - 20).parse_next(&mut stream).map_err(
-            |err: ErrMode<ContextError>| {
-                MinigitError::ParserError(
-                    err.to_string(),
-                    ParserContext::File(pack_path.to_owned()),
-                )
-            },
-        )?;
+        let _ = take(mmap.len() - 12 - 20)
+            .parse_next(&mut stream)
+            .context_err(context.clone(), &stream)?;
 
-        let checksum = parse_object_hash.parse_next(&mut stream).map_err(|err| {
-            MinigitError::ParserError(err.to_string(), ParserContext::File(pack_path.to_owned()))
-        })?;
+        let checksum = parse_object_hash
+            .parse_next(&mut stream)
+            .context_err(context, &stream)?;
 
         Ok(Self {
             pack_path,
@@ -83,22 +75,15 @@ impl PackIndexBuilder {
 
     fn read_object_at_offset(&self, offset: usize) -> Result<PackedObject, MinigitError> {
         let mut stream = Stream::new(&self.mmap[12..]);
+        let context = ParserContext::File(self.pack_path.clone());
 
         take(offset)
             .parse_next(&mut stream)
-            .map_err(|err: ErrMode<ContextError>| {
-                MinigitError::ParserError(
-                    err.to_string(),
-                    ParserContext::File(self.pack_path.to_owned()),
-                )
-            })?;
+            .context_err(context.clone(), &stream)?;
 
-        object.parse_next(&mut stream).map_err(|err| {
-            MinigitError::ParserError(
-                err.to_string(),
-                ParserContext::File(self.pack_path.to_owned()),
-            )
-        })
+        object
+            .parse_next(&mut stream)
+            .context_err(context, &stream)
     }
 
     /// Recursively resolves a [PackedObject] to a [RawObject], possibly using the cache (thus the

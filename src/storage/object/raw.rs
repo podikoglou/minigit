@@ -12,7 +12,7 @@ use crate::{
         Object, ObjectType, blob::parse_blob, commit::parse_commit, hash::ObjectHash,
         tag::parse_tag, tree::parse_tree,
     },
-    parsing::Stream,
+    parsing::{ParseNextExt, Stream},
     storage::object::{
         loose::Encode,
         packed::delta::{CopyInstruction, Delta, InsertInstruction, Instruction},
@@ -49,8 +49,7 @@ impl RawObject {
             ObjectType::Commit => parse_commit.map(Object::from).parse_next(&mut stream),
             ObjectType::Tag => parse_tag.map(Object::from).parse_next(&mut stream),
         }
-        // TODO: we are losing context here
-        .map_err(|err| MinigitError::ParserError(err.to_string(), context))
+        .context_err(context, &stream)
     }
 
     /// Computes the hash of the object.

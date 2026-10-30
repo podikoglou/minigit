@@ -324,13 +324,13 @@ pub fn deltified_object(input: &mut Stream<'_>) -> ModalResult<DeltifiedObject> 
 
     let mut buf = Vec::default();
     buf.try_reserve_exact(header.length as usize)
-        .map_err(|_| ErrMode::Cut(ContextError::new()))?;
+        .map_err(|err| ErrMode::Cut(ContextError::from_external_error(input, err)))?;
 
     let mut decoder = ZlibDecoder::new(&input[..]);
 
     decoder
         .read_to_end(&mut buf)
-        .map_err(|_| ErrMode::Cut(ContextError::new()))?;
+        .map_err(|err| ErrMode::Cut(ContextError::from_external_error(input, err)))?;
 
     if buf.len() != header.length as usize {
         return Err(ErrMode::Cut(ContextError::new()));

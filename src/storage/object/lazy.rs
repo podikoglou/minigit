@@ -4,16 +4,12 @@ use crate::{
     MinigitError,
     error::ParserContext,
     object::{Object, hash::ObjectHash, parse_header},
-    parsing::Stream,
+    parsing::{ParseNextExt, Stream},
     storage::object::{RawObject, packed::Packfile},
 };
 
 use flate2::bufread::ZlibDecoder;
-use winnow::{
-    Parser,
-    error::{ContextError, ErrMode},
-    token::take,
-};
+use winnow::{Parser, token::take};
 
 /// An object which has not been loaded yet.
 ///
@@ -45,21 +41,16 @@ impl LazyObject {
                 // parse just the header of the object
                 let mut stream = Stream::new(&decompressed);
 
-                let (r#type, size) = parse_header.parse_next(&mut stream).map_err(|err| {
-                    MinigitError::ParserError(err.to_string(), ParserContext::File(path.clone()))
-                })?;
+                let (r#type, size) = parse_header
+                    .parse_next(&mut stream)
+                    .context_err(ParserContext::File(path.clone()), &stream)?;
 
                 // take the object's payload verbatim
                 // NOTE: PERF: This creates a new Vec<u8>, so we have duplicate data in memory
                 // (`decompressed`, and `object_bytes`).
                 let object_bytes: Vec<u8> = take(size)
                     .parse_next(&mut stream)
-                    .map_err(|err: ErrMode<ContextError>| {
-                        MinigitError::ParserError(
-                            err.to_string(),
-                            ParserContext::File(path.clone()),
-                        )
-                    })?
+                    .context_err(ParserContext::File(path.clone()), &stream)?
                     .into();
 
                 Ok(RawObject::new(r#type, object_bytes))

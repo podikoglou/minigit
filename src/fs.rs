@@ -1,7 +1,10 @@
 //! This module contains items that deal with file names.
 
 use crate::{
-    MinigitError, error::ParserContext, parsing::Stream, storage::object::loose::Encode,
+    MinigitError,
+    error::ParserContext,
+    parsing::{ParseResultExt, Stream},
+    storage::object::loose::Encode,
 };
 use std::{fmt::Display, path::PathBuf, str::FromStr};
 use winnow::{ModalResult, Parser, combinator::terminated, token::take_until};
@@ -35,7 +38,7 @@ impl FromStr for FileName {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         parse_file_name
             .parse(Stream::new(s.as_bytes()))
-            .map_err(|err| MinigitError::ParserError(err.to_string(), ParserContext::None))
+            .with_context(ParserContext::None)
     }
 }
 

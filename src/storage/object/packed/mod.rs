@@ -22,7 +22,7 @@ use winnow::{
     ModalResult, Parser,
     binary::be_u32,
     combinator::seq,
-    error::{ContextError, ErrMode, StrContext},
+    error::StrContext,
     token::{any, take},
 };
 
@@ -30,7 +30,7 @@ use crate::{
     MinigitError,
     error::ParserContext,
     object::hash::ObjectHash,
-    parsing::Stream,
+    parsing::{ParseNextExt, ParseResultExt, Stream},
     storage::object::{
         LazyObject, ObjectDb, RawObject,
         loose::Encode,
@@ -74,9 +74,9 @@ impl Packfile {
         let pack = (pack_path, pack_buf);
 
         // read packfile header
-        let pack_header = header.parse(Stream::new(&pack.1[..12])).map_err(|err| {
-            MinigitError::ParserError(err.to_string(), ParserContext::File(pack.0.to_owned()))
-        })?;
+        let pack_header = header
+            .parse(Stream::new(&pack.1[..12]))
+            .with_context(ParserContext::File(pack.0.to_owned()))?;
 
         // if present, open idx
         let idx = PackIndex::open(idx_path)?;
@@ -118,16 +118,11 @@ impl Packfile {
         let mut stream = Stream::new(&self.pack.1[..]);
         take(offset)
             .parse_next(&mut stream)
-            .map_err(|err: ErrMode<ContextError>| {
-                MinigitError::ParserError(
-                    err.to_string(),
-                    ParserContext::File(self.path().to_owned()),
-                )
-            })?;
+            .context_err(ParserContext::File(self.path().to_owned()), &stream)?;
 
-        object.parse_next(&mut stream).map_err(|err| {
-            MinigitError::ParserError(err.to_string(), ParserContext::File(self.path().to_owned()))
-        })
+        object
+            .parse_next(&mut stream)
+            .context_err(ParserContext::File(self.path().to_owned()), &stream)
     }
 
     /// Reads an object by its ID ([ObjectHash]) from the packfile and returns it.

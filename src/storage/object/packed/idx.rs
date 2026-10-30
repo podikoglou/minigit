@@ -21,7 +21,7 @@ use crate::{
     MinigitError,
     error::ParserContext,
     object::hash::{ObjectHash, parse_object_hash},
-    parsing::Stream,
+    parsing::{ParseNextExt, Stream},
     storage::object::loose::Encode,
 };
 
@@ -52,23 +52,19 @@ impl PackIndex {
         let contents = fs::read(path.as_ref())?;
         let mut stream = Stream::new(&contents[..]);
 
+        let context = ParserContext::File(path.as_ref().to_path_buf());
+
         // read idx header
         //
         // this doesn't return any information, this is mostly for validation that this is a valid idx
         // file.
-        header.parse_next(&mut stream).map_err(|err| {
-            MinigitError::ParserError(
-                err.to_string(),
-                ParserContext::File(path.as_ref().to_path_buf()),
-            )
-        })?;
+        header
+            .parse_next(&mut stream)
+            .context_err(context.clone(), &stream)?;
 
-        let fanout_table = fanout_table.parse_next(&mut stream).map_err(|err| {
-            MinigitError::ParserError(
-                err.to_string(),
-                ParserContext::File(path.as_ref().to_path_buf()),
-            )
-        })?;
+        let fanout_table = fanout_table
+            .parse_next(&mut stream)
+            .context_err(context.clone(), &stream)?;
 
         let objects_count = fanout_table
             .last()
@@ -77,30 +73,15 @@ impl PackIndex {
 
         let object_names = object_names(objects_count)
             .parse_next(&mut stream)
-            .map_err(|err| {
-                MinigitError::ParserError(
-                    err.to_string(),
-                    ParserContext::File(path.as_ref().to_path_buf()),
-                )
-            })?;
+            .context_err(context.clone(), &stream)?;
 
         let crc_entries = crc_entries(objects_count)
             .parse_next(&mut stream)
-            .map_err(|err| {
-                MinigitError::ParserError(
-                    err.to_string(),
-                    ParserContext::File(path.as_ref().to_path_buf()),
-                )
-            })?;
+            .context_err(context.clone(), &stream)?;
 
         let offsets_1 = offsets_1(objects_count)
             .parse_next(&mut stream)
-            .map_err(|err| {
-                MinigitError::ParserError(
-                    err.to_string(),
-                    ParserContext::File(path.as_ref().to_path_buf()),
-                )
-            })?;
+            .context_err(context.clone(), &stream)?;
 
         let offsets_2_entries = offsets_1
             .iter()
@@ -109,26 +90,15 @@ impl PackIndex {
 
         let offsets_2 = offsets_2(offsets_2_entries)
             .parse_next(&mut stream)
-            .map_err(|err| {
-                MinigitError::ParserError(
-                    err.to_string(),
-                    ParserContext::File(path.as_ref().to_path_buf()),
-                )
-            })?;
+            .context_err(context.clone(), &stream)?;
 
-        let pack_checksum = checksum.parse_next(&mut stream).map_err(|err| {
-            MinigitError::ParserError(
-                err.to_string(),
-                ParserContext::File(path.as_ref().to_path_buf()),
-            )
-        })?;
+        let pack_checksum = checksum
+            .parse_next(&mut stream)
+            .context_err(context.clone(), &stream)?;
 
-        let idx_checksum = checksum.parse_next(&mut stream).map_err(|err| {
-            MinigitError::ParserError(
-                err.to_string(),
-                ParserContext::File(path.as_ref().to_path_buf()),
-            )
-        })?;
+        let idx_checksum = checksum
+            .parse_next(&mut stream)
+            .context_err(context, &stream)?;
 
         Ok(Self {
             path: path.as_ref().to_path_buf(),

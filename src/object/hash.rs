@@ -12,7 +12,11 @@ use winnow::{
     token::take,
 };
 
-use crate::{MinigitError, error::ParserContext, parsing::Stream};
+use crate::{
+    MinigitError,
+    error::{ParseError, ParserContext},
+    parsing::Stream,
+};
 
 /// A hash that identifies an [`super::Object`]. It is a SHA1 hash of the header and
 /// contents of the object.
@@ -51,9 +55,9 @@ impl FromStr for ObjectHash {
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         let decoded = hex::decode(value)?;
         let bytes: [u8; 20] = decoded.try_into().map_err(|_| {
-            MinigitError::ParserError(
-                String::from("Couldn't parse 20 bytes from hexadecimal hash"),
+            ParseError::new(
                 ParserContext::None,
+                "Couldn't parse 20 bytes from hexadecimal hash",
             )
         })?;
 

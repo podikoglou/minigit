@@ -79,7 +79,7 @@ impl PackIndexBuilder {
     }
 
     fn read_object_at_offset(&self, offset: usize) -> Result<PackedObject, MinigitError> {
-        let mut stream = Stream::new(&self.mmap[..]);
+        let mut stream = Stream::new(&self.mmap[12..]);
 
         take(offset)
             .parse_next(&mut stream)

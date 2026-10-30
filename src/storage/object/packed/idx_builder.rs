@@ -128,12 +128,19 @@ impl PackIndexBuilder {
 
         let mut intermediate: Vec<IntermediateTableEntry> = Vec::default();
 
-        for packed_object in self.objects().iterator() {
-            let packed_object = packed_object?;
+        let mut iter = self.objects().peekable();
 
+        while let Some(packed_object) = iter.next()? {
             // wait, why is this usize? what about 32 bit computers? can we address large
             // packfiles in them at all?
             let offset = packed_object.offset();
+
+            // offset of the end of the object in the packfile, aka, the start of the next if it
+            // exists
+            let end = match iter.peek()? {
+                Some(next) => next.offset(),
+                None => self.mmap.len() - 20,
+            };
 
             let raw_object = self.resolve(packed_object, cache)?;
 
@@ -151,7 +158,9 @@ impl PackIndexBuilder {
 
             idx.objects_count = idx.fanout_table[255] as usize;
 
-            let crc = crc32fast::hash(&raw_object.bytes);
+            // compute CRC on the full packed object including its header
+            let object_bytes = &self.mmap[offset..end];
+            let crc = crc32fast::hash(object_bytes);
 
             // figure out where to place offset
             let offset = if offset > 2 ^ 31 {

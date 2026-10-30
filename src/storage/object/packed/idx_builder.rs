@@ -11,7 +11,7 @@ use winnow::{
 use crate::{
     MinigitError,
     error::ParserContext,
-    object::hash::ObjectHash,
+    object::hash::{ObjectHash, parse_object_hash},
     parsing::Stream,
     storage::object::{
         ObjectDb, RawObject,
@@ -26,6 +26,7 @@ pub struct PackIndexBuilder {
     mmap: Mmap,
 
     objects_expected: usize,
+    checksum: ObjectHash,
 }
 
 impl PackIndexBuilder {
@@ -45,11 +46,26 @@ impl PackIndexBuilder {
             MinigitError::ParserError(err.to_string(), ParserContext::File(pack_path.to_owned()))
         })?;
 
+        // seek to the end
+        let _ = take(mmap.len() - 12 - 20).parse_next(&mut stream).map_err(
+            |err: ErrMode<ContextError>| {
+                MinigitError::ParserError(
+                    err.to_string(),
+                    ParserContext::File(pack_path.to_owned()),
+                )
+            },
+        )?;
+
+        let checksum = parse_object_hash.parse_next(&mut stream).map_err(|err| {
+            MinigitError::ParserError(err.to_string(), ParserContext::File(pack_path.to_owned()))
+        })?;
+
         Ok(Self {
             pack_path,
             index_path,
             mmap,
             objects_expected: header.objects as usize,
+            checksum,
         })
     }
 
@@ -192,6 +208,8 @@ impl PackIndexBuilder {
         }
 
         idx.objects_count = idx.fanout_table[255] as usize;
+        idx.pack_checksum = self.checksum.to_owned();
+
         Ok(idx)
     }
 }

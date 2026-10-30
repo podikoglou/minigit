@@ -149,6 +149,8 @@ impl PackIndexBuilder {
                 }
             }
 
+            idx.objects_count = idx.fanout_table[255] as usize;
+
             // populate object names
             idx.object_names.push(hash.clone());
 

@@ -194,7 +194,6 @@ impl PackIndexBuilder {
             intermediate.push(IntermediateTableEntry(hash, crc, offset));
         }
 
-        // does this sort as we expect it to?
         intermediate.sort();
 
         for IntermediateTableEntry(hash, crc, offset) in intermediate {

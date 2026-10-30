@@ -97,7 +97,7 @@ impl Tree {
 }
 
 impl Encode for Tree {
-    fn encode<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
+    fn encode<W: Write>(&self, writer: &mut W) -> Result<(), crate::TinygitError> {
         for entry in &self.entries {
             entry.encode(writer)?;
         }
@@ -138,7 +138,7 @@ impl TreeEntry {
 }
 
 impl Encode for (&TreeKey, &TreeEntry) {
-    fn encode<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
+    fn encode<W: Write>(&self, writer: &mut W) -> Result<(), crate::TinygitError> {
         write!(writer, "{:o} {}\0", self.0.mode, self.0.name)?;
 
         let hash_s = Into::<Array<u8, U20>>::into(self.1.object.clone());

@@ -57,7 +57,7 @@ impl Commit {
 }
 
 impl Encode for Commit {
-    fn encode<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
+    fn encode<W: Write>(&self, writer: &mut W) -> Result<(), crate::TinygitError> {
         write!(writer, "tree {}", self.tree)?;
         writeln!(writer)?;
 
@@ -102,7 +102,7 @@ pub fn parse_commit(input: &mut Stream<'_>) -> ModalResult<Commit> {
 }
 
 impl Encode for (Identity, Timestamp) {
-    fn encode<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
+    fn encode<W: Write>(&self, writer: &mut W) -> Result<(), crate::TinygitError> {
         self.0.encode(writer)?;
         write!(writer, " {}", self.1.format("%s %z"))?;
 
@@ -113,7 +113,7 @@ impl Encode for (Identity, Timestamp) {
 pub type CommitProperty = (String, String);
 
 impl Encode for &CommitProperty {
-    fn encode<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
+    fn encode<W: Write>(&self, writer: &mut W) -> Result<(), crate::TinygitError> {
         // TODO: validation. neither should be empty
         // the below code assumes they aren't
 

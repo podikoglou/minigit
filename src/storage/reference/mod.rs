@@ -9,7 +9,7 @@ use winnow::{
 };
 
 use crate::{
-    MinigitError,
+    TinygitError,
     error::ParserContext,
     object::hash::{ObjectHash, parse_object_hash_str},
     parsing::{ParseResultExt, Stream},
@@ -36,7 +36,7 @@ impl Ref {
     /// Opens a loose ref given its path, and given its name.
     ///
     /// No validation is done to ensure the name matches the path, so is trusted.
-    pub fn open_loose(path: impl AsRef<Path>, name: &RefName) -> Result<Ref, MinigitError> {
+    pub fn open_loose(path: impl AsRef<Path>, name: &RefName) -> Result<Ref, TinygitError> {
         let path = path.as_ref();
 
         let contents = fs::read(path)?;
@@ -58,7 +58,7 @@ impl Ref {
 }
 
 impl FromStr for RefPointer {
-    type Err = MinigitError;
+    type Err = TinygitError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         parse_ref_pointer

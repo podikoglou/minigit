@@ -21,7 +21,7 @@ use winnow::{
 };
 
 use crate::{
-    MinigitError,
+    TinygitError,
     error::ParserContext,
     object::{
         blob::parse_blob,
@@ -48,7 +48,7 @@ pub enum Object {
 
 impl Object {
     /// Creates a SHA1 hash of the object.
-    pub fn hash(&self) -> Result<ObjectHash, MinigitError> {
+    pub fn hash(&self) -> Result<ObjectHash, TinygitError> {
         let mut buf = Vec::new();
         self.encode(&mut buf)?;
 
@@ -58,7 +58,7 @@ impl Object {
 
 impl Encode for Object {
     /// Writes the uncompressed object to a write.
-    fn encode<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
+    fn encode<W: Write>(&self, writer: &mut W) -> Result<(), crate::TinygitError> {
         let mut buf: Vec<u8> = Vec::new();
 
         match self {
@@ -95,7 +95,7 @@ impl Object {
     pub fn encode_compressed<W: Write>(
         &self,
         writer: &mut W,
-    ) -> Result<(), crate::MinigitError> {
+    ) -> Result<(), crate::TinygitError> {
         let mut zlib_writer = ZlibEncoder::new(writer, Compression::default());
 
         self.encode(&mut zlib_writer)
@@ -126,7 +126,7 @@ impl From<Tag> for Object {
 }
 
 impl TryFrom<LazyObject> for Object {
-    type Error = MinigitError;
+    type Error = TinygitError;
 
     fn try_from(value: LazyObject) -> Result<Self, Self::Error> {
         value.into_object()
@@ -136,7 +136,7 @@ impl TryFrom<LazyObject> for Object {
 /// Parses an [Object] from some bytes.
 ///
 /// Unless you're building your own parsers this is the function you're looking for.
-pub fn parse_object(input: &[u8], context: ParserContext) -> Result<Object, MinigitError> {
+pub fn parse_object(input: &[u8], context: ParserContext) -> Result<Object, TinygitError> {
     object
         .parse(Stream::new(input))
         .with_context(context)

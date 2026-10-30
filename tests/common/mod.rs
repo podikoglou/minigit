@@ -1,5 +1,5 @@
 #[allow(dead_code)]
-pub fn unpack_repo(bytes: &[u8]) -> (minigit::Repo, tempfile::TempDir) {
+pub fn unpack_repo(bytes: &[u8]) -> (tinygit::Repo, tempfile::TempDir) {
     let dir = tempfile::tempdir().unwrap();
 
     let cursor = std::io::Cursor::new(bytes);
@@ -7,7 +7,7 @@ pub fn unpack_repo(bytes: &[u8]) -> (minigit::Repo, tempfile::TempDir) {
     archive.unpack(&dir).unwrap();
 
     (
-        minigit::Repo::open(dir.path()).expect("should be able to open repo"),
+        tinygit::Repo::open(dir.path()).expect("should be able to open repo"),
         dir,
     )
 }

@@ -1,6 +1,6 @@
 use bolero::check;
 use chrono::{DateTime, FixedOffset};
-use minigit::{
+use tinygit::{
     error::ParserContext,
     fs::parse_file_name,
     identity::parse_identity,
@@ -19,7 +19,7 @@ use minigit::{
 use winnow::Parser;
 
 /// Fuzz the uncompressed loose object parser with arbitrary raw bytes.
-/// Whenever an input successfully parses into a valid Minigit `Object`,
+/// Whenever an input successfully parses into a valid Tinygit `Object`,
 /// verify that serializing it and re-parsing it is completely lossless (roundtrip).
 #[test]
 fn fuzz_read_loose_object() {

@@ -6,7 +6,7 @@ use sha1::{Digest, Sha1};
 use winnow::Parser;
 
 use crate::{
-    MinigitError,
+    TinygitError,
     error::ParserContext,
     object::{
         Object, ObjectType, blob::parse_blob, commit::parse_commit, hash::ObjectHash,
@@ -40,7 +40,7 @@ impl RawObject {
     }
 
     /// Parses the object bytes.
-    pub fn into_object(&self, context: ParserContext) -> Result<Object, MinigitError> {
+    pub fn into_object(&self, context: ParserContext) -> Result<Object, TinygitError> {
         let mut stream = Stream::new(&self.bytes);
 
         match self.r#type {
@@ -53,7 +53,7 @@ impl RawObject {
     }
 
     /// Computes the hash of the object.
-    pub fn hash(&self) -> Result<ObjectHash, MinigitError> {
+    pub fn hash(&self) -> Result<ObjectHash, TinygitError> {
         let mut buf = Vec::new(); // TODO: capacity
 
         self.encode(&mut buf)?;
@@ -79,7 +79,7 @@ impl RawObject {
         RawObject::new(self.r#type, new_bytes)
     }
 
-    pub fn encode_compressed<W: Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+    pub fn encode_compressed<W: Write>(&self, writer: &mut W) -> Result<(), TinygitError> {
         let mut zlib_writer = ZlibEncoder::new(writer, Compression::default());
 
         self.encode(&mut zlib_writer)
@@ -87,7 +87,7 @@ impl RawObject {
 }
 
 impl Encode for RawObject {
-    fn encode<W: Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+    fn encode<W: Write>(&self, writer: &mut W) -> Result<(), TinygitError> {
         write!(
             writer,
             "{} {}\0",

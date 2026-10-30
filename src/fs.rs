@@ -1,7 +1,7 @@
 //! This module contains items that deal with file names.
 
 use crate::{
-    MinigitError,
+    TinygitError,
     error::ParserContext,
     parsing::{ParseResultExt, Stream},
     storage::object::loose::Encode,
@@ -16,7 +16,7 @@ use winnow::{ModalResult, Parser, combinator::terminated, token::take_until};
 ///
 /// A [`FileName`] can be created using [`FromStr`]. For example:
 /// ```
-/// use minigit::fs::FileName;
+/// use tinygit::fs::FileName;
 ///
 /// let name: FileName = "foo.rs\0".parse().unwrap();
 ///
@@ -33,7 +33,7 @@ impl FileName {
 }
 
 impl FromStr for FileName {
-    type Err = MinigitError;
+    type Err = TinygitError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         parse_file_name
@@ -55,7 +55,7 @@ impl From<FileName> for PathBuf {
 }
 
 impl Encode for FileName {
-    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), TinygitError> {
         write!(writer, "{}", self.0)?;
 
         Ok(())

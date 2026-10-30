@@ -5,8 +5,8 @@ use std::{
 };
 
 use argh::FromArgs;
-use minigit::error::ParserContext;
-use minigit::{MinigitError, storage::object::loose::read_object_compressed};
+use tinygit::error::ParserContext;
+use tinygit::{TinygitError, storage::object::loose::read_object_compressed};
 
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "parse-object")]
@@ -25,7 +25,7 @@ pub struct ParseObjectCommand {
 }
 
 impl ParseObjectCommand {
-    pub fn run(self) -> Result<(), MinigitError> {
+    pub fn run(self) -> Result<(), TinygitError> {
         let Self {
             stdin,
             files,
@@ -58,7 +58,7 @@ impl ParseObjectCommand {
             )
             .map(|contents| match contents {
                 Ok((bytes, context)) => read_object_compressed(bytes.as_slice(), context),
-                Err(err) => Err(MinigitError::from(err)),
+                Err(err) => Err(TinygitError::from(err)),
             });
 
         for object in objects {

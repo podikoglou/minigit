@@ -29,7 +29,7 @@ impl Identity {
 }
 
 impl Encode for Identity {
-    fn encode<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
+    fn encode<W: Write>(&self, writer: &mut W) -> Result<(), crate::TinygitError> {
         writer.write_all(self.name.as_ref())?;
         writer.write_all(b" <")?;
         writer.write_all(self.email.as_ref())?;

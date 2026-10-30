@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
 use argh::FromArgs;
-use minigit::{
-    MinigitError,
+use tinygit::{
+    TinygitError,
     storage::object::packed::idx_builder::{ObjectCache, PackIndexBuilder},
 };
 
@@ -15,7 +15,7 @@ pub struct IndexPackCommand {
 }
 
 impl IndexPackCommand {
-    pub fn run(self) -> Result<(), MinigitError> {
+    pub fn run(self) -> Result<(), TinygitError> {
         let Self { file } = self;
 
         let builder = PackIndexBuilder::new(file, None)?;

@@ -56,7 +56,7 @@ impl Tag {
 pub type TagTarget = (ObjectHash, ObjectType);
 
 impl Encode for Tag {
-    fn encode<W: Write>(&self, writer: &mut W) -> Result<(), crate::MinigitError> {
+    fn encode<W: Write>(&self, writer: &mut W) -> Result<(), crate::TinygitError> {
         writeln!(writer, "object {}", self.target.0)?;
         writeln!(writer, "type {}", Into::<&'static str>::into(self.target.1))?;
         writeln!(writer, "tag {}", self.name)?;

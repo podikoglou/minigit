@@ -27,7 +27,7 @@ use winnow::{
 };
 
 use crate::{
-    MinigitError,
+    TinygitError,
     error::ParserContext,
     object::hash::ObjectHash,
     parsing::{ParseNextExt, ParseResultExt, Stream},
@@ -58,7 +58,7 @@ pub struct Packfile {
 impl Packfile {
     /// Creates an instance of [Packfile]. This memory maps the pack and (if present) index file,
     /// and parses their headers.
-    pub fn open(pack_path: PathBuf, idx_path: PathBuf) -> Result<Self, MinigitError> {
+    pub fn open(pack_path: PathBuf, idx_path: PathBuf) -> Result<Self, TinygitError> {
         // open packfile
         let pack_file = File::open(&pack_path)?;
         let pack_buf = unsafe { Mmap::map(&pack_file) }?;
@@ -114,7 +114,7 @@ impl Packfile {
     /// Reads an object at a specific offset of the packfile and returns it.
     ///
     /// This does not resolve the deltas.
-    pub fn read_object_at_offset(&self, offset: usize) -> Result<PackedObject, MinigitError> {
+    pub fn read_object_at_offset(&self, offset: usize) -> Result<PackedObject, TinygitError> {
         let mut stream = Stream::new(&self.pack.1[..]);
         take(offset)
             .parse_next(&mut stream)
@@ -128,20 +128,20 @@ impl Packfile {
     /// Reads an object by its ID ([ObjectHash]) from the packfile and returns it.
     ///
     /// This does not resolve the deltas.
-    pub fn read_object_by_id(&self, hash: ObjectHash) -> Result<PackedObject, MinigitError> {
-        let offset = self.idx.lookup(hash).ok_or(MinigitError::ObjectNotFound)?;
+    pub fn read_object_by_id(&self, hash: ObjectHash) -> Result<PackedObject, TinygitError> {
+        let offset = self.idx.lookup(hash).ok_or(TinygitError::ObjectNotFound)?;
 
         self.read_object_at_offset(offset)
     }
 
     /// Reads and resolves a [`RawObject`] by its ID ([`ObjectHash`]) from the packfile.
-    pub fn raw_object(&self, hash: &ObjectHash) -> Result<RawObject, MinigitError> {
+    pub fn raw_object(&self, hash: &ObjectHash) -> Result<RawObject, TinygitError> {
         let packed = self.read_object_by_id(hash.clone())?;
         self.resolve(packed)
     }
 
     /// Resolves a [PackedObject] into a [RawObject], resolving the deltas if it is deltified.
-    pub fn resolve(&self, object: PackedObject) -> Result<RawObject, MinigitError> {
+    pub fn resolve(&self, object: PackedObject) -> Result<RawObject, TinygitError> {
         match object {
             PackedObject::Deltified(_offset, object) => {
                 let (base, delta) = object.into_inner();
@@ -177,7 +177,7 @@ impl PartialEq for Packfile {
 impl Eq for Packfile {}
 
 impl ObjectDb for Packfile {
-    fn raw_object(&self, hash: &ObjectHash) -> Result<RawObject, MinigitError> {
+    fn raw_object(&self, hash: &ObjectHash) -> Result<RawObject, TinygitError> {
         self.raw_object(hash)
     }
 }
@@ -195,7 +195,7 @@ impl PackfileHeader {
 }
 
 impl Encode for PackfileHeader {
-    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), TinygitError> {
         write!(writer, "PACK")?;
         writer.write_all(&[0x00, 0x00, 0x00, 0x02])?;
         writer.write_all(&self.objects.to_be_bytes())?;

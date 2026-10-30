@@ -6,7 +6,7 @@ use quick_cache::sync::Cache;
 use winnow::{Parser, token::take};
 
 use crate::{
-    MinigitError,
+    TinygitError,
     error::ParserContext,
     object::hash::{ObjectHash, parse_object_hash},
     parsing::{ParseNextExt, Stream},
@@ -34,7 +34,7 @@ impl PackIndexBuilder {
     ///
     /// If `index_path` is not provided, it is inferred from the pack's path, where the `.pack`
     /// extension is replaced with `.idx`
-    pub fn new(pack_path: PathBuf, index_path: Option<PathBuf>) -> Result<Self, MinigitError> {
+    pub fn new(pack_path: PathBuf, index_path: Option<PathBuf>) -> Result<Self, TinygitError> {
         let index_path = index_path.unwrap_or_else(|| pack_path.with_extension("idx"));
 
         let file = File::open(&pack_path)?;
@@ -73,7 +73,7 @@ impl PackIndexBuilder {
         )
     }
 
-    fn read_object_at_offset(&self, offset: usize) -> Result<PackedObject, MinigitError> {
+    fn read_object_at_offset(&self, offset: usize) -> Result<PackedObject, TinygitError> {
         let mut stream = Stream::new(&self.mmap[12..]);
         let context = ParserContext::File(self.pack_path.clone());
 
@@ -92,7 +92,7 @@ impl PackIndexBuilder {
         &self,
         object: PackedObject,
         cache: &mut ObjectCache,
-    ) -> Result<RawObject, MinigitError> {
+    ) -> Result<RawObject, TinygitError> {
         let offset = object.offset();
 
         let raw_object = match object {
@@ -128,7 +128,7 @@ impl PackIndexBuilder {
         Ok(raw_object)
     }
 
-    pub fn build(&self, cache: &mut ObjectCache) -> Result<PackIndex, MinigitError> {
+    pub fn build(&self, cache: &mut ObjectCache) -> Result<PackIndex, TinygitError> {
         let mut idx = PackIndex::new(&self.index_path);
 
         let mut intermediate: Vec<IntermediateTableEntry> = Vec::default();
@@ -202,7 +202,7 @@ impl PackIndexBuilder {
 }
 
 impl ObjectDb for PackIndexBuilder {
-    fn raw_object(&self, hash: &ObjectHash) -> Result<RawObject, MinigitError> {
+    fn raw_object(&self, hash: &ObjectHash) -> Result<RawObject, TinygitError> {
         // we could have an in memory cache that maps hashes to raw objects like we do
         // with offsets, but i believe ref deltas are mostly used when the object is
         // outside the pack, which is a feature we do not yet support and would be hard

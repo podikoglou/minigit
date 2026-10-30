@@ -6,7 +6,7 @@ pub mod db;
 pub use db::LooseDb;
 
 use crate::{
-    MinigitError,
+    TinygitError,
     error::ParserContext,
     object::{Object, parse_object},
 };
@@ -18,7 +18,7 @@ use std::io::{BufRead, Read, Write};
 /// The trait isn't unique to a specific format, but it must be the case that for this trait to be
 /// implemented for a type, there is only *one* way to encode a value of that type.
 pub trait Encode {
-    fn encode<W: Write>(&self, writer: &mut W) -> Result<(), MinigitError>;
+    fn encode<W: Write>(&self, writer: &mut W) -> Result<(), TinygitError>;
 }
 
 /// Reads and parses an [Object] from a [`Read`].
@@ -27,7 +27,7 @@ pub trait Encode {
 pub fn read_object(
     mut reader: impl BufRead,
     context: ParserContext,
-) -> Result<Object, MinigitError> {
+) -> Result<Object, TinygitError> {
     let mut buf = Vec::new();
     reader.read_to_end(&mut buf)?;
 
@@ -40,7 +40,7 @@ pub fn read_object(
 pub fn read_object_compressed(
     reader: impl BufRead,
     context: ParserContext,
-) -> Result<Object, MinigitError> {
+) -> Result<Object, TinygitError> {
     let mut decoder = ZlibDecoder::new(reader);
 
     let mut buf = Vec::new();

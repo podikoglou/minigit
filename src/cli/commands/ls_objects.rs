@@ -3,7 +3,7 @@ use std::env;
 use argh::FromArgs;
 use bstr::ByteSlice;
 use itertools::Either;
-use minigit::{MinigitError, Repo, object::hash::HashPrefix, storage::object::ObjectsBucket};
+use tinygit::{TinygitError, Repo, object::hash::HashPrefix, storage::object::ObjectsBucket};
 use strum::IntoDiscriminant;
 
 #[derive(FromArgs, PartialEq, Debug)]
@@ -24,7 +24,7 @@ pub struct LsObjectsCommand {
 }
 
 impl LsObjectsCommand {
-    pub fn run(self) -> Result<(), MinigitError> {
+    pub fn run(self) -> Result<(), TinygitError> {
         let Self {
             buckets,
             pretty,
@@ -66,20 +66,20 @@ impl LsObjectsCommand {
                     let hash = lazy_object.hash()?;
 
                     match object {
-                        minigit::object::Object::Blob(blob) => {
+                        tinygit::object::Object::Blob(blob) => {
                             println!("{}  blob    {} bytes", hash, blob.0.len());
                         }
-                        minigit::object::Object::Tree(tree) => {
+                        tinygit::object::Object::Tree(tree) => {
                             println!("{}  tree    {} entries", hash, tree.entries.len());
                         }
-                        minigit::object::Object::Commit(commit) => {
+                        tinygit::object::Object::Commit(commit) => {
                             println!(
                                 "{}  commit  {:?}",
                                 hash,
                                 commit.description.lines().next().unwrap_or_default()
                             );
                         }
-                        minigit::object::Object::Tag(tag) => {
+                        tinygit::object::Object::Tag(tag) => {
                             println!("{}  tag  {}", hash, tag.name);
                         }
                     }

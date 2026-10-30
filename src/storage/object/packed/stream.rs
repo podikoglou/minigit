@@ -2,7 +2,7 @@ use fallible_iterator::FallibleIterator;
 use winnow::Parser;
 
 use crate::{
-    MinigitError,
+    TinygitError,
     error::ParserContext,
     parsing::{ParseNextExt, Stream},
     storage::object::packed::{PackedObject, object},
@@ -52,7 +52,7 @@ impl<'a> PackStream<'a> {
 
 impl FallibleIterator for PackStream<'_> {
     type Item = PackedObject;
-    type Error = MinigitError;
+    type Error = TinygitError;
 
     fn next(&mut self) -> Result<Option<Self::Item>, Self::Error> {
         if self.read >= self.amount {

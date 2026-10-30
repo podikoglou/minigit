@@ -8,8 +8,8 @@ use std::{
 use argh::FromArgs;
 use bstr::ByteSlice;
 use itertools::Either;
-use minigit::{
-    MinigitError, Repo,
+use tinygit::{
+    TinygitError, Repo,
     object::{commit::Commit, hash::ObjectHash},
 };
 use owo_colors::{OwoColorize as _, Stream};
@@ -54,7 +54,7 @@ impl From<(Commit, ObjectHash)> for QueueEntry {
 }
 
 impl LogCommand {
-    pub fn run(self) -> Result<(), MinigitError> {
+    pub fn run(self) -> Result<(), TinygitError> {
         let stdout = io::stdout();
         let mut out = if io::stdout().is_terminal() {
             let pipe = io::pipe()?;
@@ -94,7 +94,7 @@ impl LogCommand {
                 }
 
                 let parent = repo.store.object(&parent_hash)?;
-                let parent = *parent.try_as_commit().ok_or(MinigitError::UnexpectedType)?;
+                let parent = *parent.try_as_commit().ok_or(TinygitError::UnexpectedType)?;
 
                 queue.push((parent, parent_hash.clone()).into());
                 visited.insert(parent_hash.clone());

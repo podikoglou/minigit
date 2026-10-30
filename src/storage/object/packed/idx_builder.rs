@@ -143,7 +143,7 @@ impl PackIndexBuilder {
             let prefix = prefix as usize;
 
             // populate fanout table cumulatively
-            for i in 0..=prefix {
+            for i in prefix..idx.fanout_table.len() {
                 if let Some(entry) = idx.fanout_table.get_mut(i) {
                     *entry += 1;
                 }

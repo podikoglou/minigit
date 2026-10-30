@@ -128,6 +128,10 @@ impl PackIndexBuilder {
 
         let mut intermediate: Vec<IntermediateTableEntry> = Vec::default();
 
+        // a slice of the pack data, relative to the start of the first object, which the offsets
+        // also are naturally, due to the way the `objects` iterator works
+        let pack_data = &self.mmap[12..];
+
         let mut iter = self.objects().peekable();
 
         while let Some(packed_object) = iter.next()? {
@@ -139,7 +143,7 @@ impl PackIndexBuilder {
             // exists
             let end = match iter.peek()? {
                 Some(next) => next.offset(),
-                None => self.mmap.len() - 20,
+                None => pack_data.len() - 20,
             };
 
             let raw_object = self.resolve(packed_object, cache)?;
@@ -159,7 +163,7 @@ impl PackIndexBuilder {
             idx.objects_count = idx.fanout_table[255] as usize;
 
             // compute CRC on the full packed object including its header
-            let object_bytes = &self.mmap[offset..end];
+            let object_bytes = &pack_data[offset..end];
             let crc = crc32fast::hash(object_bytes);
 
             // figure out where to place offset

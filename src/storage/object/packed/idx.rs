@@ -149,6 +149,7 @@ impl PackIndex {
     pub fn new(path: impl AsRef<Path>) -> Self {
         Self {
             path: path.as_ref().to_path_buf(),
+            fanout_table: vec![0x00; 256],
             ..Default::default()
         }
     }

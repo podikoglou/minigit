@@ -160,8 +160,6 @@ impl PackIndexBuilder {
                 }
             }
 
-            idx.objects_count = idx.fanout_table[255] as usize;
-
             // compute CRC on the full packed object including its header
             let object_bytes = &pack_data[offset..end];
             let crc = crc32fast::hash(object_bytes);
@@ -193,6 +191,7 @@ impl PackIndexBuilder {
             }
         }
 
+        idx.objects_count = idx.fanout_table[255] as usize;
         Ok(idx)
     }
 }

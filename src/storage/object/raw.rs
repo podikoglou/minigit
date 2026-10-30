@@ -32,7 +32,7 @@ pub struct RawObject {
 }
 
 impl RawObject {
-    /// Creates a new [RawObject] given its type and raw bytes.
+    /// Creates a new [RawObject] given its type and raw uncompressed bytes.
     ///
     /// Does **not** perform any validation.
     pub fn new(r#type: ObjectType, bytes: Vec<u8>) -> Self {

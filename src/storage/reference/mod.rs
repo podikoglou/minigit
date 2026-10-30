@@ -12,7 +12,7 @@ use crate::{
     MinigitError,
     error::ParserContext,
     object::hash::{ObjectHash, parse_object_hash_str},
-    parsing::Stream,
+    parsing::{ParseResultExt, Stream},
 };
 
 pub mod db;
@@ -43,9 +43,7 @@ impl Ref {
 
         let pointer = parse_ref_pointer
             .parse(Stream::new(&contents))
-            .map_err(|err| {
-                MinigitError::ParserError(err.to_string(), ParserContext::File(path.to_path_buf()))
-            })?;
+            .with_context(ParserContext::File(path.to_path_buf()))?;
 
         Ok(Ref {
             name: name.to_owned(),
@@ -65,7 +63,7 @@ impl FromStr for RefPointer {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         parse_ref_pointer
             .parse(Stream::new(s.as_bytes()))
-            .map_err(|err| MinigitError::ParserError(err.to_string(), ParserContext::None))
+            .with_context(ParserContext::None)
     }
 }
 

@@ -112,10 +112,7 @@ pub enum MinigitError {
     TooMuchData,
 
     #[error(transparent)]
-    Parse(#[from] ParseError),
-
-    #[error("Error parsing {1:?}: {0}")]
-    ParserError(String, ParserContext),
+    ParserError(#[from] ParseError),
 
     #[error("Invalid pack index")]
     InvalidPackIndex,

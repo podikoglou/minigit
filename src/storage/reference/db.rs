@@ -12,7 +12,7 @@ use crate::{
     MinigitError,
     error::ParserContext,
     object::hash::parse_object_hash_str,
-    parsing::Stream,
+    parsing::{ParseNextExt, Stream},
     storage::reference::{Ref, RefPointer},
 };
 
@@ -31,11 +31,10 @@ impl RefsDb {
         let file = File::open(&path)?;
         let mmap = unsafe { Mmap::map(&file) }?;
 
+        let mut stream = Stream::new(&mmap);
         let flags = parse_header
-            .parse_next(&mut Stream::new(&mmap))
-            .map_err(|err| {
-                MinigitError::ParserError(err.to_string(), ParserContext::File(path.clone()))
-            })?;
+            .parse_next(&mut stream)
+            .context_err(ParserContext::File(path.clone()), &stream)?;
 
         Ok(Self {
             path,
@@ -56,14 +55,12 @@ impl RefsDb {
 
         terminated(parse_header, opt(newline))
             .parse_next(&mut stream)
-            .map_err(|err| {
-                MinigitError::ParserError(err.to_string(), ParserContext::File(self.path.clone()))
-            })?;
+            .context_err(ParserContext::File(self.path.clone()), &stream)?;
 
         while !stream.is_empty() {
-            let entry = parse_entry.parse_next(&mut stream).map_err(|err| {
-                MinigitError::ParserError(err.to_string(), ParserContext::File(self.path.clone()))
-            })?;
+            let entry = parse_entry
+                .parse_next(&mut stream)
+                .context_err(ParserContext::File(self.path.clone()), &stream)?;
 
             if entry.name == name {
                 return Ok(entry);

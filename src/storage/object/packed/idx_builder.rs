@@ -151,8 +151,6 @@ impl PackIndexBuilder {
         let mut iter = self.objects().peekable();
 
         while let Some(packed_object) = iter.next()? {
-            // wait, why is this usize? what about 32 bit computers? can we address large
-            // packfiles in them at all?
             let offset = packed_object.offset();
 
             // offset of the end of the object in the packfile, aka, the start of the next if it

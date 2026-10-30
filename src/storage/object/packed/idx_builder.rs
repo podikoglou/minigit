@@ -21,25 +21,33 @@ use crate::{
 
 #[derive(Debug)]
 pub struct PackIndexBuilder {
-    path: PathBuf,
+    pack_path: PathBuf,
+    index_path: PathBuf,
     mmap: Mmap,
 
     objects_expected: usize,
 }
 
 impl PackIndexBuilder {
-    pub fn new(path: PathBuf) -> Result<Self, MinigitError> {
-        let file = File::open(&path)?;
+    /// Creates a new pack builder, memory-mapping the packfile and parsing its header.
+    ///
+    /// If `index_path` is not provided, it is inferred from the pack's path, where the `.pack`
+    /// extension is replaced with `.idx`
+    pub fn new(pack_path: PathBuf, index_path: Option<PathBuf>) -> Result<Self, MinigitError> {
+        let index_path = index_path.unwrap_or_else(|| pack_path.with_extension("idx"));
+
+        let file = File::open(&pack_path)?;
         let mmap = unsafe { Mmap::map(&file) }?;
 
         let mut stream = Stream::new(&mmap);
 
         let header = header.parse_next(&mut stream).map_err(|err| {
-            MinigitError::ParserError(err.to_string(), ParserContext::File(path.to_owned()))
+            MinigitError::ParserError(err.to_string(), ParserContext::File(pack_path.to_owned()))
         })?;
 
         Ok(Self {
-            path,
+            pack_path,
+            index_path,
             mmap,
             objects_expected: header.objects as usize,
         })
@@ -49,7 +57,7 @@ impl PackIndexBuilder {
         PackStream::new_from_stream(
             Stream::new(&self.mmap[12..]),
             self.objects_expected,
-            ParserContext::File(self.path.clone()),
+            ParserContext::File(self.pack_path.clone()),
         )
     }
 
@@ -61,12 +69,15 @@ impl PackIndexBuilder {
             .map_err(|err: ErrMode<ContextError>| {
                 MinigitError::ParserError(
                     err.to_string(),
-                    ParserContext::File(self.path.to_owned()),
+                    ParserContext::File(self.pack_path.to_owned()),
                 )
             })?;
 
         object.parse_next(&mut stream).map_err(|err| {
-            MinigitError::ParserError(err.to_string(), ParserContext::File(self.path.to_owned()))
+            MinigitError::ParserError(
+                err.to_string(),
+                ParserContext::File(self.pack_path.to_owned()),
+            )
         })
     }
 
@@ -113,7 +124,7 @@ impl PackIndexBuilder {
     }
 
     pub fn build(&self, cache: &mut ObjectCache) -> Result<PackIndex, MinigitError> {
-        let mut idx = PackIndex::new(&self.path);
+        let mut idx = PackIndex::new(&self.index_path);
 
         let mut intermediate: Vec<IntermediateTableEntry> = Vec::default();
 

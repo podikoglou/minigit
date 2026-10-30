@@ -6,15 +6,17 @@
 //!
 //! In particular, this deals with version 2 of the packfile format.
 
-mod delta;
+pub mod builder;
+pub mod delta;
 pub mod idx;
+pub mod idx_builder;
 mod object;
+pub mod stream;
 
 pub use object::*;
 
 use std::{fs::File, path::PathBuf, rc::Rc};
 
-use fallible_iterator::FallibleIterator;
 use memmap2::Mmap;
 use winnow::{
     ModalResult, Parser,
@@ -30,11 +32,9 @@ use crate::{
     object::hash::ObjectHash,
     parsing::Stream,
     storage::object::{
-        LazyObject, RawObject,
-        packed::{
-            delta::{CopyInstruction, InsertInstruction, Instruction},
-            idx::PackIndex,
-        },
+        LazyObject, ObjectDb, RawObject,
+        loose::Encode,
+        packed::{idx::PackIndex, stream::PackStream},
     },
 };
 
@@ -90,16 +90,15 @@ impl Packfile {
     }
 
     /// Returns an iterator over the objects of the packfile.
-    pub fn objects<'a>(&'a self) -> Objects<'a> {
+    pub fn objects<'a>(&'a self) -> PackStream<'a> {
         let mut buf = Stream::new(&self.pack.1[..]);
         let _: ModalResult<_> = take(12usize).parse_next(&mut buf);
 
-        Objects {
-            amount: self.objects_count as usize,
-            context: ParserContext::File(self.path().to_owned()),
-            read: 0,
+        PackStream::new_from_stream(
             buf,
-        }
+            self.objects_count as usize,
+            ParserContext::File(self.path().to_owned()),
+        )
     }
 
     /// Returns an iterator over the objects of the packfile as [LazyObject]s.
@@ -140,6 +139,12 @@ impl Packfile {
         self.read_object_at_offset(offset)
     }
 
+    /// Reads and resolves a [`RawObject`] by its ID ([`ObjectHash`]) from the packfile.
+    pub fn raw_object(&self, hash: &ObjectHash) -> Result<RawObject, MinigitError> {
+        let packed = self.read_object_by_id(hash.clone())?;
+        self.resolve(packed)
+    }
+
     /// Resolves a [PackedObject] into a [RawObject], resolving the deltas if it is deltified.
     pub fn resolve(&self, object: PackedObject) -> Result<RawObject, MinigitError> {
         match object {
@@ -153,21 +158,7 @@ impl Packfile {
 
                 let base_raw = self.resolve(base_packed)?;
 
-                let mut new_bytes: Vec<u8> =
-                    Vec::with_capacity(delta.deltified_object_size as usize);
-
-                for instruction in delta.instructions {
-                    let mut new_data = match instruction {
-                        Instruction::Insert(InsertInstruction(data)) => data,
-                        Instruction::Copy(CopyInstruction { offset, size }) => {
-                            base_raw.bytes[offset as usize..offset as usize + size as usize].into()
-                        }
-                    };
-
-                    new_bytes.append(&mut new_data);
-                }
-
-                Ok(RawObject::new(base_raw.r#type, new_bytes))
+                Ok(base_raw.apply_delta(delta))
             }
 
             PackedObject::Undeltified(_, object) => Ok(object.into_inner()),
@@ -188,47 +179,34 @@ impl PartialEq for Packfile {
     }
 }
 
-/// An iterator over [PackedObject].
-pub struct Objects<'a> {
-    /// The amount of objects to read. [`Self::next`] will start returning `None` after having read
-    /// `amount` objects.
-    amount: usize,
+impl Eq for Packfile {}
 
-    /// The parser context, used for error reporting.
-    context: ParserContext,
-
-    /// A slice of the packfile's contents, starting from the first object.
-    buf: Stream<'a>,
-
-    /// (state) The amount of objects that have been read so far.
-    read: usize,
-}
-
-impl FallibleIterator for Objects<'_> {
-    type Item = PackedObject;
-    type Error = MinigitError;
-
-    fn next(&mut self) -> Result<Option<PackedObject>, MinigitError> {
-        if self.read >= self.amount {
-            return Ok(None);
-        }
-
-        let object = object
-            .parse_next(&mut self.buf)
-            .map_err(|err| MinigitError::ParserError(err.to_string(), self.context.to_owned()))?;
-
-        self.read += 1;
-
-        Ok(Some(object))
+impl ObjectDb for Packfile {
+    fn raw_object(&self, hash: &ObjectHash) -> Result<RawObject, MinigitError> {
+        self.raw_object(hash)
     }
 }
 
-impl Eq for Packfile {}
-
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct PackfileHeader {
     /// The amount of objects contained in the packfile.
     pub objects: u32,
+}
+
+impl PackfileHeader {
+    pub fn new(objects: u32) -> Self {
+        Self { objects }
+    }
+}
+
+impl Encode for PackfileHeader {
+    fn encode<W: std::io::prelude::Write>(&self, writer: &mut W) -> Result<(), MinigitError> {
+        write!(writer, "PACK")?;
+        writer.write_all(&[0x00, 0x00, 0x00, 0x02])?;
+        writer.write_all(&self.objects.to_be_bytes())?;
+
+        Ok(())
+    }
 }
 
 /// Parses the header of a packfile, returning the amount of objects contained in the packfile.
@@ -242,29 +220,31 @@ pub fn header(input: &mut Stream<'_>) -> ModalResult<PackfileHeader> {
     .parse_next(input)
 }
 
-fn offset(input: &mut Stream<'_>) -> ModalResult<u64> {
+pub fn offset(input: &mut Stream<'_>) -> ModalResult<u64> {
     let mut current_byte = any.parse_next(input)?;
-    let mut offset = (current_byte & 0b0111_1111) as u64;
+    let mut value = (current_byte & 0b0111_1111) as u64;
 
     while current_byte >= 128 {
         current_byte = any.parse_next(input)?;
 
         let chunk = (current_byte & 0b0111_1111) as u64;
 
-        offset += 1;
-        offset = (offset << 7) | chunk;
+        match value.checked_add(1) {
+            Some(val) => value = val,
+            None => break,
+        }
+        value = (value << 7) | chunk;
     }
 
-    Ok(offset)
+    Ok(value)
 }
 
-fn size(input: &mut Stream<'_>) -> ModalResult<u64> {
-    // TODO: check to ensure this fits inside a u64
+pub fn size(input: &mut Stream<'_>) -> ModalResult<u64> {
     let mut current_byte = any.parse_next(input)?;
     let mut value = (current_byte & 0b0111_1111) as u64;
     let mut pos = 7;
 
-    while current_byte >= 128 {
+    while current_byte >= 128 && pos < 70 {
         current_byte = any.parse_next(input)?;
 
         // these are the bits that constitute the size, which is the byte as-is, but with the first

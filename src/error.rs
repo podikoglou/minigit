@@ -45,6 +45,9 @@ pub enum MinigitError {
     #[error("Unexpected object type")]
     UnexpectedType,
 
+    #[error("Too much data")]
+    TooMuchData,
+
     // Ideally, we'd take advantage of winnow's `ParseError`, but it contains a lifetime and we'd need
     // to make this type something like `MinigitError<'a>`, which means we'd need to specify the
     // lifetime every time we use it.
@@ -60,4 +63,7 @@ pub enum MinigitError {
 
     #[error("Hex decoding error: {0}")]
     HexDecodingError(#[from] FromHexError),
+
+    #[error("Invalid instruction")]
+    InvalidInstruction,
 }

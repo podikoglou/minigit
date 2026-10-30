@@ -17,6 +17,7 @@ One of the following subcommands must be present:
     parse-pack
     unpack-objects
     log
+    index-pack
 ```
 
 

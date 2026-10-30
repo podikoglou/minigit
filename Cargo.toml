@@ -7,6 +7,7 @@ edition = "2024"
 argh = "0.1.19"
 bstr = "1.13.1"
 chrono = "0.4.45"
+crc32fast = "1.5.3"
 fallible-iterator = "0.3.0"
 flate2 = { version = "1.1.10", features = ["zlib-rs"] }
 hex = "0.4.3"
@@ -16,6 +17,7 @@ itertools = "0.15.0"
 memmap2 = "0.9.11"
 nutype = "0.7.0"
 owo-colors = { version = "4.4.0", features = ["supports-color", "supports-colors"] }
+quick_cache = "0.7.0"
 sha1 = "0.11.0"
 strum = { version = "0.28.0", features = ["derive"] }
 thiserror = "2.0.20"
@@ -28,6 +30,7 @@ git2 = "0.21.0"
 hegeltest = { version = "0.45.3", features = ["chrono"] }
 include_dir = "0.7.4"
 insta = "1.43.0"
+similar-asserts = "2.0.0"
 tar = "0.4.46"
 tempfile = "3.27.0"
 

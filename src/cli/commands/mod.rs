@@ -1,4 +1,5 @@
 pub mod hash_object;
+pub mod index_pack;
 pub mod log;
 pub mod ls_buckets;
 pub mod ls_objects;

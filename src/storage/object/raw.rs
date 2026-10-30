@@ -13,7 +13,10 @@ use crate::{
         tag::parse_tag, tree::parse_tree,
     },
     parsing::Stream,
-    storage::object::loose::Encode,
+    storage::object::{
+        loose::Encode,
+        packed::delta::{CopyInstruction, Delta, InsertInstruction, Instruction},
+    },
 };
 
 /// An object that has not been parsed yet.
@@ -29,7 +32,7 @@ pub struct RawObject {
 }
 
 impl RawObject {
-    /// Creates a new [RawObject] given its type and raw bytes.
+    /// Creates a new [RawObject] given its type and raw uncompressed bytes.
     ///
     /// Does **not** perform any validation.
     pub fn new(r#type: ObjectType, bytes: Vec<u8>) -> Self {
@@ -57,6 +60,24 @@ impl RawObject {
         self.encode(&mut buf)?;
 
         Ok(Sha1::digest(buf).into())
+    }
+
+    /// Returns a new [RawObject] based on this, with a [Delta] applied.
+    pub fn apply_delta(&self, delta: Delta) -> RawObject {
+        let mut new_bytes: Vec<u8> = Vec::with_capacity(delta.deltified_object_size as usize);
+
+        for instruction in delta.instructions {
+            let mut new_data = match instruction {
+                Instruction::Insert(InsertInstruction(data)) => data,
+                Instruction::Copy(CopyInstruction { offset, size }) => {
+                    self.bytes[offset as usize..offset as usize + size as usize].into()
+                }
+            };
+
+            new_bytes.append(&mut new_data);
+        }
+
+        RawObject::new(self.r#type, new_bytes)
     }
 
     pub fn encode_compressed<W: Write>(&self, writer: &mut W) -> Result<(), MinigitError> {

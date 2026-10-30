@@ -1,7 +1,7 @@
 //! This module deals with the packfile index format.
 
 use std::{
-    fs::{self},
+    fs::{self, File},
     io::Write,
     path::{Path, PathBuf},
 };
@@ -151,6 +151,15 @@ impl PackIndex {
             path: path.as_ref().to_path_buf(),
             ..Default::default()
         }
+    }
+
+    /// Writes (overwriting contents) the index to the filesystem.
+    pub fn write(&self) -> Result<(), MinigitError> {
+        let mut file = File::create(&self.path)?;
+
+        self.encode(&mut file)?;
+
+        Ok(())
     }
 
     /// Gets the object count.

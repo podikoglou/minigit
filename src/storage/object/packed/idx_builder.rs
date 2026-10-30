@@ -151,9 +151,6 @@ impl PackIndexBuilder {
 
             idx.objects_count = idx.fanout_table[255] as usize;
 
-            // populate object names
-            idx.object_names.push(hash.clone());
-
             let crc = crc32fast::hash(&raw_object.bytes);
 
             // figure out where to place offset
@@ -173,7 +170,8 @@ impl PackIndexBuilder {
         // does this sort as we expect it to?
         intermediate.sort();
 
-        for IntermediateTableEntry(_, crc, offset) in intermediate {
+        for IntermediateTableEntry(hash, crc, offset) in intermediate {
+            idx.object_names.push(hash);
             idx.crc_entries.push(crc);
 
             match offset {

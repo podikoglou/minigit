@@ -4,7 +4,7 @@ use std::{
     sync::Arc,
 };
 
-use once_cell::unsync::OnceCell;
+use once_cell::sync::OnceCell;
 
 use crate::{
     TinygitError,

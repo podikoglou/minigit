@@ -7,17 +7,14 @@ use winnow::Parser;
 
 use crate::{
     TinygitError,
-    ende::Decode,
+    ende::{Decode, Encode},
     error::ParserContext,
     object::{
         Object, ObjectType, blob::Blob, commit::Commit, hash::ObjectHash,
         tag::Tag, tree::Tree,
     },
     parsing::{ParseNextExt, Stream},
-    storage::object::{
-        loose::Encode,
-        packed::delta::{CopyInstruction, Delta, InsertInstruction, Instruction},
-    },
+    storage::object::packed::delta::{CopyInstruction, Delta, InsertInstruction, Instruction},
 };
 
 /// An object that has not been parsed yet.

@@ -4,16 +4,16 @@ use std::fs::{self, File};
 
 use include_dir::{Dir, include_dir};
 use insta::assert_debug_snapshot;
-use tinygit::storage::object::{
-    loose::Encode,
-    packed::{
+use similar_asserts::assert_eq;
+use tinygit::{
+    ende::Encode,
+    storage::object::packed::{
         Packfile,
         builder::PackBuilder,
         idx::PackIndex,
         idx_builder::{ObjectCache, PackIndexBuilder},
     },
 };
-use similar_asserts::assert_eq;
 
 use crate::common::unpack_repo;
 

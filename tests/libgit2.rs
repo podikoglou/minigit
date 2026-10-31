@@ -12,10 +12,11 @@ use git2::{
 };
 use include_dir::{Dir, include_dir};
 use tinygit::{
+    ende::Encode,
     error::ParserContext,
     identity::{Email, Identity, Name},
     object::{Object, ObjectType as TinygitObjectType, hash::ObjectHash},
-    storage::{object::loose::Encode, reference::RefPointer},
+    storage::reference::RefPointer,
 };
 use std::str::FromStr;
 

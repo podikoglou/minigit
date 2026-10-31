@@ -13,14 +13,6 @@ use crate::{
 use flate2::read::ZlibDecoder;
 use std::io::{BufRead, Read, Write};
 
-/// Behaviour for encoding a value in the relevant format.
-///
-/// The trait isn't unique to a specific format, but it must be the case that for this trait to be
-/// implemented for a type, there is only *one* way to encode a value of that type.
-pub trait Encode {
-    fn encode<W: Write>(&self, writer: &mut W) -> Result<(), TinygitError>;
-}
-
 /// Reads and parses an [Object] from a [`Read`].
 ///
 /// Objects are typically small enough, so this is not a streaming operation.

@@ -2,7 +2,7 @@ use std::io::Write;
 
 use winnow::{ModalResult, Parser, error::StrContext, token::rest};
 
-use crate::{ende::Decode, parsing::Stream, storage::object::loose::Encode};
+use crate::{ende::Decode, parsing::Stream, ende::Encode};
 
 /// An blob: an object that simply contains some bytes.
 ///

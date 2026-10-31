@@ -5,7 +5,7 @@ use crate::{
     ende::Decode,
     error::ParserContext,
     parsing::{ParseResultExt, Stream},
-    storage::object::loose::Encode,
+    ende::Encode,
 };
 use std::{fmt::Display, path::PathBuf, str::FromStr};
 use winnow::{ModalResult, Parser, combinator::terminated, token::take_until};

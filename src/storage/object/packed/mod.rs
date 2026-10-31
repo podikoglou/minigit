@@ -28,13 +28,12 @@ use winnow::{
 
 use crate::{
     TinygitError,
-    ende::Decode,
+    ende::{Decode, Encode},
     error::ParserContext,
     object::hash::ObjectHash,
     parsing::{ParseNextExt, Stream},
     storage::object::{
         LazyObject, ObjectDb, RawObject,
-        loose::Encode,
         packed::{idx::PackIndex, stream::PackStream},
     },
 };

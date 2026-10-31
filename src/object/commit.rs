@@ -11,7 +11,7 @@ use crate::{
     identity::Identity,
     object::hash::{ObjectHash, parse_object_hash_str},
     parsing::{Stream, extra_property, property},
-    storage::object::loose::Encode,
+    ende::Encode,
     time::Timestamp,
 };
 use std::io::Write;
@@ -156,7 +156,7 @@ mod tests {
     use crate::{
         identity::{Email, Identity, Name},
         object::{commit::Commit, hash::ObjectHash},
-        storage::object::loose::Encode,
+        ende::Encode,
         time::Timestamp,
     };
 

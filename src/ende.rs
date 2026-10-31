@@ -25,28 +25,36 @@ pub trait Decode: Sized {
         Self::parse.parse(input).with_context(context)
     }
 
+    /// Parses from a byte slice with appropriate context.
+    fn decode_bytes_with_context(
+        input: &[u8],
+        context: ParserContext,
+    ) -> Result<Self, TinygitError> {
+        let stream = Stream::new(input);
+
+        Self::parse.parse(stream).with_context(context)
+    }
+
+    /// Parses from a byte slice, with no context.
+    fn decode_bytes(input: &[u8]) -> Result<Self, TinygitError> {
+        Self::decode_bytes_with_context(input, ParserContext::None)
+    }
+
     /// Parses from a [Path] with appropriate context.
     fn decode_file(path: impl AsRef<Path>) -> Result<Self, TinygitError> {
         let path = path.as_ref();
         let bytes = fs::read(path)?;
-        let stream = Stream::new(&bytes);
 
-        Self::parse
-            .parse(stream)
-            .with_context(ParserContext::File(path.to_path_buf()))
+        Self::decode_bytes_with_context(&bytes, ParserContext::File(path.to_path_buf()))
     }
 
     /// Parses from a string slice, with no context.
     fn decode_str(input: &str) -> Result<Self, TinygitError> {
-        let stream = Stream::new(input.as_bytes());
-
-        Self::parse.parse(stream).with_context(ParserContext::None)
+        Self::decode_bytes(input.as_bytes())
     }
 
     /// Parses from a string slice with appropriate context.
     fn decode_str_with_context(input: &str, context: ParserContext) -> Result<Self, TinygitError> {
-        let stream = Stream::new(input.as_bytes());
-
-        Self::parse.parse(stream).with_context(context)
+        Self::decode_bytes_with_context(input.as_bytes(), context)
     }
 }

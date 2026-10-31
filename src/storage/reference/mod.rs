@@ -1,6 +1,6 @@
 //! This module deals with the storage and parsing of refs (`.git/refs`)
 
-use std::{fs, path::Path, str::FromStr};
+use std::path::Path;
 
 use winnow::{
     ModalResult, Parser,
@@ -11,9 +11,8 @@ use winnow::{
 use crate::{
     TinygitError,
     ende::Decode,
-    error::ParserContext,
     object::hash::{ObjectHash, parse_object_hash_str},
-    parsing::{ParseResultExt, Stream},
+    parsing::Stream,
 };
 
 pub mod db;
@@ -38,13 +37,7 @@ impl Ref {
     ///
     /// No validation is done to ensure the name matches the path, so is trusted.
     pub fn open_loose(path: impl AsRef<Path>, name: &RefName) -> Result<Ref, TinygitError> {
-        let path = path.as_ref();
-
-        let contents = fs::read(path)?;
-
-        let pointer = RefPointer::parse
-            .parse(Stream::new(&contents))
-            .with_context(ParserContext::File(path.to_path_buf()))?;
+        let pointer = RefPointer::decode_file(path)?;
 
         Ok(Ref {
             name: name.to_owned(),
@@ -80,6 +73,8 @@ impl Decode for RefPointer {
 
 #[cfg(test)]
 mod tests {
+    use crate::ParserContext;
+
     use super::*;
 
     #[test]

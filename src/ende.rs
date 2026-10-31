@@ -1,3 +1,8 @@
+use std::{
+    fs::{self},
+    path::Path,
+};
+
 use winnow::{ModalResult, Parser as _};
 
 use crate::{
@@ -18,5 +23,16 @@ pub trait Decode: Sized {
     /// Parses from a [Stream] with some context.
     fn decode_stream(input: Stream, context: ParserContext) -> Result<Self, TinygitError> {
         Self::parse.parse(input).with_context(context)
+    }
+
+    /// Parses from a [Path] with appropriate context.
+    fn decode_file(path: impl AsRef<Path>) -> Result<Self, TinygitError> {
+        let path = path.as_ref();
+        let bytes = fs::read(path)?;
+        let stream = Stream::new(&bytes);
+
+        Self::parse
+            .parse(stream)
+            .with_context(ParserContext::File(path.to_path_buf()))
     }
 }

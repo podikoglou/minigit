@@ -27,7 +27,7 @@ use crate::{
         RawObject,
         loose::Encode,
         packed::{
-            delta::{Delta, delta},
+            delta::Delta,
             offset,
         },
     },
@@ -341,7 +341,7 @@ impl Decode for DeltifiedObject {
         // consume the amount of bytes that the decoder read, advancing the `input` slice
         take(decoder.total_in() as usize).parse_next(input)?;
 
-        let delta = delta.parse_next(&mut Stream::new(&buf))?;
+        let delta = Delta::parse.parse_next(&mut Stream::new(&buf))?;
 
         Ok(DeltifiedObject::new((base_object, delta)))
     }

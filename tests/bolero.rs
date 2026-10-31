@@ -12,7 +12,7 @@ use tinygit::{
         packed::{
             self, PackedObject, PackedObjectHeader, DeltifiedObject, UndeltifiedObject,
             PackedObjectType, base_object,
-            delta::{copy_instruction, delta, insert_instruction, instruction},
+            delta::{CopyInstruction, Delta, InsertInstruction, Instruction},
             size, PackfileHeader,
         },
     },
@@ -136,9 +136,7 @@ fn fuzz_tree() {
 #[test]
 fn fuzz_insert_instruction() {
     check!().for_each(|input: &[u8]| {
-        let stream = Stream::new(input);
-
-        if let Ok(instruction) = insert_instruction.parse(stream) {
+        if let Ok(instruction) = InsertInstruction::decode_bytes(input) {
             let mut buf = Vec::default();
 
             instruction.encode(&mut buf).expect("should be encodable");
@@ -164,17 +162,12 @@ fn fuzz_insert_instruction() {
 #[test]
 fn fuzz_copy_instruction() {
     check!().for_each(|input: &[u8]| {
-        let stream = Stream::new(input);
-
-        if let Ok(instruction) = copy_instruction.parse(stream) {
+        if let Ok(instruction) = CopyInstruction::decode_bytes(input) {
             let mut buf = Vec::default();
 
             instruction.encode(&mut buf).expect("should be encodable");
 
-            let stream_2 = Stream::new(&buf);
-
-            let instruction_2 = copy_instruction
-                .parse(stream_2)
+            let instruction_2 = CopyInstruction::decode_bytes(&buf)
                 .expect("should be parseable");
             assert_eq!(instruction_2, instruction);
         }
@@ -184,16 +177,12 @@ fn fuzz_copy_instruction() {
 #[test]
 fn fuzz_delta_instruction() {
     check!().for_each(|input: &[u8]| {
-        let stream = Stream::new(input);
-
-        if let Ok(instr) = instruction.parse(stream) {
+        if let Ok(instr) = Instruction::decode_bytes(input) {
             let mut buf = Vec::default();
 
             instr.encode(&mut buf).expect("should be encodable");
 
-            let stream_2 = Stream::new(&buf);
-
-            let instruction_2 = instruction.parse(stream_2).expect("should be parseable");
+            let instruction_2 = Instruction::decode_bytes(&buf).expect("should be parseable");
             assert_eq!(instruction_2, instr);
         }
     });
@@ -221,14 +210,12 @@ fn fuzz_size() {
 #[test]
 fn fuzz_delta() {
     check!().for_each(|input: &[u8]| {
-        let stream = Stream::new(input);
-
-        if let Ok(parsed) = delta.parse(stream) {
+        if let Ok(parsed) = Delta::decode_bytes(input) {
             let mut buf = Vec::default();
 
             (parsed).encode(&mut buf).expect("should be encodable");
 
-            let parsed_2 = delta.parse(Stream::new(&buf)).expect("should be parseable");
+            let parsed_2 = Delta::decode_bytes(&buf).expect("should be parseable");
 
             assert_eq!(parsed_2, parsed);
         }

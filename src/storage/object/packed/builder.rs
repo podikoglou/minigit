@@ -7,13 +7,11 @@ use sha1::{
 
 use crate::{
     TinygitError,
+    ende::Encode,
     object::hash::ObjectHash,
     storage::{
         Store,
-        object::{
-            loose::Encode,
-            packed::{PackedObject, PackfileHeader, UndeltifiedObject},
-        },
+        object::packed::{PackedObject, PackfileHeader, UndeltifiedObject},
     },
 };
 

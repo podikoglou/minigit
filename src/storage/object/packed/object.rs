@@ -17,7 +17,7 @@ use winnow::{
 
 use crate::{
     TinygitError,
-    ende::Decode,
+    ende::{Decode, Encode},
     object::{
         ObjectType,
         hash::{ObjectHash, parse_object_hash},
@@ -25,7 +25,6 @@ use crate::{
     parsing::Stream,
     storage::object::{
         RawObject,
-        loose::Encode,
         packed::{
             delta::Delta,
             offset,

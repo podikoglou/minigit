@@ -24,11 +24,11 @@ use winnow::{
 
 use crate::{
     TinygitError,
-    ende::Decode,
+    ende::{Decode, Encode},
     error::ParserContext,
     object::hash::ObjectHash,
     parsing::{ParseResultExt, Stream},
-    storage::object::{LazyObject, loose::Encode},
+    storage::object::LazyObject,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone, EnumDiscriminants, EnumIs, EnumTryAs)]

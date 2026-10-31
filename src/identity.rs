@@ -13,7 +13,7 @@ use winnow::{
     token::take_until,
 };
 
-use crate::{ende::Decode, parsing::Stream, storage::object::loose::Encode};
+use crate::{ende::Decode, parsing::Stream, ende::Encode};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Identity {

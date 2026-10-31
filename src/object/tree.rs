@@ -12,7 +12,7 @@ use crate::{
     fs::FileName,
     object::hash::{ObjectHash, parse_object_hash},
     parsing::{Stream, mode},
-    storage::object::loose::Encode,
+    ende::Encode,
 };
 
 /// The key for a [`Tree`] entry.

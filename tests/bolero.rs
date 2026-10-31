@@ -1,16 +1,16 @@
 use bolero::check;
 use chrono::{DateTime, FixedOffset};
 use tinygit::{
-    ende::Decode,
+    ende::{Decode, Encode},
     error::ParserContext,
     fs::FileName,
     identity::Identity,
     object::{commit::Commit, parse_header, tag::Tag, tree::Tree},
     parsing::Stream,
     storage::object::{
-        loose::{Encode, read_object, read_object_compressed},
+        loose::{read_object, read_object_compressed},
         packed::{
-            self, PackedObject, PackedObjectHeader, DeltifiedObject, UndeltifiedObject,
+            PackedObject, PackedObjectHeader, DeltifiedObject, UndeltifiedObject,
             PackedObjectType, base_object,
             delta::{CopyInstruction, Delta, InsertInstruction, Instruction},
             size, PackfileHeader,

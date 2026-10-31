@@ -7,9 +7,9 @@ use winnow::{
 
 use crate::{
     TinygitError,
-    ende::Decode,
+    ende::{Decode, Encode},
     parsing::Stream,
-    storage::object::{loose::Encode, packed::size},
+    storage::object::packed::size,
 };
 
 #[derive(Debug, PartialEq)]

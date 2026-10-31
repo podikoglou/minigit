@@ -1,5 +1,6 @@
 use std::{
     fs::{self},
+    io::Write,
     path::Path,
 };
 
@@ -9,6 +10,14 @@ use crate::{
     ParserContext, TinygitError,
     parsing::{ParseResultExt, Stream},
 };
+
+/// Behaviour for encoding a value in the relevant format.
+///
+/// The trait isn't unique to a specific format, but it must be the case that for this trait to be
+/// implemented for a type, there is only *one* way to encode a value of that type.
+pub trait Encode {
+    fn encode<W: Write>(&self, writer: &mut W) -> Result<(), TinygitError>;
+}
 
 /// Behaviour for contextfully decoding a value from some bytes.
 ///

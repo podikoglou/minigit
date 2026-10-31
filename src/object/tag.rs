@@ -16,7 +16,7 @@ use crate::{
         parse_object_type,
     },
     parsing::{Stream, property},
-    storage::object::loose::Encode,
+    ende::Encode,
     time::Timestamp,
 };
 

@@ -22,7 +22,7 @@ use crate::{
     error::ParserContext,
     object::hash::{ObjectHash, parse_object_hash},
     parsing::{ParseNextExt, Stream},
-    storage::object::loose::Encode,
+    ende::Encode,
 };
 
 /// A packfile index providing information for reading a Packfile.

@@ -153,7 +153,7 @@ mod roundtrip {
     use tinygit::error::ParserContext;
     use tinygit::object::{Object, ObjectType, hash::ObjectHash, tag::Tag};
 
-    use tinygit::storage::object::loose::Encode;
+    use tinygit::ende::Encode;
     use tinygit::storage::object::loose::read_object;
 
     mod generators {

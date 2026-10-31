@@ -1,5 +1,5 @@
 pub mod error;
-pub use error::{TinygitError, ParseError, ParserContext};
+pub use error::{ParseError, ParserContext, TinygitError};
 
 pub mod object;
 pub mod storage;
@@ -12,3 +12,5 @@ pub mod parsing;
 
 mod repo;
 pub use repo::Repo;
+
+pub mod ende;

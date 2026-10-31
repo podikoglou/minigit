@@ -1,4 +1,4 @@
-use std::{env, path::PathBuf, rc::Rc};
+use std::{env, path::PathBuf, sync::Arc};
 
 use argh::FromArgs;
 use fallible_iterator::FallibleIterator;
@@ -22,7 +22,7 @@ impl UnpackObjectsCommand {
         let pack_path = PathBuf::from(file);
         let idx_path = pack_path.with_extension("idx");
 
-        let pack = Rc::new(Packfile::open(pack_path, idx_path)?);
+        let pack = Arc::new(Packfile::open(pack_path, idx_path)?);
 
         let bar = ProgressBar::new(pack.objects_count as u64);
 

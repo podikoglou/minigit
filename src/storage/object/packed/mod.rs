@@ -15,7 +15,7 @@ pub mod stream;
 
 pub use object::*;
 
-use std::{fs::File, path::PathBuf, rc::Rc};
+use std::{fs::File, path::PathBuf, sync::Arc};
 
 use memmap2::Mmap;
 use winnow::{
@@ -102,12 +102,12 @@ impl Packfile {
     }
 
     /// Returns an iterator over the objects of the packfile as [LazyObject]s.
-    pub fn lazy_objects(self: Rc<Self>) -> impl Iterator<Item = LazyObject> {
+    pub fn lazy_objects(self: Arc<Self>) -> impl Iterator<Item = LazyObject> {
         let count = self.idx.len();
 
         (0..count).map(move |i| {
             let offset = self.idx.offset_at(i);
-            LazyObject::Packed(Rc::clone(&self), offset)
+            LazyObject::Packed(Arc::clone(&self), offset)
         })
     }
 

@@ -1,4 +1,4 @@
-use std::{fs, io::Read, path::PathBuf, rc::Rc};
+use std::{fs, io::Read, path::PathBuf, sync::Arc};
 
 use crate::{
     TinygitError,
@@ -17,7 +17,7 @@ use winnow::{Parser, token::take};
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum LazyObject {
     Loose(PathBuf),
-    Packed(Rc<Packfile>, usize),
+    Packed(Arc<Packfile>, usize),
 }
 
 impl LazyObject {

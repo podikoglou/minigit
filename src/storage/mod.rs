@@ -1,7 +1,7 @@
 use std::{
     fs,
     path::PathBuf,
-    rc::Rc,
+    sync::Arc,
 };
 
 use once_cell::unsync::OnceCell;
@@ -28,8 +28,8 @@ pub struct Store {
     pub path: PathBuf,
     pub loose: LooseDb,
 
-    packs: Vec<Rc<Packfile>>,
-    refs_db: OnceCell<Rc<RefsDb>>,
+    packs: Vec<Arc<Packfile>>,
+    refs_db: OnceCell<Arc<RefsDb>>,
 }
 
 impl Store {
@@ -124,7 +124,7 @@ impl Store {
                     // TODO: when do we ever handle such failures? this seems important
                     let pack = Packfile::open(path, idx_path).ok()?;
 
-                    Some(Rc::new(pack))
+                    Some(Arc::new(pack))
                 })
                 .collect::<Vec<_>>()
         } else {
@@ -135,7 +135,7 @@ impl Store {
     }
 
     /// Gets all the [Packfile]s in the store.
-    pub fn packs(&self) -> impl Iterator<Item = Rc<Packfile>> {
+    pub fn packs(&self) -> impl Iterator<Item = Arc<Packfile>> {
         self.packs.iter().cloned()
     }
 
@@ -181,9 +181,9 @@ impl Store {
     }
 
     /// Gets a handle to the `packed-refs` database
-    pub fn ref_db(&self) -> Result<Rc<RefsDb>, TinygitError> {
+    pub fn ref_db(&self) -> Result<Arc<RefsDb>, TinygitError> {
         self.refs_db
-            .get_or_try_init(|| RefsDb::open(self.packed_refs_path()).map(Rc::new))
+            .get_or_try_init(|| RefsDb::open(self.packed_refs_path()).map(Arc::new))
             .cloned()
     }
 

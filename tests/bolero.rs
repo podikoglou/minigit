@@ -12,7 +12,7 @@ use tinygit::{
         packed::{
             self, PackedObjectType, base_object,
             delta::{copy_instruction, delta, insert_instruction, instruction},
-            deltified_object, header, object_header, size, undeltified_object,
+            deltified_object, object_header, size, undeltified_object, PackfileHeader,
         },
     },
     time::Timestamp,
@@ -332,15 +332,12 @@ fn fuzz_deltified_object() {
 #[test]
 fn fuzz_pack_header() {
     check!().for_each(|input: &[u8]| {
-        let stream = Stream::new(input);
-
-        if let Ok(parsed) = header.parse(stream) {
+        if let Ok(parsed) = PackfileHeader::decode_bytes(input) {
             let mut buf = Vec::default();
 
             parsed.encode(&mut buf).expect("should be encodable");
 
-            let parsed_2 = header
-                .parse(Stream::new(&buf))
+            let parsed_2 = PackfileHeader::decode_bytes(&buf)
                 .expect("should be parseable");
 
             assert_eq!(parsed_2, parsed);

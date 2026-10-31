@@ -22,9 +22,9 @@ use winnow::{
 
 use crate::{
     TinygitError,
+    ende::Decode,
     error::ParserContext,
     object::{
-        blob::parse_blob,
         commit::{Commit, parse_commit},
         hash::ObjectHash,
         tag::{Tag, parse_tag},
@@ -148,7 +148,7 @@ pub fn object<'a>(input: &mut Stream<'a>) -> ModalResult<Object> {
     let mut bytes: Stream<'a> = Stream::new(take(size).parse_next(input)?);
 
     match typee {
-        ObjectType::Blob => parse_blob.map(Object::Blob).parse_next(&mut bytes),
+        ObjectType::Blob => Blob::parse.map(Object::Blob).parse_next(&mut bytes),
         ObjectType::Tree => parse_tree.map(Object::Tree).parse_next(&mut bytes),
         ObjectType::Commit => parse_commit.map(Object::from).parse_next(&mut bytes),
         ObjectType::Tag => parse_tag.map(Object::from).parse_next(&mut bytes),

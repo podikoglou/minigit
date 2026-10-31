@@ -73,21 +73,26 @@ impl Decode for RefPointer {
 
 #[cfg(test)]
 mod tests {
-    use crate::ParserContext;
-
     use super::*;
 
     #[test]
     fn parses_ref_pointer_hash_with_newline() {
         let input = b"61d5cf2c92d28f042275da58239417db20c5c3da\n";
-        let pointer = RefPointer::decode_stream(Stream::new(input), ParserContext::None);
+        let pointer = RefPointer::decode_bytes(input);
         assert!(pointer.is_ok(), "expected Ok, got {:?}", pointer);
     }
 
     #[test]
     fn parses_ref_pointer_symbolic_without_newline() {
+        let input = b"ref: refs/heads/main";
+        let pointer = RefPointer::decode_bytes(input).unwrap();
+        assert_eq!(pointer, RefPointer::Symbolic("refs/heads/main".into()));
+    }
+
+    #[test]
+    fn parses_ref_pointer_symbolic_with_newline() {
         let input = b"ref: refs/heads/main\n";
-        let pointer = RefPointer::decode_stream(Stream::new(input), ParserContext::None).unwrap();
+        let pointer = RefPointer::decode_bytes(input).unwrap();
         assert_eq!(pointer, RefPointer::Symbolic("refs/heads/main".into()));
     }
 }

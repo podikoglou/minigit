@@ -5,7 +5,7 @@ use tinygit::{
     error::ParserContext,
     fs::FileName,
     identity::Identity,
-    object::{commit::parse_commit, parse_header, tag::parse_tag, tree::parse_tree},
+    object::{commit::parse_commit, parse_header, tag::parse_tag, tree::Tree},
     parsing::Stream,
     storage::object::{
         loose::{Encode, read_object, read_object_compressed},
@@ -129,8 +129,7 @@ fn fuzz_tag() {
 #[test]
 fn fuzz_tree() {
     check!().for_each(|input: &[u8]| {
-        let mut stream = Stream::new(input);
-        let _ = parse_tree(&mut stream);
+        let _ = Tree::decode_bytes(input);
     });
 }
 

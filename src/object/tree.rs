@@ -97,6 +97,23 @@ impl Tree {
     }
 }
 
+impl Decode for Tree {
+    fn parse(input: &mut Stream<'_>) -> ModalResult<Self> {
+        // NOTE: not sure if this should be `0..` or `1..`
+        // should we be able to parse empty trees?
+        repeat(0.., parse_tree_entry)
+            .map(|entries: Vec<(u16, FileName, ObjectHash)>| {
+                entries
+                    .into_iter()
+                    .map(|(mode, name, hash)| (TreeKey::new(name, mode), TreeEntry::new(hash)))
+                    .collect::<BTreeMap<TreeKey, TreeEntry>>()
+            })
+            .context(StrContext::Label("tree object"))
+            .map(Tree::new)
+            .parse_next(input)
+    }
+}
+
 impl Encode for Tree {
     fn encode<W: Write>(&self, writer: &mut W) -> Result<(), crate::TinygitError> {
         for entry in &self.entries {
@@ -105,22 +122,6 @@ impl Encode for Tree {
 
         Ok(())
     }
-}
-
-/// Parses a tree object from some bytes.
-pub fn parse_tree(input: &mut Stream<'_>) -> ModalResult<Tree> {
-    // NOTE: not sure if this should be `0..` or `1..`
-    // should we be able to parse empty trees?
-    repeat(0.., parse_tree_entry)
-        .map(|entries: Vec<(u16, FileName, ObjectHash)>| {
-            entries
-                .into_iter()
-                .map(|(mode, name, hash)| (TreeKey::new(name, mode), TreeEntry::new(hash)))
-                .collect::<BTreeMap<TreeKey, TreeEntry>>()
-        })
-        .context(StrContext::Label("tree object"))
-        .map(Tree::new)
-        .parse_next(input)
 }
 
 /// An entry inside a [Tree].

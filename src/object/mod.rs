@@ -28,7 +28,6 @@ use crate::{
         commit::{Commit, parse_commit},
         hash::ObjectHash,
         tag::{Tag, parse_tag},
-        tree::parse_tree,
     },
     parsing::{ParseResultExt, Stream},
     storage::object::{LazyObject, loose::Encode},
@@ -149,7 +148,7 @@ pub fn object<'a>(input: &mut Stream<'a>) -> ModalResult<Object> {
 
     match typee {
         ObjectType::Blob => Blob::parse.map(Object::Blob).parse_next(&mut bytes),
-        ObjectType::Tree => parse_tree.map(Object::Tree).parse_next(&mut bytes),
+        ObjectType::Tree => Tree::parse.map(Object::Tree).parse_next(&mut bytes),
         ObjectType::Commit => parse_commit.map(Object::from).parse_next(&mut bytes),
         ObjectType::Tag => parse_tag.map(Object::from).parse_next(&mut bytes),
     }

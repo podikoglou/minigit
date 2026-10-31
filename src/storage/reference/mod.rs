@@ -10,6 +10,7 @@ use winnow::{
 
 use crate::{
     TinygitError,
+    ende::Decode,
     error::ParserContext,
     object::hash::{ObjectHash, parse_object_hash_str},
     parsing::{ParseResultExt, Stream},
@@ -41,7 +42,7 @@ impl Ref {
 
         let contents = fs::read(path)?;
 
-        let pointer = parse_ref_pointer
+        let pointer = RefPointer::parse
             .parse(Stream::new(&contents))
             .with_context(ParserContext::File(path.to_path_buf()))?;
 
@@ -57,32 +58,24 @@ impl Ref {
     }
 }
 
-impl FromStr for RefPointer {
-    type Err = TinygitError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        parse_ref_pointer
-            .parse(Stream::new(s.as_bytes()))
-            .with_context(ParserContext::None)
+impl Decode for RefPointer {
+    fn parse(input: &mut Stream<'_>) -> ModalResult<Self> {
+        terminated(
+            alt((
+                parse_object_hash_str.map(RefPointer::Hash),
+                preceded(
+                    "ref: ",
+                    till_line_ending
+                        .map(str::from_utf8)
+                        .verify_map(Result::ok)
+                        .map(str::to_owned),
+                )
+                .map(RefPointer::Symbolic),
+            )),
+            opt(newline),
+        )
+        .parse_next(input)
     }
-}
-
-pub fn parse_ref_pointer(input: &mut Stream<'_>) -> ModalResult<RefPointer> {
-    terminated(
-        alt((
-            parse_object_hash_str.map(RefPointer::Hash),
-            preceded(
-                "ref: ",
-                till_line_ending
-                    .map(str::from_utf8)
-                    .verify_map(Result::ok)
-                    .map(str::to_owned),
-            )
-            .map(RefPointer::Symbolic),
-        )),
-        opt(newline),
-    )
-    .parse_next(input)
 }
 
 #[cfg(test)]
@@ -92,14 +85,14 @@ mod tests {
     #[test]
     fn parses_ref_pointer_hash_with_newline() {
         let input = b"61d5cf2c92d28f042275da58239417db20c5c3da\n";
-        let pointer = parse_ref_pointer.parse(Stream::new(input));
+        let pointer = RefPointer::decode_stream(Stream::new(input), ParserContext::None);
         assert!(pointer.is_ok(), "expected Ok, got {:?}", pointer);
     }
 
     #[test]
     fn parses_ref_pointer_symbolic_without_newline() {
         let input = b"ref: refs/heads/main\n";
-        let pointer = parse_ref_pointer.parse(Stream::new(input)).unwrap();
+        let pointer = RefPointer::decode_stream(Stream::new(input), ParserContext::None).unwrap();
         assert_eq!(pointer, RefPointer::Symbolic("refs/heads/main".into()));
     }
 }

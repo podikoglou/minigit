@@ -120,7 +120,7 @@ impl Packfile {
             .parse_next(&mut stream)
             .context_err(ParserContext::File(self.path().to_owned()), &stream)?;
 
-        object
+        PackedObject::parse
             .parse_next(&mut stream)
             .context_err(ParserContext::File(self.path().to_owned()), &stream)
     }

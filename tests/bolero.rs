@@ -10,9 +10,10 @@ use tinygit::{
     storage::object::{
         loose::{Encode, read_object, read_object_compressed},
         packed::{
-            self, PackedObjectType, base_object,
+            self, PackedObject, PackedObjectHeader, DeltifiedObject, UndeltifiedObject,
+            PackedObjectType, base_object,
             delta::{copy_instruction, delta, insert_instruction, instruction},
-            deltified_object, object_header, size, undeltified_object, PackfileHeader,
+            size, PackfileHeader,
         },
     },
     time::Timestamp,
@@ -237,15 +238,12 @@ fn fuzz_delta() {
 #[test]
 fn fuzz_undeltified_object() {
     check!().for_each(|input: &[u8]| {
-        let stream = Stream::new(input);
-
-        if let Ok(parsed) = undeltified_object.parse(stream) {
+        if let Ok(parsed) = UndeltifiedObject::decode_bytes(input) {
             let mut buf = Vec::default();
 
             parsed.encode(&mut buf).expect("should be encodable");
 
-            let parsed_2 = undeltified_object
-                .parse(Stream::new(&buf))
+            let parsed_2 = UndeltifiedObject::decode_bytes(&buf)
                 .expect("should be parseable");
 
             assert_eq!(parsed_2, parsed);
@@ -294,15 +292,12 @@ fn fuzz_ref_delta_base_object() {
 #[test]
 fn fuzz_object_header() {
     check!().for_each(|input: &[u8]| {
-        let stream = Stream::new(input);
-
-        if let Ok(parsed) = object_header.parse(stream) {
+        if let Ok(parsed) = PackedObjectHeader::decode_bytes(input) {
             let mut buf = Vec::default();
 
             parsed.encode(&mut buf).expect("should be encodable");
 
-            let parsed_2 = object_header
-                .parse(Stream::new(&buf))
+            let parsed_2 = PackedObjectHeader::decode_bytes(&buf)
                 .expect("should be parseable");
 
             assert_eq!(parsed_2, parsed);
@@ -313,15 +308,12 @@ fn fuzz_object_header() {
 #[test]
 fn fuzz_deltified_object() {
     check!().for_each(|input: &[u8]| {
-        let stream = Stream::new(input);
-
-        if let Ok(parsed) = deltified_object.parse(stream) {
+        if let Ok(parsed) = DeltifiedObject::decode_bytes(input) {
             let mut buf = Vec::default();
 
             parsed.encode(&mut buf).expect("should be encodable");
 
-            let parsed_2 = deltified_object
-                .parse(Stream::new(&buf))
+            let parsed_2 = DeltifiedObject::decode_bytes(&buf)
                 .expect("should be parseable");
 
             assert_eq!(parsed_2, parsed);
@@ -348,15 +340,12 @@ fn fuzz_pack_header() {
 #[test]
 fn fuzz_packed_object() {
     check!().for_each(|input: &[u8]| {
-        let stream = Stream::new(input);
-
-        if let Ok(parsed) = packed::object.parse(stream) {
+        if let Ok(parsed) = PackedObject::decode_bytes(input) {
             let mut buf = Vec::default();
 
             parsed.encode(&mut buf).expect("should be encodable");
 
-            let parsed_2 = packed::object
-                .parse(Stream::new(&buf))
+            let parsed_2 = PackedObject::decode_bytes(&buf)
                 .expect("should be parseable");
 
             assert_eq!(parsed_2, parsed);

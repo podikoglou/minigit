@@ -13,7 +13,7 @@ use crate::{
     parsing::{ParseNextExt, Stream},
     storage::object::{
         ObjectDb, RawObject,
-        packed::{BaseObject, PackedObject, PackfileHeader, idx::PackIndex, object, stream::PackStream},
+        packed::{BaseObject, PackedObject, PackfileHeader, idx::PackIndex, stream::PackStream},
     },
 };
 
@@ -82,7 +82,7 @@ impl PackIndexBuilder {
             .parse_next(&mut stream)
             .context_err(context.clone(), &stream)?;
 
-        object
+        PackedObject::parse
             .parse_next(&mut stream)
             .context_err(context, &stream)
     }

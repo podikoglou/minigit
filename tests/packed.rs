@@ -43,7 +43,7 @@ fn undeltified_packfile_parse() {
 
     let objects: Vec<_> = (0..header.objects)
         .map(|_| {
-            packed::object
+            PackedObject::parse
                 .parse_next(&mut slice)
                 .expect("should be able to parse object")
         })
@@ -73,7 +73,7 @@ fn deltified_packfile_parse() {
 
     let objects: Vec<_> = (0..header.objects)
         .map(|_| {
-            packed::object
+            PackedObject::parse
                 .parse_next(&mut slice)
                 .expect("should be able to parse object")
         })

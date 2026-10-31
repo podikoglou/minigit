@@ -20,7 +20,7 @@ pub trait Decode: Sized {
     /// Should generally not be used directly as it is contextless.
     fn parse(input: &mut Stream<'_>) -> ModalResult<Self>;
 
-    /// Parses from a [Stream] with some context.
+    /// Parses from a [Stream] with appropriate context.
     fn decode_stream(input: Stream, context: ParserContext) -> Result<Self, TinygitError> {
         Self::parse.parse(input).with_context(context)
     }
@@ -34,5 +34,19 @@ pub trait Decode: Sized {
         Self::parse
             .parse(stream)
             .with_context(ParserContext::File(path.to_path_buf()))
+    }
+
+    /// Parses from a string slice, with no context.
+    fn decode_str(input: &str) -> Result<Self, TinygitError> {
+        let stream = Stream::new(input.as_bytes());
+
+        Self::parse.parse(stream).with_context(ParserContext::None)
+    }
+
+    /// Parses from a string slice with appropriate context.
+    fn decode_str_with_context(input: &str, context: ParserContext) -> Result<Self, TinygitError> {
+        let stream = Stream::new(input.as_bytes());
+
+        Self::parse.parse(stream).with_context(context)
     }
 }

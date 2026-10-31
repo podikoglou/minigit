@@ -163,6 +163,9 @@ mod roundtrip {
         use hegel::TestCase;
         use hegel::extras::chrono::datetimes;
         use hegel::generators as gs;
+        use std::collections::BTreeMap;
+        use strum::VariantArray;
+        use tinygit::ende::Decode;
         use tinygit::fs::FileName;
         use tinygit::identity::Email;
         use tinygit::identity::Identity;
@@ -177,8 +180,6 @@ mod roundtrip {
         use tinygit::object::tree::TreeEntry;
         use tinygit::object::tree::TreeKey;
         use tinygit::time::Timestamp;
-        use std::collections::BTreeMap;
-        use strum::VariantArray;
 
         #[hegel::composite]
         pub fn hash(tc: &TestCase) -> ObjectHash {
@@ -204,7 +205,7 @@ mod roundtrip {
         #[hegel::composite]
         pub fn tree(tc: &TestCase) -> Tree {
             let key = gs::text()
-                .map(|str| str.parse::<FileName>())
+                .map(|str| FileName::decode_str(&str))
                 .filter(|e| e.is_ok())
                 .map(Result::unwrap)
                 .print_as_debug();

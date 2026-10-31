@@ -8,7 +8,8 @@ use winnow::{
 };
 
 use crate::{
-    fs::{FileName, parse_file_name},
+    ende::Decode,
+    fs::FileName,
     object::hash::{ObjectHash, parse_object_hash},
     parsing::{Stream, mode},
     storage::object::loose::Encode,
@@ -150,24 +151,24 @@ impl Encode for (&TreeKey, &TreeEntry) {
 
 /// Parses a tree object's entry into a tuple `(mode, name, hash)` from some bytes.
 pub fn parse_tree_entry(input: &mut Stream<'_>) -> ModalResult<(u16, FileName, ObjectHash)> {
-    seq!(mode, _: " ", parse_file_name, parse_object_hash)
+    seq!(mode, _: " ", FileName::parse, parse_object_hash)
         .context(StrContext::Label("tree entry"))
         .parse_next(input)
 }
 
 #[cfg(test)]
 mod tests {
+    use insta::assert_debug_snapshot;
     use winnow::Parser;
 
-    use crate::{object::tree::parse_tree_entry, parsing::Stream};
+    use crate::{ende::Decode, fs::FileName, object::tree::parse_tree_entry, parsing::Stream};
 
     #[test]
     fn tree_entry_parses_valid_entries() {
-        assert_eq!(
+        assert_debug_snapshot!(
             parse_tree_entry
                 .parse_peek(Stream::new(b"100644 cli.rs\0\x29\xf3\x23\xb3\x1a\xd1\x29\x96\x4f\xfb\x4f\x97\xf2\x03\xbe\x9c\x2f\x35\x10\x7d"))
                 .map(|(r, v)| (*r, v)),
-            Ok((&b""[..], (0o100644, "cli.rs\0".parse().unwrap(), [0x29, 0xf3, 0x23, 0xb3, 0x1a, 0xd1, 0x29, 0x96, 0x4f, 0xfb, 0x4f, 0x97, 0xf2, 0x03, 0xbe, 0x9c, 0x2f, 0x35, 0x10, 0x7d].into() )))
         );
     }
 
@@ -177,15 +178,16 @@ mod tests {
 
         // A directory "foo" should sort AFTER "foo-bar" because git compares
         // "foo/" vs "foo-", and '/' (0x2F) > '-' (0x2D).
-        let dir_foo: TreeKey = TreeKey::new("foo\0".parse().unwrap(), 0o40000);
-        let file_foo_bar: TreeKey = TreeKey::new("foo-bar\0".parse().unwrap(), 0o100644);
+        let dir_foo: TreeKey = TreeKey::new(FileName::decode_str("foo\0").unwrap(), 0o40000);
+        let file_foo_bar: TreeKey =
+            TreeKey::new(FileName::decode_str("foo-bar\0").unwrap(), 0o100644);
         assert!(
             dir_foo > file_foo_bar,
             "directory 'foo' should sort after 'foo-bar'"
         );
 
         // A plain file "foo" should sort BEFORE "foo-bar" (normal lex order).
-        let file_foo: TreeKey = TreeKey::new("foo\0".parse().unwrap(), 0o100644);
+        let file_foo: TreeKey = TreeKey::new(FileName::decode_str("foo\0").unwrap(), 0o100644);
         assert!(
             file_foo < file_foo_bar,
             "file 'foo' should sort before 'foo-bar'"

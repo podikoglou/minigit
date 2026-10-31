@@ -1,8 +1,9 @@
 use bolero::check;
 use chrono::{DateTime, FixedOffset};
 use tinygit::{
+    ende::Decode,
     error::ParserContext,
-    fs::parse_file_name,
+    fs::FileName,
     identity::parse_identity,
     object::{commit::parse_commit, parse_header, tag::parse_tag, tree::parse_tree},
     parsing::Stream,
@@ -105,8 +106,7 @@ fn fuzz_identity() {
 #[test]
 fn fuzz_file_name() {
     check!().for_each(|input: &[u8]| {
-        let mut stream = Stream::new(input);
-        let _ = parse_file_name(&mut stream);
+        let _ = FileName::decode_bytes(input);
     });
 }
 

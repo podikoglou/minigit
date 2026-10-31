@@ -12,9 +12,7 @@ use crate::{
         Object,
         hash::{HashPrefix, ObjectHash},
     },
-    storage::object::{
-        LazyObject, ObjectDb, ObjectsBucket, RawObject,
-    },
+    storage::object::{LazyObject, ObjectDb, ObjectsBucket, RawObject},
 };
 
 /// A database managing loose Git objects stored under `.git/objects/`.

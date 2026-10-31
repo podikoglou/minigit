@@ -3,7 +3,7 @@ use std::{env, path::PathBuf, sync::Arc};
 use argh::FromArgs;
 use fallible_iterator::FallibleIterator;
 use indicatif::ProgressBar;
-use tinygit::{TinygitError, Repo, storage::object::packed::Packfile};
+use tinygit::{Repo, TinygitError, storage::object::packed::Packfile};
 
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "unpack-objects")]

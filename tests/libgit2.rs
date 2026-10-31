@@ -11,6 +11,7 @@ use git2::{
     Odb, Oid, ReferenceType, Signature,
 };
 use include_dir::{Dir, include_dir};
+use std::str::FromStr;
 use tinygit::{
     ende::Encode,
     error::ParserContext,
@@ -18,7 +19,6 @@ use tinygit::{
     object::{Object, ObjectType as TinygitObjectType, hash::ObjectHash},
     storage::reference::RefPointer,
 };
-use std::str::FromStr;
 
 use crate::common::{unpack_git2_repo, unpack_repo};
 

@@ -8,10 +8,10 @@ use winnow::{
 
 use crate::{
     ende::Decode,
+    ende::Encode,
     identity::Identity,
     object::hash::{ObjectHash, parse_object_hash_str},
     parsing::{Stream, extra_property, property},
-    ende::Encode,
     time::Timestamp,
 };
 use std::io::Write;
@@ -154,9 +154,9 @@ mod tests {
     use chrono::{DateTime, FixedOffset};
 
     use crate::{
+        ende::Encode,
         identity::{Email, Identity, Name},
         object::{commit::Commit, hash::ObjectHash},
-        ende::Encode,
         time::Timestamp,
     };
 

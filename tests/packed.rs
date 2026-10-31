@@ -8,15 +8,11 @@ use tinygit::{
     ende::Decode,
     object::{ObjectType, hash::ObjectHash},
     parsing::Stream,
-    storage::object::{
-        RawObject,
-        packed::{
-            self,
+    storage::object::packed::{
             PackedObject::{self},
             Packfile, PackfileHeader,
             idx::PackIndex,
         },
-    },
 };
 use winnow::Parser;
 

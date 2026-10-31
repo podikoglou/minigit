@@ -3,8 +3,8 @@ use std::env;
 use argh::FromArgs;
 use bstr::ByteSlice;
 use itertools::Either;
-use tinygit::{TinygitError, Repo, object::hash::HashPrefix, storage::object::ObjectsBucket};
 use strum::IntoDiscriminant;
+use tinygit::{Repo, TinygitError, object::hash::HashPrefix, storage::object::ObjectsBucket};
 
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "ls-objects")]

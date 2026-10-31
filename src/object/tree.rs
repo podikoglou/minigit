@@ -9,10 +9,10 @@ use winnow::{
 
 use crate::{
     ende::Decode,
+    ende::Encode,
     fs::FileName,
     object::hash::{ObjectHash, parse_object_hash},
     parsing::{Stream, mode},
-    ende::Encode,
 };
 
 /// The key for a [`Tree`] entry.

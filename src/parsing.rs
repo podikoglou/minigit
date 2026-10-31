@@ -12,7 +12,7 @@ use winnow::{
 };
 
 use crate::{
-    error::{TinygitError, ParseError, ParserContext},
+    error::{ParseError, ParserContext, TinygitError},
     object::commit::CommitProperty,
 };
 

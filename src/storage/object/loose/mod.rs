@@ -11,7 +11,7 @@ use crate::{
     object::{Object, parse_object},
 };
 use flate2::read::ZlibDecoder;
-use std::io::{BufRead, Read, Write};
+use std::io::{BufRead, Read};
 
 /// Reads and parses an [Object] from a [`Read`].
 ///

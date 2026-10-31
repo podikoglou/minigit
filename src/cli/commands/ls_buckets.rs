@@ -1,7 +1,7 @@
 use std::env;
 
 use argh::FromArgs;
-use tinygit::{TinygitError, Repo};
+use tinygit::{Repo, TinygitError};
 
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "ls-buckets")]

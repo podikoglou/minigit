@@ -10,10 +10,10 @@ use tinygit::{
     storage::object::{
         loose::{read_object, read_object_compressed},
         packed::{
-            PackedObject, PackedObjectHeader, DeltifiedObject, UndeltifiedObject,
-            PackedObjectType, base_object,
+            DeltifiedObject, PackedObject, PackedObjectHeader, PackedObjectType, PackfileHeader,
+            UndeltifiedObject, base_object,
             delta::{CopyInstruction, Delta, InsertInstruction, Instruction},
-            size, PackfileHeader,
+            size,
         },
     },
     time::Timestamp,
@@ -167,8 +167,7 @@ fn fuzz_copy_instruction() {
 
             instruction.encode(&mut buf).expect("should be encodable");
 
-            let instruction_2 = CopyInstruction::decode_bytes(&buf)
-                .expect("should be parseable");
+            let instruction_2 = CopyInstruction::decode_bytes(&buf).expect("should be parseable");
             assert_eq!(instruction_2, instruction);
         }
     });
@@ -230,8 +229,7 @@ fn fuzz_undeltified_object() {
 
             parsed.encode(&mut buf).expect("should be encodable");
 
-            let parsed_2 = UndeltifiedObject::decode_bytes(&buf)
-                .expect("should be parseable");
+            let parsed_2 = UndeltifiedObject::decode_bytes(&buf).expect("should be parseable");
 
             assert_eq!(parsed_2, parsed);
         }
@@ -284,8 +282,7 @@ fn fuzz_object_header() {
 
             parsed.encode(&mut buf).expect("should be encodable");
 
-            let parsed_2 = PackedObjectHeader::decode_bytes(&buf)
-                .expect("should be parseable");
+            let parsed_2 = PackedObjectHeader::decode_bytes(&buf).expect("should be parseable");
 
             assert_eq!(parsed_2, parsed);
         }
@@ -300,8 +297,7 @@ fn fuzz_deltified_object() {
 
             parsed.encode(&mut buf).expect("should be encodable");
 
-            let parsed_2 = DeltifiedObject::decode_bytes(&buf)
-                .expect("should be parseable");
+            let parsed_2 = DeltifiedObject::decode_bytes(&buf).expect("should be parseable");
 
             assert_eq!(parsed_2, parsed);
         }
@@ -316,8 +312,7 @@ fn fuzz_pack_header() {
 
             parsed.encode(&mut buf).expect("should be encodable");
 
-            let parsed_2 = PackfileHeader::decode_bytes(&buf)
-                .expect("should be parseable");
+            let parsed_2 = PackfileHeader::decode_bytes(&buf).expect("should be parseable");
 
             assert_eq!(parsed_2, parsed);
         }
@@ -332,8 +327,7 @@ fn fuzz_packed_object() {
 
             parsed.encode(&mut buf).expect("should be encodable");
 
-            let parsed_2 = PackedObject::decode_bytes(&buf)
-                .expect("should be parseable");
+            let parsed_2 = PackedObject::decode_bytes(&buf).expect("should be parseable");
 
             assert_eq!(parsed_2, parsed);
         }

@@ -9,10 +9,10 @@ use std::io::Write;
 
 use blob::Blob;
 use commit::Commit;
-use tag::Tag;
 use flate2::{Compression, write::ZlibEncoder};
 use sha1::{Digest, Sha1};
 use strum::{EnumDiscriminants, EnumIs, EnumString, EnumTryAs, IntoStaticStr, VariantArray};
+use tag::Tag;
 use tree::Tree;
 use winnow::{
     ModalResult, Parser,
@@ -89,10 +89,7 @@ impl Encode for Object {
 }
 
 impl Object {
-    pub fn encode_compressed<W: Write>(
-        &self,
-        writer: &mut W,
-    ) -> Result<(), crate::TinygitError> {
+    pub fn encode_compressed<W: Write>(&self, writer: &mut W) -> Result<(), crate::TinygitError> {
         let mut zlib_writer = ZlibEncoder::new(writer, Compression::default());
 
         self.encode(&mut zlib_writer)
@@ -134,9 +131,7 @@ impl TryFrom<LazyObject> for Object {
 ///
 /// Unless you're building your own parsers this is the function you're looking for.
 pub fn parse_object(input: &[u8], context: ParserContext) -> Result<Object, TinygitError> {
-    object
-        .parse(Stream::new(input))
-        .with_context(context)
+    object.parse(Stream::new(input)).with_context(context)
 }
 
 /// Parses an [Object] from some input.

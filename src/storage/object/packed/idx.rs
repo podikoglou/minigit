@@ -19,10 +19,10 @@ use winnow::{
 
 use crate::{
     TinygitError,
+    ende::Encode,
     error::ParserContext,
     object::hash::{ObjectHash, parse_object_hash},
     parsing::{ParseNextExt, Stream},
-    ende::Encode,
 };
 
 /// A packfile index providing information for reading a Packfile.

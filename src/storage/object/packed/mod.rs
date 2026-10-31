@@ -74,8 +74,10 @@ impl Packfile {
         let pack = (pack_path, pack_buf);
 
         // read packfile header
-        let pack_header =
-            PackfileHeader::decode_bytes_with_context(&pack.1[..12], ParserContext::File(pack.0.to_owned()))?;
+        let pack_header = PackfileHeader::decode_bytes_with_context(
+            &pack.1[..12],
+            ParserContext::File(pack.0.to_owned()),
+        )?;
 
         // if present, open idx
         let idx = PackIndex::open(idx_path)?;

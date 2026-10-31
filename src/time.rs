@@ -48,10 +48,7 @@ impl Decode for Timestamp {
 mod tests {
     use chrono::{DateTime, FixedOffset, NaiveDateTime};
 
-    use crate::{
-        ende::Decode,
-        time::Timestamp,
-    };
+    use crate::{ende::Decode, time::Timestamp};
 
     #[test]
     fn timestamp_parses_basic_timestamps() {

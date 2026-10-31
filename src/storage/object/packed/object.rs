@@ -25,10 +25,7 @@ use crate::{
     parsing::Stream,
     storage::object::{
         RawObject,
-        packed::{
-            delta::Delta,
-            offset,
-        },
+        packed::{delta::Delta, offset},
     },
 };
 
@@ -225,8 +222,8 @@ impl Decode for PackedObjectHeader {
         let type_id = (current_byte & 0b01110000) >> 4;
 
         // TODO: better error handling
-        let r#type =
-            PackedObjectType::from_repr(type_id).ok_or_else(|| ErrMode::Cut(ContextError::new()))?;
+        let r#type = PackedObjectType::from_repr(type_id)
+            .ok_or_else(|| ErrMode::Cut(ContextError::new()))?;
 
         let mut size = (current_byte & 0b00001111) as u64;
         let mut pos = 4;
@@ -408,17 +405,13 @@ impl Decode for UndeltifiedObject {
 mod tests {
     use crate::{
         ende::Decode,
-        object::ObjectType,
         parsing::Stream,
-        storage::object::{
-            RawObject,
-            packed::{PackedObjectHeader, UndeltifiedObject},
-        },
+        storage::object::packed::{PackedObjectHeader, UndeltifiedObject},
     };
 
     use super::{BaseObject, PackedObjectType, base_object};
     use insta::assert_debug_snapshot;
-    use std::assert_matches;
+    
     use winnow::Parser;
 
     #[test]

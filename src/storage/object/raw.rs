@@ -10,8 +10,7 @@ use crate::{
     ende::{Decode, Encode},
     error::ParserContext,
     object::{
-        Object, ObjectType, blob::Blob, commit::Commit, hash::ObjectHash,
-        tag::Tag, tree::Tree,
+        Object, ObjectType, blob::Blob, commit::Commit, hash::ObjectHash, tag::Tag, tree::Tree,
     },
     parsing::{ParseNextExt, Stream},
     storage::object::packed::delta::{CopyInstruction, Delta, InsertInstruction, Instruction},

@@ -8,11 +8,11 @@ use std::{
 use argh::FromArgs;
 use bstr::ByteSlice;
 use itertools::Either;
+use owo_colors::{OwoColorize as _, Stream};
 use tinygit::{
-    TinygitError, Repo,
+    Repo, TinygitError,
     object::{commit::Commit, hash::ObjectHash},
 };
-use owo_colors::{OwoColorize as _, Stream};
 
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand, name = "log")]

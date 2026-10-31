@@ -3,11 +3,10 @@
 use crate::{
     TinygitError,
     ende::Decode,
-    error::ParserContext,
-    parsing::{ParseResultExt, Stream},
     ende::Encode,
+    parsing::Stream,
 };
-use std::{fmt::Display, path::PathBuf, str::FromStr};
+use std::{fmt::Display, path::PathBuf};
 use winnow::{ModalResult, Parser, combinator::terminated, token::take_until};
 
 /// A file name.

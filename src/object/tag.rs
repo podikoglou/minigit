@@ -9,6 +9,7 @@ use winnow::{
 
 use crate::{
     ende::Decode,
+    ende::Encode,
     identity::Identity,
     object::{
         ObjectType,
@@ -16,7 +17,6 @@ use crate::{
         parse_object_type,
     },
     parsing::{Stream, property},
-    ende::Encode,
     time::Timestamp,
 };
 

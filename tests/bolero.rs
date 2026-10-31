@@ -15,7 +15,7 @@ use tinygit::{
             deltified_object, header, object_header, size, undeltified_object,
         },
     },
-    time::{Timestamp, parse_timestamp},
+    time::Timestamp,
 };
 use winnow::Parser;
 
@@ -58,8 +58,7 @@ fn fuzz_header() {
 #[test]
 fn fuzz_timestamp() {
     check!().for_each(|input: &[u8]| {
-        let mut stream = Stream::new(input);
-        let _ = parse_timestamp(&mut stream);
+        let _ = Timestamp::decode_bytes(input);
     });
 }
 
@@ -83,8 +82,7 @@ fn prop_timestamp_roundtrip() {
                         let sign = if h >= 0 { '+' } else { '-' };
                         let formatted =
                             format!("{} {}{:02}{:02}", ts.timestamp(), sign, h.abs(), m);
-                        let mut stream = Stream::new(formatted.as_bytes());
-                        let parsed = parse_timestamp(&mut stream)
+                        let parsed = Timestamp::decode_str(&formatted)
                             .expect("validly formatted timestamp should parse");
                         assert_eq!(parsed, ts);
                     }

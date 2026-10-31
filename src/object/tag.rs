@@ -84,7 +84,7 @@ impl Decode for Tag {
             property("type", parse_object_type),
         ),
         name: property("tag", take_until(1.., "\n").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned)),
-        tagger: opt(property("tagger", seq!(Identity::parse, _: " ", Timestamp::parse))),
+        tagger: opt(property("tagger", <(Identity, Timestamp)>::parse)),
         _: "\n",
         description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
         }}.context(StrContext::Label("tag object"))

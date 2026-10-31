@@ -92,14 +92,20 @@ impl Decode for Commit {
         seq! {Commit{
             tree: property("tree", parse_object_hash_str),
             parents: repeat(0.., property("parent", parse_object_hash_str)),
-            author: property("author", seq!(Identity::parse, _: " ", Timestamp::parse)),
-            committer: property("committer", seq!(Identity::parse, _: " ", Timestamp::parse)),
+            author: property("author", <(Identity, Timestamp)>::parse),
+            committer: property("committer", <(Identity, Timestamp)>::parse),
             extra: repeat(0.., extra_property),
             _: "\n",
             description: rest.map(|x: &[u8]| x.into()),
         }}
         .context(StrContext::Label("commit object"))
         .parse_next(input)
+    }
+}
+
+impl Decode for (Identity, Timestamp) {
+    fn parse(input: &mut Stream<'_>) -> ModalResult<Self> {
+        seq!(Identity::parse, _: " ", Timestamp::parse).parse_next(input)
     }
 }
 

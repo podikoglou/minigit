@@ -13,7 +13,7 @@ use winnow::{
     token::take_until,
 };
 
-use crate::{parsing::Stream, storage::object::loose::Encode};
+use crate::{ende::Decode, parsing::Stream, storage::object::loose::Encode};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Identity {
@@ -25,6 +25,22 @@ impl Identity {
     #[must_use]
     pub fn new(name: Name, email: Email) -> Self {
         Self { name, email }
+    }
+}
+
+impl Decode for Identity {
+    fn parse(input: &mut Stream<'_>) -> ModalResult<Self> {
+        seq!(take_until(0.., " <").map(|x: &[u8]| x.into()).map(Name::try_new).verify_map(Result::ok).context(StrContext::Label("name")),
+            _: " <",
+            take_until(0.., ">").map(|x: &[u8]| x.into()).map(Email::new).context(StrContext::Label("email")),
+            _: ">"
+        )
+        .map(|(name, email)| Identity::new(name, email))
+        .context(StrContext::Label("identity"))
+        .context(StrContext::Expected(StrContextValue::Description(
+            "<name> <<email>>",
+        )))
+        .parse_next(input)
     }
 }
 
@@ -78,73 +94,32 @@ impl PartialEq<Email> for &str {
     }
 }
 
-/// Parses an identity in the form of `John Doe <john@doe.com>` from some bytes.
-pub fn parse_identity(input: &mut Stream<'_>) -> ModalResult<Identity> {
-    seq!(take_until(0.., " <").map(|x: &[u8]| x.into()).map(Name::try_new).verify_map(Result::ok).context(StrContext::Label("name")),
-        _: " <",
-        take_until(0.., ">").map(|x: &[u8]| x.into()).map(Email::new).context(StrContext::Label("email")),
-        _: ">"
-    )
-    .map(|(name, email)| Identity::new(name, email))
-    .context(StrContext::Label("identity"))
-    .context(StrContext::Expected(StrContextValue::Description(
-        "<name> <<email>>",
-    )))
-    .parse_next(input)
-}
-
 #[cfg(test)]
 mod tests {
-    use winnow::Parser;
-
     use crate::{
-        identity::{Email, Identity, Name, parse_identity},
-        parsing::Stream,
+        ende::Decode,
+        identity::{Email, Identity, Name},
     };
-    use std::assert_matches;
 
     #[test]
     fn identity_parses_valid_identities() {
         assert_eq!(
-            parse_identity
-                .parse_peek(Stream::new(b"John Doe <john@doe.com>"))
-                .map(|(r, v)| (*r, v)),
-            Ok((
-                &b""[..],
-                Identity::new(
-                    Name::try_new("John Doe".into()).unwrap(),
-                    Email::new("john@doe.com".into())
-                )
-            ))
+            Identity::decode_bytes(b"John Doe <john@doe.com>").unwrap(),
+            Identity::new(
+                Name::try_new("John Doe".into()).unwrap(),
+                Email::new("john@doe.com".into())
+            )
         );
     }
 
     #[test]
     fn identity_rejects_invalid_input() {
-        assert_matches!(
-            parse_identity.parse_peek(Stream::new(b"<john@doe.com>")),
-            Err(_)
-        );
-        assert_matches!(
-            parse_identity.parse_peek(Stream::new(b"j<john@doe.com>")),
-            Err(_)
-        );
-        assert_matches!(
-            parse_identity.parse_peek(Stream::new(b"<john@doe.com")),
-            Err(_)
-        );
-        assert_matches!(
-            parse_identity.parse_peek(Stream::new(b"john@doe.com>")),
-            Err(_)
-        );
-        assert_matches!(
-            parse_identity.parse_peek(Stream::new(b"john@doe.com")),
-            Err(_)
-        );
+        assert!(Identity::decode_bytes(b"<john@doe.com>").is_err());
+        assert!(Identity::decode_bytes(b"j<john@doe.com>").is_err());
+        assert!(Identity::decode_bytes(b"<john@doe.com").is_err());
+        assert!(Identity::decode_bytes(b"john@doe.com>").is_err());
+        assert!(Identity::decode_bytes(b"john@doe.com").is_err());
         // TODO: should this validate emails?
-        assert_matches!(
-            parse_identity.parse_peek(Stream::new(b"johndoe.com")),
-            Err(_)
-        );
+        assert!(Identity::decode_bytes(b"johndoe.com").is_err());
     }
 }

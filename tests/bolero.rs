@@ -4,7 +4,7 @@ use tinygit::{
     ende::Decode,
     error::ParserContext,
     fs::FileName,
-    identity::parse_identity,
+    identity::Identity,
     object::{commit::parse_commit, parse_header, tag::parse_tag, tree::parse_tree},
     parsing::Stream,
     storage::object::{
@@ -97,8 +97,7 @@ fn prop_timestamp_roundtrip() {
 #[test]
 fn fuzz_identity() {
     check!().for_each(|input: &[u8]| {
-        let mut stream = Stream::new(input);
-        let _ = parse_identity(&mut stream);
+        let _ = Identity::decode_bytes(input);
     });
 }
 

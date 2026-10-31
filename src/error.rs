@@ -87,6 +87,9 @@ pub enum TinygitError {
     #[error("No git directory")]
     NoGitDirectory,
 
+    #[error("Directory not empty")]
+    DirNotEmpty,
+
     #[error("Bucket not found")]
     BucketNotFound,
 

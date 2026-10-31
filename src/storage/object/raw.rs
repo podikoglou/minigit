@@ -10,7 +10,7 @@ use crate::{
     ende::Decode,
     error::ParserContext,
     object::{
-        Object, ObjectType, blob::Blob, commit::parse_commit, hash::ObjectHash,
+        Object, ObjectType, blob::Blob, commit::Commit, hash::ObjectHash,
         tag::parse_tag, tree::Tree,
     },
     parsing::{ParseNextExt, Stream},
@@ -47,7 +47,7 @@ impl RawObject {
         match self.r#type {
             ObjectType::Blob => Blob::parse.map(Object::from).parse_next(&mut stream),
             ObjectType::Tree => Tree::parse.map(Object::from).parse_next(&mut stream),
-            ObjectType::Commit => parse_commit.map(Object::from).parse_next(&mut stream),
+            ObjectType::Commit => Commit::parse.map(Object::from).parse_next(&mut stream),
             ObjectType::Tag => parse_tag.map(Object::from).parse_next(&mut stream),
         }
         .context_err(context, &stream)

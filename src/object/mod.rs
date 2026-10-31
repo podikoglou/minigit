@@ -8,6 +8,7 @@ pub mod hash;
 use std::io::Write;
 
 use blob::Blob;
+use commit::Commit;
 use flate2::{Compression, write::ZlibEncoder};
 use sha1::{Digest, Sha1};
 use strum::{EnumDiscriminants, EnumIs, EnumString, EnumTryAs, IntoStaticStr, VariantArray};
@@ -25,7 +26,6 @@ use crate::{
     ende::Decode,
     error::ParserContext,
     object::{
-        commit::{Commit, parse_commit},
         hash::ObjectHash,
         tag::{Tag, parse_tag},
     },
@@ -149,7 +149,7 @@ pub fn object<'a>(input: &mut Stream<'a>) -> ModalResult<Object> {
     match typee {
         ObjectType::Blob => Blob::parse.map(Object::Blob).parse_next(&mut bytes),
         ObjectType::Tree => Tree::parse.map(Object::Tree).parse_next(&mut bytes),
-        ObjectType::Commit => parse_commit.map(Object::from).parse_next(&mut bytes),
+        ObjectType::Commit => Commit::parse.map(Object::from).parse_next(&mut bytes),
         ObjectType::Tag => parse_tag.map(Object::from).parse_next(&mut bytes),
     }
 }

@@ -5,7 +5,7 @@ use tinygit::{
     error::ParserContext,
     fs::FileName,
     identity::Identity,
-    object::{commit::parse_commit, parse_header, tag::parse_tag, tree::Tree},
+    object::{commit::Commit, parse_header, tag::parse_tag, tree::Tree},
     parsing::Stream,
     storage::object::{
         loose::{Encode, read_object, read_object_compressed},
@@ -111,8 +111,7 @@ fn fuzz_file_name() {
 #[test]
 fn fuzz_commit() {
     check!().for_each(|input: &[u8]| {
-        let mut stream = Stream::new(input);
-        let _ = parse_commit(&mut stream);
+        let _ = Commit::decode_bytes(input);
     });
 }
 

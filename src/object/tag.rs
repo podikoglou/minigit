@@ -75,18 +75,19 @@ impl Encode for Tag {
     }
 }
 
-/// Parses a tag object from some bytes.
-pub fn parse_tag(input: &mut Stream<'_>) -> ModalResult<Tag> {
-    seq! {Tag{
-    target: seq!(
-        property("object", parse_object_hash_str),
+impl Decode for Tag {
+    fn parse(input: &mut Stream<'_>) -> ModalResult<Self> {
+        seq! {Tag{
+        target: seq!(
+            property("object", parse_object_hash_str),
 
-        property("type", parse_object_type),
-    ),
-    name: property("tag", take_until(1.., "\n").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned)),
-    tagger: opt(property("tagger", seq!(Identity::parse, _: " ", Timestamp::parse))),
-    _: "\n",
-    description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
-    }}.context(StrContext::Label("tag object"))
-    .parse_next(input)
+            property("type", parse_object_type),
+        ),
+        name: property("tag", take_until(1.., "\n").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned)),
+        tagger: opt(property("tagger", seq!(Identity::parse, _: " ", Timestamp::parse))),
+        _: "\n",
+        description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
+        }}.context(StrContext::Label("tag object"))
+        .parse_next(input)
+    }
 }

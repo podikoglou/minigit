@@ -11,7 +11,7 @@ use crate::{
     error::ParserContext,
     object::{
         Object, ObjectType, blob::Blob, commit::Commit, hash::ObjectHash,
-        tag::parse_tag, tree::Tree,
+        tag::Tag, tree::Tree,
     },
     parsing::{ParseNextExt, Stream},
     storage::object::{
@@ -48,7 +48,7 @@ impl RawObject {
             ObjectType::Blob => Blob::parse.map(Object::from).parse_next(&mut stream),
             ObjectType::Tree => Tree::parse.map(Object::from).parse_next(&mut stream),
             ObjectType::Commit => Commit::parse.map(Object::from).parse_next(&mut stream),
-            ObjectType::Tag => parse_tag.map(Object::from).parse_next(&mut stream),
+            ObjectType::Tag => Tag::parse.map(Object::from).parse_next(&mut stream),
         }
         .context_err(context, &stream)
     }

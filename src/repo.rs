@@ -20,11 +20,14 @@ impl Repo {
     }
 
     /// Creates a new empty Git repository.
-    pub fn new(path: impl Into<PathBuf>) -> Result<Self, TinygitError> {
+    pub fn new(path: impl Into<PathBuf>) -> Result<Repo, TinygitError> {
         let path = path.into();
 
-        if path.exists() {
-            return Err(TinygitError::DirNotEmpty);
+        let git_dir = path.join(".git");
+
+        // remove directory if it already exists (to re-initialize it)
+        if git_dir.exists() {
+            fs::remove_dir_all(git_dir)?;
         }
 
         fs::create_dir_all(path.join(".git/objects/pack"))?;

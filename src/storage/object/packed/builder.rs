@@ -38,7 +38,13 @@ impl PackBuilder {
     }
 
     /// Writes the packfile into the writer.
-    pub fn flush<W: Write>(&self, writer: &mut W, store: &Store) -> Result<(), TinygitError> {
+    ///
+    /// Returns the hash of the packfile, which can be used as its file name.
+    pub fn flush<W: Write>(
+        &self,
+        writer: &mut W,
+        store: &Store,
+    ) -> Result<ObjectHash, TinygitError> {
         let mut writer = HashingWriter::new(writer);
 
         let header = PackfileHeader::new(
@@ -66,7 +72,7 @@ impl PackBuilder {
 
         writer.write_all(&hash)?;
 
-        Ok(())
+        Ok(hash)
     }
 }
 

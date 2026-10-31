@@ -72,7 +72,7 @@ impl PackBuilder {
 
         writer.write_all(&hash)?;
 
-        Ok(hash)
+        Ok(hash.into())
     }
 }
 

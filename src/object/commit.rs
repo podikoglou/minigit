@@ -7,11 +7,12 @@ use winnow::{
 };
 
 use crate::{
-    identity::{Identity, parse_identity},
+    ende::Decode,
+    identity::Identity,
     object::hash::{ObjectHash, parse_object_hash_str},
     parsing::{Stream, extra_property, property},
     storage::object::loose::Encode,
-    time::{Timestamp, parse_timestamp},
+    time::Timestamp,
 };
 use std::io::Write;
 
@@ -86,19 +87,26 @@ impl Encode for Commit {
     }
 }
 
-/// Parses a commit object from some bytes.
-pub fn parse_commit(input: &mut Stream<'_>) -> ModalResult<Commit> {
-    seq! {Commit{
-        tree: property("tree", parse_object_hash_str),
-        parents: repeat(0.., property("parent", parse_object_hash_str)),
-        author: property("author", seq!(parse_identity, _: " ", parse_timestamp)),
-        committer: property("committer", seq!(parse_identity, _: " ", parse_timestamp)),
-        extra: repeat(0.., extra_property),
-        _: "\n",
-        description: rest.map(|x: &[u8]| x.into()),
-    }}
-    .context(StrContext::Label("commit object"))
-    .parse_next(input)
+impl Decode for Commit {
+    fn parse(input: &mut Stream<'_>) -> ModalResult<Self> {
+        seq! {Commit{
+            tree: property("tree", parse_object_hash_str),
+            parents: repeat(0.., property("parent", parse_object_hash_str)),
+            author: property("author", <(Identity, Timestamp)>::parse),
+            committer: property("committer", <(Identity, Timestamp)>::parse),
+            extra: repeat(0.., extra_property),
+            _: "\n",
+            description: rest.map(|x: &[u8]| x.into()),
+        }}
+        .context(StrContext::Label("commit object"))
+        .parse_next(input)
+    }
+}
+
+impl Decode for (Identity, Timestamp) {
+    fn parse(input: &mut Stream<'_>) -> ModalResult<Self> {
+        seq!(Identity::parse, _: " ", Timestamp::parse).parse_next(input)
+    }
 }
 
 impl Encode for (Identity, Timestamp) {

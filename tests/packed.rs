@@ -5,6 +5,7 @@ use fallible_iterator::FallibleIterator;
 use insta::assert_debug_snapshot;
 use memmap2::Mmap;
 use tinygit::{
+    ende::Decode,
     object::{ObjectType, hash::ObjectHash},
     parsing::Stream,
     storage::object::{
@@ -12,7 +13,7 @@ use tinygit::{
         packed::{
             self,
             PackedObject::{self},
-            Packfile,
+            Packfile, PackfileHeader,
             idx::PackIndex,
         },
     },
@@ -34,7 +35,7 @@ fn undeltified_packfile_parse() {
     let mmap = unsafe { Mmap::map(&file).expect("should be able to mmap file") };
     let mut slice = Stream::new(&mmap[..]);
 
-    let header = packed::header
+    let header = PackfileHeader::parse
         .parse_next(&mut slice)
         .expect("should be able to parse packfile header");
 
@@ -42,7 +43,7 @@ fn undeltified_packfile_parse() {
 
     let objects: Vec<_> = (0..header.objects)
         .map(|_| {
-            packed::object
+            PackedObject::parse
                 .parse_next(&mut slice)
                 .expect("should be able to parse object")
         })
@@ -64,7 +65,7 @@ fn deltified_packfile_parse() {
     let mmap = unsafe { Mmap::map(&file).expect("should be able to mmap file") };
     let mut slice = Stream::new(&mmap[..]);
 
-    let header = packed::header
+    let header = PackfileHeader::parse
         .parse_next(&mut slice)
         .expect("should be able to parse packfile header");
 
@@ -72,7 +73,7 @@ fn deltified_packfile_parse() {
 
     let objects: Vec<_> = (0..header.objects)
         .map(|_| {
-            packed::object
+            PackedObject::parse
                 .parse_next(&mut slice)
                 .expect("should be able to parse object")
         })

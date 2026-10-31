@@ -2,6 +2,7 @@
 
 use crate::{
     TinygitError,
+    ende::Decode,
     error::ParserContext,
     parsing::{ParseResultExt, Stream},
     storage::object::loose::Encode,
@@ -17,8 +18,9 @@ use winnow::{ModalResult, Parser, combinator::terminated, token::take_until};
 /// A [`FileName`] can be created using [`FromStr`]. For example:
 /// ```
 /// use tinygit::fs::FileName;
+/// use tinygit::ende::Decode;
 ///
-/// let name: FileName = "foo.rs\0".parse().unwrap();
+/// let name: FileName = FileName::decode_str("foo.rs\0").unwrap();
 ///
 /// assert_eq!(name.as_str(), "foo.rs");
 /// ```
@@ -32,13 +34,14 @@ impl FileName {
     }
 }
 
-impl FromStr for FileName {
-    type Err = TinygitError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        parse_file_name
-            .parse(Stream::new(s.as_bytes()))
-            .with_context(ParserContext::None)
+impl Decode for FileName {
+    fn parse(input: &mut Stream<'_>) -> ModalResult<Self> {
+        terminated(take_until(1.., "\x00"), "\x00")
+            .map(str::from_utf8)
+            .verify_map(Result::ok)
+            .map(str::to_owned)
+            .map(FileName)
+            .parse_next(input)
     }
 }
 
@@ -62,55 +65,22 @@ impl Encode for FileName {
     }
 }
 
-/// Parses a file name from some UTF-8 encoded bytes.
-pub fn parse_file_name(input: &mut Stream<'_>) -> ModalResult<FileName> {
-    terminated(take_until(1.., "\x00"), "\x00")
-        .map(str::from_utf8)
-        .verify_map(Result::ok)
-        .map(str::to_owned)
-        .map(FileName)
-        .parse_next(input)
-}
-
 #[cfg(test)]
 mod test {
-
-    use std::assert_matches;
-
-    use winnow::{Parser, error::ErrMode};
-
-    use crate::{fs::parse_file_name, parsing::Stream};
+    use crate::{ende::Decode, fs::FileName};
 
     #[test]
     fn file_name_parses_valid_inputs() {
+        assert_eq!(FileName::decode_str("foo.bar\0").unwrap().0, "foo.bar");
         assert_eq!(
-            parse_file_name
-                .parse_peek(Stream::new(b"foo.bar\0"))
-                .unwrap()
-                .1
-                .to_string(),
-            "foo.bar"
-        );
-
-        assert_eq!(
-            parse_file_name
-                .parse_peek(Stream::new(b"even this!!!\0"))
-                .unwrap()
-                .1
-                .to_string(),
+            FileName::decode_str("even this!!!\0").unwrap().0,
             "even this!!!"
         );
     }
 
     #[test]
     fn file_name_rejects_invalid_inputs() {
-        assert_matches!(
-            parse_file_name.parse_peek(Stream::new(b"foo.bar")),
-            Err(ErrMode::Backtrack(_))
-        );
-        assert_matches!(
-            parse_file_name.parse_peek(Stream::new(b"foo.bar\n")),
-            Err(ErrMode::Backtrack(_))
-        );
+        assert!(FileName::decode_str("foo.bar").is_err());
+        assert!(FileName::decode_str("foo.bar\n").is_err());
     }
 }

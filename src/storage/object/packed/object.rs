@@ -17,6 +17,7 @@ use winnow::{
 
 use crate::{
     TinygitError,
+    ende::Decode,
     object::{
         ObjectType,
         hash::{ObjectHash, parse_object_hash},
@@ -26,7 +27,7 @@ use crate::{
         RawObject,
         loose::Encode,
         packed::{
-            delta::{Delta, delta},
+            delta::Delta,
             offset,
         },
     },
@@ -218,37 +219,37 @@ impl Encode for PackedObject {
     }
 }
 
-pub fn object_header(input: &mut Stream<'_>) -> ModalResult<PackedObjectHeader> {
-    // TODO: using combinators instead of doing this imperatively would be great.
+impl Decode for PackedObjectHeader {
+    fn parse(input: &mut Stream<'_>) -> ModalResult<Self> {
+        let mut current_byte = any.parse_next(input)?;
 
-    let mut current_byte = any.parse_next(input)?;
+        let type_id = (current_byte & 0b01110000) >> 4;
 
-    let type_id = (current_byte & 0b01110000) >> 4;
+        // TODO: better error handling
+        let r#type =
+            PackedObjectType::from_repr(type_id).ok_or_else(|| ErrMode::Cut(ContextError::new()))?;
 
-    // TODO: better error handling
-    let r#type =
-        PackedObjectType::from_repr(type_id).ok_or_else(|| ErrMode::Cut(ContextError::new()))?;
+        let mut size = (current_byte & 0b00001111) as u64;
+        let mut pos = 4;
 
-    let mut size = (current_byte & 0b00001111) as u64;
-    let mut pos = 4;
+        // keep reading, the continuation bit is 1
+        // (thanks for the trick Aditya! - https://codewords.recurse.com/issues/three/unpacking-git-packfiles)
+        while current_byte >= 128 && pos < 67 {
+            current_byte = any.parse_next(input)?;
 
-    // keep reading, the continuation bit is 1
-    // (thanks for the trick Aditya! - https://codewords.recurse.com/issues/three/unpacking-git-packfiles)
-    while current_byte >= 128 && pos < 67 {
-        current_byte = any.parse_next(input)?;
+            // these are the bits that constitute the size, which is the byte as-is, but with the first
+            // bit masked off as it's the continuation bit
+            let chunk = (current_byte & 0b0111_1111) as u64;
 
-        // these are the bits that constitute the size, which is the byte as-is, but with the first
-        // bit masked off as it's the continuation bit
-        let chunk = (current_byte & 0b0111_1111) as u64;
+            size |= chunk << pos;
+            pos += 7;
+        }
 
-        size |= chunk << pos;
-        pos += 7;
+        Ok(PackedObjectHeader {
+            r#type,
+            length: size,
+        })
     }
-
-    Ok(PackedObjectHeader {
-        r#type,
-        length: size,
-    })
 }
 
 pub fn base_object(
@@ -272,109 +273,61 @@ pub fn base_object(
     }
 }
 
-/// Parses an object. Takes care of parsing the header too.
-pub fn object(input: &mut Stream<'_>) -> ModalResult<PackedObject> {
-    let offset = input.current_token_start();
+impl Decode for PackedObject {
+    fn parse(input: &mut Stream<'_>) -> ModalResult<Self> {
+        let offset = input.current_token_start();
 
-    alt((
-        deltified_object
-            .map(|object| PackedObject::Deltified(offset, object))
-            .context(StrContext::Label("deltified object")),
-        undeltified_object
-            .map(|object| PackedObject::Undeltified(offset, object))
-            .context(StrContext::Label("undeltified object")),
-    ))
-    .context(StrContext::Label("object"))
-    .parse_next(input)
+        alt((
+            DeltifiedObject::parse
+                .map(|object| PackedObject::Deltified(offset, object))
+                .context(StrContext::Label("deltified object")),
+            UndeltifiedObject::parse
+                .map(|object| PackedObject::Undeltified(offset, object))
+                .context(StrContext::Label("undeltified object")),
+        ))
+        .context(StrContext::Label("object"))
+        .parse_next(input)
+    }
 }
 
-/// Parses the header and data of a deltified object. Does not take care of resolving the deltas.
-pub fn deltified_object(input: &mut Stream<'_>) -> ModalResult<DeltifiedObject> {
-    let offset = input.current_token_start();
+impl Decode for DeltifiedObject {
+    fn parse(input: &mut Stream<'_>) -> ModalResult<Self> {
+        let offset = input.current_token_start();
 
-    let header = object_header
-        .verify(|header| {
-            matches!(
-                header.r#type,
-                PackedObjectType::OfsDelta | PackedObjectType::RefDelta
-            )
-        })
-        .context(StrContext::Label("object header"))
-        .parse_next(input)?;
+        let header = PackedObjectHeader::parse
+            .verify(|header| {
+                matches!(
+                    header.r#type,
+                    PackedObjectType::OfsDelta | PackedObjectType::RefDelta
+                )
+            })
+            .context(StrContext::Label("object header"))
+            .parse_next(input)?;
 
-    let base_object = base_object(header.r#type)
-        .context(StrContext::Label("base object"))
-        .verify_map(|base| {
-            match base {
-                BaseObject::Ofs(relative_offset) => {
-                    // we resolve the relative offset ofs_delta gives us offset to a file-level offset
-                    Some(BaseObject::Ofs(
-                        (offset as u64).checked_sub(relative_offset)?,
-                    ))
+        let base_object = base_object(header.r#type)
+            .context(StrContext::Label("base object"))
+            .verify_map(|base| {
+                match base {
+                    BaseObject::Ofs(relative_offset) => {
+                        // we resolve the relative offset ofs_delta gives us offset to a file-level offset
+                        Some(BaseObject::Ofs(
+                            (offset as u64).checked_sub(relative_offset)?,
+                        ))
+                    }
+
+                    other => Some(other),
                 }
+            })
+            .parse_next(input)?;
 
-                other => Some(other),
-            }
-        })
-        .parse_next(input)?;
+        if header.length > MAX_BUF_SIZE {
+            return Err(ErrMode::Cut(ContextError::new()));
+        }
 
-    if header.length > MAX_BUF_SIZE {
-        return Err(ErrMode::Cut(ContextError::new()));
-    }
+        let mut buf = Vec::default();
+        buf.try_reserve_exact(header.length as usize)
+            .map_err(|err| ErrMode::Cut(ContextError::from_external_error(input, err)))?;
 
-    let mut buf = Vec::default();
-    buf.try_reserve_exact(header.length as usize)
-        .map_err(|err| ErrMode::Cut(ContextError::from_external_error(input, err)))?;
-
-    let mut decoder = ZlibDecoder::new(&input[..]);
-
-    decoder
-        .read_to_end(&mut buf)
-        .map_err(|err| ErrMode::Cut(ContextError::from_external_error(input, err)))?;
-
-    if buf.len() != header.length as usize {
-        return Err(ErrMode::Cut(ContextError::new()));
-    }
-
-    // consume the amount of bytes that the decoder read, advancing the `input` slice
-    take(decoder.total_in() as usize).parse_next(input)?;
-
-    let delta = delta.parse_next(&mut Stream::new(&buf))?;
-
-    Ok(DeltifiedObject::new((base_object, delta)))
-}
-
-/// Parses the header and data of an undeltified object. Also takes care of decompressing the data.
-pub fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<UndeltifiedObject> {
-    let header = object_header
-        .verify(|header| {
-            matches!(
-                header.r#type,
-                PackedObjectType::Commit
-                    | PackedObjectType::Tag
-                    | PackedObjectType::Blob
-                    | PackedObjectType::Tree
-            )
-        })
-        .context(StrContext::Label("object header"))
-        .parse_next(input)?;
-
-    if header.length > MAX_BUF_SIZE {
-        return Err(ErrMode::Cut(ContextError::new()));
-    }
-
-    // we create a buffer with the size we read from the header
-    //
-    // keep in mind the fact that this size is the size of the decompressed data
-    // rather than the compressed data
-    let mut buf = Vec::default();
-    buf.try_reserve_exact(header.length as usize)
-        .map_err(|err| ErrMode::Cut(ContextError::from_external_error(input, err)))?;
-
-    if header.length == 0 {
-        // fixed-sized zlib header + trailer
-        take(8usize).parse_next(input)?;
-    } else {
         let mut decoder = ZlibDecoder::new(&input[..]);
 
         decoder
@@ -387,53 +340,105 @@ pub fn undeltified_object(input: &mut Stream<'_>) -> ModalResult<UndeltifiedObje
 
         // consume the amount of bytes that the decoder read, advancing the `input` slice
         take(decoder.total_in() as usize).parse_next(input)?;
+
+        let delta = Delta::parse.parse_next(&mut Stream::new(&buf))?;
+
+        Ok(DeltifiedObject::new((base_object, delta)))
     }
+}
 
-    let r#type = match header.r#type {
-        PackedObjectType::Commit => ObjectType::Commit,
-        PackedObjectType::Tree => ObjectType::Tree,
-        PackedObjectType::Blob => ObjectType::Blob,
-        PackedObjectType::Tag => ObjectType::Tag,
+impl Decode for UndeltifiedObject {
+    fn parse(input: &mut Stream<'_>) -> ModalResult<Self> {
+        let header = PackedObjectHeader::parse
+            .verify(|header| {
+                matches!(
+                    header.r#type,
+                    PackedObjectType::Commit
+                        | PackedObjectType::Tag
+                        | PackedObjectType::Blob
+                        | PackedObjectType::Tree
+                )
+            })
+            .context(StrContext::Label("object header"))
+            .parse_next(input)?;
 
-        _ => unreachable!(),
-    };
+        if header.length > MAX_BUF_SIZE {
+            return Err(ErrMode::Cut(ContextError::new()));
+        }
 
-    Ok(UndeltifiedObject::new(RawObject::new(r#type, buf)))
+        // we create a buffer with the size we read from the header
+        //
+        // keep in mind the fact that this size is the size of the decompressed data
+        // rather than the compressed data
+        let mut buf = Vec::default();
+        buf.try_reserve_exact(header.length as usize)
+            .map_err(|err| ErrMode::Cut(ContextError::from_external_error(input, err)))?;
+
+        if header.length == 0 {
+            // fixed-sized zlib header + trailer
+            take(8usize).parse_next(input)?;
+        } else {
+            let mut decoder = ZlibDecoder::new(&input[..]);
+
+            decoder
+                .read_to_end(&mut buf)
+                .map_err(|err| ErrMode::Cut(ContextError::from_external_error(input, err)))?;
+
+            if buf.len() != header.length as usize {
+                return Err(ErrMode::Cut(ContextError::new()));
+            }
+
+            // consume the amount of bytes that the decoder read, advancing the `input` slice
+            take(decoder.total_in() as usize).parse_next(input)?;
+        }
+
+        let r#type = match header.r#type {
+            PackedObjectType::Commit => ObjectType::Commit,
+            PackedObjectType::Tree => ObjectType::Tree,
+            PackedObjectType::Blob => ObjectType::Blob,
+            PackedObjectType::Tag => ObjectType::Tag,
+
+            _ => unreachable!(),
+        };
+
+        Ok(UndeltifiedObject::new(RawObject::new(r#type, buf)))
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::{
+        ende::Decode,
         object::ObjectType,
         parsing::Stream,
         storage::object::{
             RawObject,
-            packed::{UndeltifiedObject, object::undeltified_object},
+            packed::{PackedObjectHeader, UndeltifiedObject},
         },
     };
 
-    use super::{BaseObject, PackedObjectType, base_object, object_header};
+    use super::{BaseObject, PackedObjectType, base_object};
     use insta::assert_debug_snapshot;
     use std::assert_matches;
     use winnow::Parser;
 
     #[test]
     fn object_header_parses_basic_headers() {
-        let (rest, header) = object_header
+        let (rest, header) = PackedObjectHeader::parse
             .parse_peek(Stream::new(&[0x99, 0x0a, 0x78, 0x9c][..]))
             .expect("commit header should parse");
         assert_eq!(header.r#type, PackedObjectType::Commit);
         assert_eq!(header.length, 169);
         assert_eq!(*rest, &[0x78, 0x9c]);
 
-        let (rest, header) = object_header
+        let (rest, header) = PackedObjectHeader::parse
             .parse_peek(Stream::new(&[0xb7, 0x02, 0x78, 0x9c][..]))
             .expect("blob header should parse");
         assert_eq!(header.r#type, PackedObjectType::Blob);
         assert_eq!(header.length, 39);
         assert_eq!(*rest, &[0x78, 0x9c]);
 
-        let (rest, header) = object_header
+        let (rest, header) = PackedObjectHeader::parse
             .parse_peek(Stream::new(&[0xa4, 0x02, 0x78, 0x9c][..]))
             .expect("tree header should parse");
         assert_eq!(header.r#type, PackedObjectType::Tree);
@@ -443,7 +448,7 @@ mod tests {
 
     #[test]
     fn object_header_parses_single_byte_header() {
-        let (rest, header) = object_header
+        let (rest, header) = PackedObjectHeader::parse
             .parse_peek(Stream::new(&[0x19, 0x0a][..]))
             .expect("commit header should parse");
         assert_eq!(header.r#type, PackedObjectType::Commit);
@@ -453,7 +458,7 @@ mod tests {
 
     #[test]
     fn undeltified_object_parses_basic_object() {
-        let (_, obj) = undeltified_object
+        let (_, obj) = UndeltifiedObject::parse
             .parse_peek(Stream::new(&[
                 0x99, 0x0a, 0x78, 0x9c, 0x9d, 0xcb, 0x4d, 0x0a, 0xc2, 0x30, 0x10, 0x40, 0xe1, 0x7d,
                 0x4e, 0x31, 0x7b, 0xa1, 0x64, 0x12, 0xf3, 0x53, 0x10, 0xf1, 0x2a, 0x99, 0x66, 0xd2,

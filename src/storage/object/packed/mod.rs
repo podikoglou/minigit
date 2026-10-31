@@ -28,9 +28,10 @@ use winnow::{
 
 use crate::{
     TinygitError,
+    ende::Decode,
     error::ParserContext,
     object::hash::ObjectHash,
-    parsing::{ParseNextExt, ParseResultExt, Stream},
+    parsing::{ParseNextExt, Stream},
     storage::object::{
         LazyObject, ObjectDb, RawObject,
         loose::Encode,
@@ -74,9 +75,8 @@ impl Packfile {
         let pack = (pack_path, pack_buf);
 
         // read packfile header
-        let pack_header = header
-            .parse(Stream::new(&pack.1[..12]))
-            .with_context(ParserContext::File(pack.0.to_owned()))?;
+        let pack_header =
+            PackfileHeader::decode_bytes_with_context(&pack.1[..12], ParserContext::File(pack.0.to_owned()))?;
 
         // if present, open idx
         let idx = PackIndex::open(idx_path)?;
@@ -120,7 +120,7 @@ impl Packfile {
             .parse_next(&mut stream)
             .context_err(ParserContext::File(self.path().to_owned()), &stream)?;
 
-        object
+        PackedObject::parse
             .parse_next(&mut stream)
             .context_err(ParserContext::File(self.path().to_owned()), &stream)
     }
@@ -204,15 +204,16 @@ impl Encode for PackfileHeader {
     }
 }
 
-/// Parses the header of a packfile, returning the amount of objects contained in the packfile.
-pub fn header(input: &mut Stream<'_>) -> ModalResult<PackfileHeader> {
-    seq! {PackfileHeader {
-        _: "PACK".context(StrContext::Label("magic bytes")),
-        _: seq!(0x00, 0x00, 0x00, 0x02).context(StrContext::Label("packfile version")),
-        objects: be_u32.context(StrContext::Label("objects amount"))
-    }}
-    .context(StrContext::Label("packfile header"))
-    .parse_next(input)
+impl Decode for PackfileHeader {
+    fn parse(input: &mut Stream<'_>) -> ModalResult<Self> {
+        seq! {PackfileHeader {
+            _: "PACK".context(StrContext::Label("magic bytes")),
+            _: seq!(0x00, 0x00, 0x00, 0x02).context(StrContext::Label("packfile version")),
+            objects: be_u32.context(StrContext::Label("objects amount"))
+        }}
+        .context(StrContext::Label("packfile header"))
+        .parse_next(input)
+    }
 }
 
 pub fn offset(input: &mut Stream<'_>) -> ModalResult<u64> {

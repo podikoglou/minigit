@@ -1,0 +1,16 @@
+---
+source: src/object/tree.rs
+expression: "parse_tree_entry.parse_peek(Stream::new(b\"100644 cli.rs\\0\\x29\\xf3\\x23\\xb3\\x1a\\xd1\\x29\\x96\\x4f\\xfb\\x4f\\x97\\xf2\\x03\\xbe\\x9c\\x2f\\x35\\x10\\x7d\")).map(|(r,\nv)| (*r, v))"
+---
+Ok(
+    (
+        [],
+        (
+            33188,
+            FileName(
+                "cli.rs",
+            ),
+            29f323b31ad129964ffb4f97f203be9c2f35107d,
+        ),
+    ),
+)

@@ -8,7 +8,8 @@ use winnow::{
 };
 
 use crate::{
-    identity::{Identity, parse_identity},
+    ende::Decode,
+    identity::Identity,
     object::{
         ObjectType,
         hash::{ObjectHash, parse_object_hash_str},
@@ -16,7 +17,7 @@ use crate::{
     },
     parsing::{Stream, property},
     storage::object::loose::Encode,
-    time::{Timestamp, parse_timestamp},
+    time::Timestamp,
 };
 
 /// A tag: an object that points to an [`crate::object::Object`].
@@ -74,18 +75,19 @@ impl Encode for Tag {
     }
 }
 
-/// Parses a tag object from some bytes.
-pub fn parse_tag(input: &mut Stream<'_>) -> ModalResult<Tag> {
-    seq! {Tag{
-    target: seq!(
-        property("object", parse_object_hash_str),
+impl Decode for Tag {
+    fn parse(input: &mut Stream<'_>) -> ModalResult<Self> {
+        seq! {Tag{
+        target: seq!(
+            property("object", parse_object_hash_str),
 
-        property("type", parse_object_type),
-    ),
-    name: property("tag", take_until(1.., "\n").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned)),
-    tagger: opt(property("tagger", seq!(parse_identity, _: " ", parse_timestamp))),
-    _: "\n",
-    description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
-    }}.context(StrContext::Label("tag object"))
-    .parse_next(input)
+            property("type", parse_object_type),
+        ),
+        name: property("tag", take_until(1.., "\n").map(str::from_utf8).verify_map(Result::ok).map(str::to_owned)),
+        tagger: opt(property("tagger", <(Identity, Timestamp)>::parse)),
+        _: "\n",
+        description: rest.map(str::from_utf8).verify_map(Result::ok).map(str::to_owned),
+        }}.context(StrContext::Label("tag object"))
+        .parse_next(input)
+    }
 }

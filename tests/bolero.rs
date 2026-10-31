@@ -1,20 +1,22 @@
 use bolero::check;
 use chrono::{DateTime, FixedOffset};
 use tinygit::{
+    ende::Decode,
     error::ParserContext,
-    fs::parse_file_name,
-    identity::parse_identity,
-    object::{commit::parse_commit, parse_header, tag::parse_tag, tree::parse_tree},
+    fs::FileName,
+    identity::Identity,
+    object::{commit::Commit, parse_header, tag::Tag, tree::Tree},
     parsing::Stream,
     storage::object::{
         loose::{Encode, read_object, read_object_compressed},
         packed::{
-            self, PackedObjectType, base_object,
-            delta::{copy_instruction, delta, insert_instruction, instruction},
-            deltified_object, header, object_header, size, undeltified_object,
+            self, PackedObject, PackedObjectHeader, DeltifiedObject, UndeltifiedObject,
+            PackedObjectType, base_object,
+            delta::{CopyInstruction, Delta, InsertInstruction, Instruction},
+            size, PackfileHeader,
         },
     },
-    time::{Timestamp, parse_timestamp},
+    time::Timestamp,
 };
 use winnow::Parser;
 
@@ -57,8 +59,7 @@ fn fuzz_header() {
 #[test]
 fn fuzz_timestamp() {
     check!().for_each(|input: &[u8]| {
-        let mut stream = Stream::new(input);
-        let _ = parse_timestamp(&mut stream);
+        let _ = Timestamp::decode_bytes(input);
     });
 }
 
@@ -82,8 +83,7 @@ fn prop_timestamp_roundtrip() {
                         let sign = if h >= 0 { '+' } else { '-' };
                         let formatted =
                             format!("{} {}{:02}{:02}", ts.timestamp(), sign, h.abs(), m);
-                        let mut stream = Stream::new(formatted.as_bytes());
-                        let parsed = parse_timestamp(&mut stream)
+                        let parsed = Timestamp::decode_str(&formatted)
                             .expect("validly formatted timestamp should parse");
                         assert_eq!(parsed, ts);
                     }
@@ -96,8 +96,7 @@ fn prop_timestamp_roundtrip() {
 #[test]
 fn fuzz_identity() {
     check!().for_each(|input: &[u8]| {
-        let mut stream = Stream::new(input);
-        let _ = parse_identity(&mut stream);
+        let _ = Identity::decode_bytes(input);
     });
 }
 
@@ -105,8 +104,7 @@ fn fuzz_identity() {
 #[test]
 fn fuzz_file_name() {
     check!().for_each(|input: &[u8]| {
-        let mut stream = Stream::new(input);
-        let _ = parse_file_name(&mut stream);
+        let _ = FileName::decode_bytes(input);
     });
 }
 
@@ -114,8 +112,7 @@ fn fuzz_file_name() {
 #[test]
 fn fuzz_commit() {
     check!().for_each(|input: &[u8]| {
-        let mut stream = Stream::new(input);
-        let _ = parse_commit(&mut stream);
+        let _ = Commit::decode_bytes(input);
     });
 }
 
@@ -123,8 +120,7 @@ fn fuzz_commit() {
 #[test]
 fn fuzz_tag() {
     check!().for_each(|input: &[u8]| {
-        let mut stream = Stream::new(input);
-        let _ = parse_tag(&mut stream);
+        let _ = Tag::decode_bytes(input);
     });
 }
 
@@ -132,8 +128,7 @@ fn fuzz_tag() {
 #[test]
 fn fuzz_tree() {
     check!().for_each(|input: &[u8]| {
-        let mut stream = Stream::new(input);
-        let _ = parse_tree(&mut stream);
+        let _ = Tree::decode_bytes(input);
     });
 }
 
@@ -141,9 +136,7 @@ fn fuzz_tree() {
 #[test]
 fn fuzz_insert_instruction() {
     check!().for_each(|input: &[u8]| {
-        let stream = Stream::new(input);
-
-        if let Ok(instruction) = insert_instruction.parse(stream) {
+        if let Ok(instruction) = InsertInstruction::decode_bytes(input) {
             let mut buf = Vec::default();
 
             instruction.encode(&mut buf).expect("should be encodable");
@@ -169,17 +162,12 @@ fn fuzz_insert_instruction() {
 #[test]
 fn fuzz_copy_instruction() {
     check!().for_each(|input: &[u8]| {
-        let stream = Stream::new(input);
-
-        if let Ok(instruction) = copy_instruction.parse(stream) {
+        if let Ok(instruction) = CopyInstruction::decode_bytes(input) {
             let mut buf = Vec::default();
 
             instruction.encode(&mut buf).expect("should be encodable");
 
-            let stream_2 = Stream::new(&buf);
-
-            let instruction_2 = copy_instruction
-                .parse(stream_2)
+            let instruction_2 = CopyInstruction::decode_bytes(&buf)
                 .expect("should be parseable");
             assert_eq!(instruction_2, instruction);
         }
@@ -189,16 +177,12 @@ fn fuzz_copy_instruction() {
 #[test]
 fn fuzz_delta_instruction() {
     check!().for_each(|input: &[u8]| {
-        let stream = Stream::new(input);
-
-        if let Ok(instr) = instruction.parse(stream) {
+        if let Ok(instr) = Instruction::decode_bytes(input) {
             let mut buf = Vec::default();
 
             instr.encode(&mut buf).expect("should be encodable");
 
-            let stream_2 = Stream::new(&buf);
-
-            let instruction_2 = instruction.parse(stream_2).expect("should be parseable");
+            let instruction_2 = Instruction::decode_bytes(&buf).expect("should be parseable");
             assert_eq!(instruction_2, instr);
         }
     });
@@ -226,14 +210,12 @@ fn fuzz_size() {
 #[test]
 fn fuzz_delta() {
     check!().for_each(|input: &[u8]| {
-        let stream = Stream::new(input);
-
-        if let Ok(parsed) = delta.parse(stream) {
+        if let Ok(parsed) = Delta::decode_bytes(input) {
             let mut buf = Vec::default();
 
             (parsed).encode(&mut buf).expect("should be encodable");
 
-            let parsed_2 = delta.parse(Stream::new(&buf)).expect("should be parseable");
+            let parsed_2 = Delta::decode_bytes(&buf).expect("should be parseable");
 
             assert_eq!(parsed_2, parsed);
         }
@@ -243,15 +225,12 @@ fn fuzz_delta() {
 #[test]
 fn fuzz_undeltified_object() {
     check!().for_each(|input: &[u8]| {
-        let stream = Stream::new(input);
-
-        if let Ok(parsed) = undeltified_object.parse(stream) {
+        if let Ok(parsed) = UndeltifiedObject::decode_bytes(input) {
             let mut buf = Vec::default();
 
             parsed.encode(&mut buf).expect("should be encodable");
 
-            let parsed_2 = undeltified_object
-                .parse(Stream::new(&buf))
+            let parsed_2 = UndeltifiedObject::decode_bytes(&buf)
                 .expect("should be parseable");
 
             assert_eq!(parsed_2, parsed);
@@ -300,15 +279,12 @@ fn fuzz_ref_delta_base_object() {
 #[test]
 fn fuzz_object_header() {
     check!().for_each(|input: &[u8]| {
-        let stream = Stream::new(input);
-
-        if let Ok(parsed) = object_header.parse(stream) {
+        if let Ok(parsed) = PackedObjectHeader::decode_bytes(input) {
             let mut buf = Vec::default();
 
             parsed.encode(&mut buf).expect("should be encodable");
 
-            let parsed_2 = object_header
-                .parse(Stream::new(&buf))
+            let parsed_2 = PackedObjectHeader::decode_bytes(&buf)
                 .expect("should be parseable");
 
             assert_eq!(parsed_2, parsed);
@@ -319,15 +295,12 @@ fn fuzz_object_header() {
 #[test]
 fn fuzz_deltified_object() {
     check!().for_each(|input: &[u8]| {
-        let stream = Stream::new(input);
-
-        if let Ok(parsed) = deltified_object.parse(stream) {
+        if let Ok(parsed) = DeltifiedObject::decode_bytes(input) {
             let mut buf = Vec::default();
 
             parsed.encode(&mut buf).expect("should be encodable");
 
-            let parsed_2 = deltified_object
-                .parse(Stream::new(&buf))
+            let parsed_2 = DeltifiedObject::decode_bytes(&buf)
                 .expect("should be parseable");
 
             assert_eq!(parsed_2, parsed);
@@ -338,15 +311,12 @@ fn fuzz_deltified_object() {
 #[test]
 fn fuzz_pack_header() {
     check!().for_each(|input: &[u8]| {
-        let stream = Stream::new(input);
-
-        if let Ok(parsed) = header.parse(stream) {
+        if let Ok(parsed) = PackfileHeader::decode_bytes(input) {
             let mut buf = Vec::default();
 
             parsed.encode(&mut buf).expect("should be encodable");
 
-            let parsed_2 = header
-                .parse(Stream::new(&buf))
+            let parsed_2 = PackfileHeader::decode_bytes(&buf)
                 .expect("should be parseable");
 
             assert_eq!(parsed_2, parsed);
@@ -357,15 +327,12 @@ fn fuzz_pack_header() {
 #[test]
 fn fuzz_packed_object() {
     check!().for_each(|input: &[u8]| {
-        let stream = Stream::new(input);
-
-        if let Ok(parsed) = packed::object.parse(stream) {
+        if let Ok(parsed) = PackedObject::decode_bytes(input) {
             let mut buf = Vec::default();
 
             parsed.encode(&mut buf).expect("should be encodable");
 
-            let parsed_2 = packed::object
-                .parse(Stream::new(&buf))
+            let parsed_2 = PackedObject::decode_bytes(&buf)
                 .expect("should be parseable");
 
             assert_eq!(parsed_2, parsed);

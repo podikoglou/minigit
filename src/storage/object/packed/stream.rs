@@ -3,9 +3,10 @@ use winnow::Parser;
 
 use crate::{
     TinygitError,
+    ende::Decode,
     error::ParserContext,
     parsing::{ParseNextExt, Stream},
-    storage::object::packed::{PackedObject, object},
+    storage::object::packed::PackedObject,
 };
 
 /// A [FallibleIterator] over the items of a packfile ([PackedObject]);
@@ -59,7 +60,7 @@ impl FallibleIterator for PackStream<'_> {
             return Ok(None);
         }
 
-        let object = object
+        let object = PackedObject::parse
             .parse_next(&mut self.buf)
             .context_err(self.context.to_owned(), &self.buf)?;
 

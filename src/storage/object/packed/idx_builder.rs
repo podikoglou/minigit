@@ -7,12 +7,13 @@ use winnow::{Parser, token::take};
 
 use crate::{
     TinygitError,
+    ende::Decode,
     error::ParserContext,
     object::hash::{ObjectHash, parse_object_hash},
     parsing::{ParseNextExt, Stream},
     storage::object::{
         ObjectDb, RawObject,
-        packed::{BaseObject, PackedObject, header, idx::PackIndex, object, stream::PackStream},
+        packed::{BaseObject, PackedObject, PackfileHeader, idx::PackIndex, stream::PackStream},
     },
 };
 
@@ -43,7 +44,7 @@ impl PackIndexBuilder {
         let mut stream = Stream::new(&mmap);
         let context = ParserContext::File(pack_path.clone());
 
-        let header = header
+        let header = PackfileHeader::parse
             .parse_next(&mut stream)
             .context_err(context.clone(), &stream)?;
 
@@ -81,7 +82,7 @@ impl PackIndexBuilder {
             .parse_next(&mut stream)
             .context_err(context.clone(), &stream)?;
 
-        object
+        PackedObject::parse
             .parse_next(&mut stream)
             .context_err(context, &stream)
     }

@@ -2,7 +2,7 @@ use std::io::Write;
 
 use winnow::{ModalResult, Parser, error::StrContext, token::rest};
 
-use crate::{parsing::Stream, storage::object::loose::Encode};
+use crate::{ende::Decode, parsing::Stream, storage::object::loose::Encode};
 
 /// An blob: an object that simply contains some bytes.
 ///
@@ -17,16 +17,17 @@ impl Blob {
     }
 }
 
+impl Decode for Blob {
+    fn parse(input: &mut Stream<'_>) -> ModalResult<Self> {
+        rest.map(|e: &[u8]| Blob(e.into()))
+            .context(StrContext::Label("blob object"))
+            .parse_next(input)
+    }
+}
+
 impl Encode for Blob {
     fn encode<W: Write>(&self, writer: &mut W) -> Result<(), crate::TinygitError> {
         writer.write_all(&self.0)?;
         Ok(())
     }
-}
-
-/// Parses a blob object's content from some bytes.
-pub fn parse_blob(input: &mut Stream<'_>) -> ModalResult<Blob> {
-    rest.map(|e: &[u8]| Blob(e.into()))
-        .context(StrContext::Label("blob object"))
-        .parse_next(input)
 }

@@ -7,10 +7,11 @@ use winnow::Parser;
 
 use crate::{
     TinygitError,
+    ende::Decode,
     error::ParserContext,
     object::{
-        Object, ObjectType, blob::parse_blob, commit::parse_commit, hash::ObjectHash,
-        tag::parse_tag, tree::parse_tree,
+        Object, ObjectType, blob::Blob, commit::Commit, hash::ObjectHash,
+        tag::Tag, tree::Tree,
     },
     parsing::{ParseNextExt, Stream},
     storage::object::{
@@ -44,10 +45,10 @@ impl RawObject {
         let mut stream = Stream::new(&self.bytes);
 
         match self.r#type {
-            ObjectType::Blob => parse_blob.map(Object::from).parse_next(&mut stream),
-            ObjectType::Tree => parse_tree.map(Object::from).parse_next(&mut stream),
-            ObjectType::Commit => parse_commit.map(Object::from).parse_next(&mut stream),
-            ObjectType::Tag => parse_tag.map(Object::from).parse_next(&mut stream),
+            ObjectType::Blob => Blob::parse.map(Object::from).parse_next(&mut stream),
+            ObjectType::Tree => Tree::parse.map(Object::from).parse_next(&mut stream),
+            ObjectType::Commit => Commit::parse.map(Object::from).parse_next(&mut stream),
+            ObjectType::Tag => Tag::parse.map(Object::from).parse_next(&mut stream),
         }
         .context_err(context, &stream)
     }
